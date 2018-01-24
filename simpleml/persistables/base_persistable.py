@@ -57,6 +57,16 @@ class BasePersistable(Base, AllFeaturesMixin):
 
     Takes advantage of sqlalchemy-mixins to enable active record operations
     (TableModel.save(), create(), where(), destroy())
+
+    -------
+    Schema
+    -------
+    id: Random UUID(4). Used over auto incrementing id to minimize collision probability
+        with distributed trainings and authors (especially if using central server
+        to combine results across different instantiations of SimpleML)
+    metadata: Generic JSON store for random attributes
+    created_timestamp: Server time on insert
+    modified_timestamp: Server time on update
     '''
     __abstract__ = True
 
