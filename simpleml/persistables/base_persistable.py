@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import DeclaritiveBase
-from sqlalchemy import MetaData, Column, func, DateTime
+from sqlalchemy import MetaData, Column, func, DateTime, String, Boolean
 from sqlalchemy_mixins import AllFeaturesMixin
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import TypeDecorator, CHAR
@@ -64,6 +64,15 @@ class BasePersistable(Base, AllFeaturesMixin):
     id: Random UUID(4). Used over auto incrementing id to minimize collision probability
         with distributed trainings and authors (especially if using central server
         to combine results across different instantiations of SimpleML)
+
+    hash_id: Use hash of object to uniquely identify the contents at train time
+    registered_name: internal name of object used when instantiating the class
+        Can be used for the drag and drop GUI
+
+    # Persistence of fitted states
+    has_external_files = boolean field to signify presence of saved files not in db
+    external_filename = path to file, relative to base simpleml folder (default ~/.simpleml)
+
     metadata: Generic JSON store for random attributes
     created_timestamp: Server time on insert
     modified_timestamp: Server time on update
@@ -71,7 +80,20 @@ class BasePersistable(Base, AllFeaturesMixin):
     __abstract__ = True
 
     # Use random uuid for graceful distributed instantiation
+    # also allows saved objects to include id in filename (before db persistence)
     id = Column(GUID, primary_key=True, default=uuid.uuid4())
+
+    # Specific metadata for versioning and comparison
+    # Use hash for code/data content for referencing similar objects
+    # Use registered name for internal object pointer - internal code can
+    # still get updated between trainings (hence hash)
+    # TODO: figure out how to hash objects in a way that signifies code content
+    hash_id = Column(String, nullable=False)
+    registered_name = Column(String, nullable=False)
+
+    # Persistence of fitted states
+    has_external_files = Column(Boolean, default=False)
+    external_filename = Column(String, nullable=True)
 
     # Generic store and metadata for all child objects
     metadata = Column(JSONB, default={})
