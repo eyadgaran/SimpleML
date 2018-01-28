@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
+from abc import abstractmethod
 
 __author__ = 'Elisha Yadgaran'
 
@@ -88,7 +89,7 @@ class BasePersistable(Base, AllFeaturesMixin):
     # Use registered name for internal object pointer - internal code can
     # still get updated between trainings (hence hash)
     # TODO: figure out how to hash objects in a way that signifies code content
-    hash_id = Column(String, nullable=False)
+    hash_ = Column('hash', String, nullable=False)
     registered_name = Column(String, nullable=False)
 
     # Persistence of fitted states
@@ -99,3 +100,46 @@ class BasePersistable(Base, AllFeaturesMixin):
     metadata_ = Column('metadata', JSONB, default={})
     created_timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     modified_timestamp = Column(DateTime(timezone=True), server_onupdate=func.now())
+
+    def __init__(self, registered_name, ):
+        self.id = uuid.uuid4()
+        self.registered_name = registered_name
+
+    def save(self):
+        '''
+        Each subclass needs to instantiate a save routine to persist to the
+        database and any other required filestore
+
+        sqlalchemy_mixins supports active record style TableModel.save()
+        so can still call super(BasePersistable, self).save()
+        '''
+        if self.has_external_files:
+            self._save_external_files()
+
+        super(BasePersistable, self).save()
+
+    def _save_external_files(self):
+        '''
+        Each subclass needs to instantiate a save routine to persist
+        any other required files
+
+        Opt not to use abstractmethod for default behavior of no external files
+        '''
+        raise NotImplementedError
+
+    @abstractmethod
+    def load(self):
+        '''
+        Counter operation for save
+        Needs to load any file and db objects
+        '''
+        pass
+
+    def _load_external_files(self):
+        '''
+        Each subclass needs to instantiate a load routine to read in
+        any other required files
+
+        Opt not to use abstractmethod for default behavior of no external files
+        '''
+        raise NotImplementedError

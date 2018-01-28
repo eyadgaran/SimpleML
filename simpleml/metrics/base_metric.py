@@ -1,4 +1,4 @@
-from simpleml.persistables.base_persistable import BasePersistable
+from simpleml.persistables.base_persistable import BasePersistable, GUID
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -28,5 +28,5 @@ class BaseMetric(BasePersistable):
     values = Column(JSONB, nullable=False)
 
     # Only dependency is the model (to score in production)
-    model_id = Column(String, ForeignKey("models.id"))
+    model_id = Column(GUID, ForeignKey("models.id"))
     model = relationship('BaseModel')

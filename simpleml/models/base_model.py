@@ -1,4 +1,4 @@
-from simpleml.persistables.base_persistable import BasePersistable
+from simpleml.persistables.base_persistable import BasePersistable, GUID
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -37,9 +37,16 @@ class BaseModel(BasePersistable):
     version_description = Column(String, default='')
 
     # Only dependency is the pipeline (to score in production)
-    pipeline_id = Column(String, ForeignKey("pipelines.id"))
+    pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
     pipeline = relationship("BasePipeline")
 
     # Additional model specific metadata
     params = Column(JSONB, default={})
     feature_metadata = Column(JSONB, default={})
+
+
+    def save(self):
+        pass
+
+    def load(self):
+        pass
