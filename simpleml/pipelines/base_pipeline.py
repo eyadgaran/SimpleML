@@ -1,4 +1,4 @@
-from simpleml.persistables.base_persistable import BasePersistable
+from simpleml.persistables.base_persistable import BasePersistable, GUID
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -20,5 +20,5 @@ class BasePipeline(BasePersistable):
 
     transformers = Column(JSONB, default={})
 
-    dataset_id = Column(String, ForeignKey("datasets.id"))
+    dataset_id = Column(GUID, ForeignKey("datasets.id"))
     dataset = relationship("BaseDataset")
