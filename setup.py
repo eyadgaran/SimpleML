@@ -10,7 +10,11 @@ setup(
     url='https://github.com/eyadgaran/SimpleML',
     download_url='https://github.com/eyadgaran/SimpleML/archive/0.1.tar.gz',
     packages=find_packages(),
-    keywords = ['machine learning'],
-    install_requires=[],
+    keywords = ['machine-learning'],
+    install_requires=[
+        'sqlalchemy',
+        'sqlalchemy_mixins',
+        'psycopg2'
+    ],
     zip_safe=False
 )

@@ -1,4 +1,4 @@
-from sqlalchemy.ext.declarative import DeclaritiveBase
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import MetaData, Column, func, DateTime, String, Boolean
 from sqlalchemy_mixins import AllFeaturesMixin
 from sqlalchemy.dialects.postgresql import JSONB
@@ -10,7 +10,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 metadata = MetaData()
-Base = DeclaritiveBase(metadata=metadata)
+Base = declarative_base(metadata=metadata)
 
 
 class GUID(TypeDecorator):
@@ -96,6 +96,6 @@ class BasePersistable(Base, AllFeaturesMixin):
     external_filename = Column(String, nullable=True)
 
     # Generic store and metadata for all child objects
-    metadata = Column(JSONB, default={})
+    metadata_ = Column('metadata', JSONB, default={})
     created_timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     modified_timestamp = Column(DateTime(timezone=True), server_onupdate=func.now())
