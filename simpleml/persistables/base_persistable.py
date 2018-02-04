@@ -2,8 +2,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import MetaData, Column, func, DateTime, String, Boolean
 from sqlalchemy_mixins import AllFeaturesMixin
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.types import TypeDecorator, CHAR
-from sqlalchemy.dialects.postgresql import UUID
+from simpleml.persistables.meta_register import MetaRegistry, SIMPLEML_REGISTRY
+from simpleml.persistables.guid import GUID
 import uuid
 from abc import abstractmethod
 
@@ -12,43 +12,6 @@ __author__ = 'Elisha Yadgaran'
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
-
-
-class GUID(TypeDecorator):
-    """Platform-independent GUID type.
-
-    Uses PostgreSQL's UUID type, otherwise uses
-    CHAR(32), storing as stringified hex values.
-
-    http://docs.sqlalchemy.org/en/latest/core/custom_types.html
-    """
-    impl = CHAR
-
-    def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
-            return dialect.type_descriptor(UUID())
-        else:
-            return dialect.type_descriptor(CHAR(32))
-
-    def process_bind_param(self, value, dialect):
-        if value is None:
-            return value
-        elif dialect.name == 'postgresql':
-            return str(value)
-        else:
-            if not isinstance(value, uuid.UUID):
-                return "%.32x" % uuid.UUID(value).int
-            else:
-                # hexstring
-                return "%.32x" % value.int
-
-    def process_result_value(self, value, dialect):
-        if value is None:
-            return value
-        else:
-            if not isinstance(value, uuid.UUID):
-                value = uuid.UUID(value)
-            return value
 
 
 class BasePersistable(Base, AllFeaturesMixin):
@@ -67,8 +30,10 @@ class BasePersistable(Base, AllFeaturesMixin):
         to combine results across different instantiations of SimpleML)
 
     hash_id: Use hash of object to uniquely identify the contents at train time
-    registered_name: internal name of object used when instantiating the class
+    registered_name: class name of object defined when importing
         Can be used for the drag and drop GUI
+    author: creator
+    name: friendly name - primary way of tracking evolution of "same" object over time
 
     # Persistence of fitted states
     has_external_files = boolean field to signify presence of saved files not in db
@@ -79,10 +44,11 @@ class BasePersistable(Base, AllFeaturesMixin):
     modified_timestamp: Server time on update
     '''
     __abstract__ = True
+    __metaclass__ = MetaRegistry
 
     # Use random uuid for graceful distributed instantiation
     # also allows saved objects to include id in filename (before db persistence)
-    id = Column(GUID, primary_key=True, default=uuid.uuid4())
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
 
     # Specific metadata for versioning and comparison
     # Use hash for code/data content for referencing similar objects
@@ -91,6 +57,8 @@ class BasePersistable(Base, AllFeaturesMixin):
     # TODO: figure out how to hash objects in a way that signifies code content
     hash_ = Column('hash', String, nullable=False)
     registered_name = Column(String, nullable=False)
+    author = Column(String, default='default')
+    name = Column(String, nullable=False)
 
     # Persistence of fitted states
     has_external_files = Column(Boolean, default=False)
@@ -101,9 +69,15 @@ class BasePersistable(Base, AllFeaturesMixin):
     created_timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     modified_timestamp = Column(DateTime(timezone=True), server_onupdate=func.now())
 
-    def __init__(self, registered_name, ):
+    def __init__(self, name, has_external_files,
+                 author=None, metadata_={}):
+        # Initialize values expected to exist at time of instantiation
+        self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
-        self.registered_name = registered_name
+        self.author = author
+        self.name = name
+        self.has_external_files = has_external_files
+        self.metadata_ = metadata_
 
     def save(self):
         '''
@@ -115,6 +89,9 @@ class BasePersistable(Base, AllFeaturesMixin):
         '''
         if self.has_external_files:
             self._save_external_files()
+
+        # Hash contents upon save
+        self.hash_ = self._hash()
 
         super(BasePersistable, self).save()
 
@@ -128,12 +105,33 @@ class BasePersistable(Base, AllFeaturesMixin):
         raise NotImplementedError
 
     @abstractmethod
+    def _hash(self):
+        '''
+        Each subclass should implement a hashing routine to uniquely AND consistently
+        identify the object contents. Consistency is important to ensure ability
+        to assert identity across code definitions
+        '''
+
     def load(self):
         '''
         Counter operation for save
         Needs to load any file and db objects
+
+        Class definition is stored by registered_name param and
+        Pickled objects are stored in external_filename param
         '''
-        pass
+
+        # Lookup appropriate class and reinstantiate
+        self.__class__ = self._load_class()
+
+        if self.has_external_files():
+            self._load_external_files()
+
+    def _load_class(self):
+        '''
+        Wrapper function to call global registry of all imported class names
+        '''
+        return SIMPLEML_REGISTRY.get(self.registered_name)
 
     def _load_external_files(self):
         '''
