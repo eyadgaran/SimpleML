@@ -2,7 +2,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import MetaData, Column, func, DateTime, String, Boolean
 from sqlalchemy_mixins import AllFeaturesMixin
 from sqlalchemy.dialects.postgresql import JSONB
-from simpleml.persistables.meta_register import MetaRegistry, SIMPLEML_REGISTRY
+from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
 from simpleml.persistables.guid import GUID
 import uuid
 from abc import abstractmethod
