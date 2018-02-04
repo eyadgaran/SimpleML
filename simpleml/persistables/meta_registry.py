@@ -2,15 +2,14 @@
 Meta class to auto register new classes
 '''
 from sqlalchemy.ext.declarative import declarative_base
+from abc import ABCMeta
 
 __author__ = 'Elisha Yadgaran'
 
 
 class Registry(object):
     '''
-    Importable class to maintain reference to the correct global registry
-
-    (Import splintering makes it non trivial to import registry explicitly)
+    Importable class to maintain reference to the global registry
     '''
     def __init__(self):
         self.registry = {}
@@ -36,7 +35,7 @@ SIMPLEML_REGISTRY = Registry()
 MetaBase = type(declarative_base())
 
 
-class MetaRegistry(MetaBase):
+class MetaRegistry(MetaBase, ABCMeta):
     def __new__(cls, clsname, bases, attrs):
         newclass = super(MetaRegistry, cls).__new__(cls, clsname, bases, attrs)
         SIMPLEML_REGISTRY.register(newclass)
