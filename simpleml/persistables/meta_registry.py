@@ -16,9 +16,6 @@ class Registry(object):
         self.registry = {}
 
     def register(self, cls):
-        print 'Hit registry'
-        print cls
-        print cls.__name__
         if cls.__name__ in self.registry:
             raise ValueError('Cannot duplicate class in registry: {}'.format(cls.__name__))
         self.registry[cls.__name__] = cls
