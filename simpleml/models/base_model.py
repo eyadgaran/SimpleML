@@ -41,14 +41,14 @@ class BaseModel(BasePersistable):
     feature_metadata = Column(JSONB, default={})
 
     def __init__(self, version, version_description=None,
-                 section=None, *args, **kwargs):
-        super(BaseModel, self).__init__(*args, **kwargs)
+                 section=None, has_external_files=True, **kwargs):
+        super(BaseModel, self).__init__(has_external_files=has_external_files, **kwargs)
         self.section = section
         self.version = version
         self.version_description = version_description
 
         # Instantiate model
-        self._external_model = self._create_external_model(*args, **kwargs)
+        self._external_model = self._create_external_model(**kwargs)
 
     @property
     def external_model(self):
