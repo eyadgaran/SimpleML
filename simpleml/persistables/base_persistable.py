@@ -69,8 +69,8 @@ class BasePersistable(Base, AllFeaturesMixin):
     created_timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     modified_timestamp = Column(DateTime(timezone=True), server_onupdate=func.now())
 
-    def __init__(self, name, has_external_files,
-                 author=None, metadata_={}):
+    def __init__(self, name, has_external_files=False,
+                 author=None, metadata_={}, *args, **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
