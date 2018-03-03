@@ -12,7 +12,8 @@ import simpleml.metrics.base_metric
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-from subprocess import call
+import psycopg2
+from psycopg2 import ProgrammingError
 
 
 __author__ = 'Elisha Yadgaran'
@@ -75,10 +76,22 @@ class Database(object):
 
         :return: None
         '''
-        call(["createdb", "-U", "postgres", self.database_name])
-        call(['psql', '-U', 'postgres', '-d', self.database_name, '-c',
-              "CREATE USER {user} PASSWORD '{password}' SUPERUSER;".format(
-                  user=self.database_user, password=self.database_password)])
+        admin_params = {'user': 'postgres', 'database': 'postgres',
+                        'host': self.database_params.get('host'),
+                        'port': self.database_params.get('port')}
+        user_command = "CREATE USER {user} PASSWORD '{password}';".format(
+            user=self.database_user, password=self.database_password)
+        database_command =  'CREATE DATABASE "{database}" WITH OWNER {user};'.format(
+             database=self.database_name, user=self.database_user)
+
+        try:
+            run_sql_command(admin_params, user_command, autocommit=True)
+        except ProgrammingError:
+            pass
+        try:
+            run_sql_command(admin_params, database_command, autocommit=True)
+        except ProgrammingError:
+            pass
 
     def initialize(self, create_database=True, drop_tables=False):
         '''
@@ -103,3 +116,25 @@ class Database(object):
         self.create_tables(drop_tables=drop_tables)
 
         base.set_session(session)
+
+
+def run_sql_command(connection_params, command, autocommit=False):
+    '''
+    Execute command directly using psycopg2 cursor
+
+    :param connection_params: dict of connection details
+    :param command: raw sql to execute
+    :param autocommit: default false; determines if the connection automcommits
+    commands. Necessary for certain commands (create/drop db)
+    '''
+    connection = psycopg2.connect(**connection_params)
+    cursor = connection.cursor()
+    connection.autocommit = autocommit
+
+    cursor.execute(command)
+
+    if not autocommit:
+        connection.commit()
+
+    cursor.close()
+    connection.close()
