@@ -69,15 +69,43 @@ class BasePersistable(Base, AllFeaturesMixin):
     created_timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     modified_timestamp = Column(DateTime(timezone=True), server_onupdate=func.now())
 
+    def __new__(cls, *args, **kwargs):
+        '''
+        Since new class instatiation ignores potential database records,
+        check first and return existing if there is one
+
+        use class attribute `is_persisted` to signify if using retrieved instance
+        or new one
+        '''
+        existing_class = cls.check_for_existence(*args, **kwargs)
+        if existing_class is None:
+            existing_class = cls
+            existing_class.is_persisted = False
+        else:
+            existing_class.is_persisted = True
+        return super(BasePersistable, existing_class).__new__(existing_class, *args, **kwargs)
+
     def __init__(self, name, has_external_files=False,
                  author=None, metadata_={}, *args, **kwargs):
-        # Initialize values expected to exist at time of instantiation
-        self.registered_name = self.__class__.__name__
-        self.id = uuid.uuid4()
-        self.author = author
-        self.name = name
-        self.has_external_files = has_external_files
-        self.metadata_ = metadata_
+        if self.__class__.is_persisted:
+            self.load()
+        else:
+            # Initialize values expected to exist at time of instantiation
+            self.registered_name = self.__class__.__name__
+            self.id = uuid.uuid4()
+            self.author = author
+            self.name = name
+            self.has_external_files = has_external_files
+            self.metadata_ = metadata_
+
+    @classmethod
+    def check_for_existence(cls, *args, **kwargs):
+        '''
+        If object already exists, overwrite new initialization and load old
+
+        return cls.find('unique determiner for class')
+        '''
+        raise NotImplementedError
 
     def save(self):
         '''
