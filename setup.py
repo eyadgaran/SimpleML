@@ -14,7 +14,9 @@ setup(
     install_requires=[
         'sqlalchemy',
         'sqlalchemy_mixins',
-        'psycopg2'
+        'psycopg2',
+        'scikit-learn',
+        'numpy'
     ],
     zip_safe=False,
     test_suite='nose.collector',
