@@ -1,20 +1,16 @@
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import MetaData, Column, func, DateTime, String, Boolean
-from sqlalchemy_mixins import AllFeaturesMixin
+from sqlalchemy import MetaData, Column, func, String, Boolean, Integer,\
+    UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
 from simpleml.persistables.guid import GUID
+from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
 import uuid
 from abc import abstractmethod
 
 __author__ = 'Elisha Yadgaran'
 
 
-metadata = MetaData()
-Base = declarative_base(metadata=metadata)
-
-
-class BasePersistable(Base, AllFeaturesMixin):
+class BasePersistable(BaseSQLAlchemy):
     '''
     Base class for all SimpleML database objects. Defaults to PostgreSQL
     but can be swapped out for any supported SQLAlchemy backend.
@@ -31,20 +27,21 @@ class BasePersistable(Base, AllFeaturesMixin):
 
     hash_id: Use hash of object to uniquely identify the contents at train time
     registered_name: class name of object defined when importing
-        Can be used for the drag and drop GUI
+        Can be used for the drag and drop GUI - also for prescribing training config
     author: creator
     name: friendly name - primary way of tracking evolution of "same" object over time
+    version: autoincrementing id of "friendly name"
 
     # Persistence of fitted states
     has_external_files = boolean field to signify presence of saved files not in db
     external_filename = path to file, relative to base simpleml folder (default ~/.simpleml)
 
     metadata: Generic JSON store for random attributes
-    created_timestamp: Server time on insert
-    modified_timestamp: Server time on update
     '''
     __abstract__ = True
     __metaclass__ = MetaRegistry
+    # Uses main (public) schema
+    metadata = MetaData()
 
     # Use random uuid for graceful distributed instantiation
     # also allows saved objects to include id in filename (before db persistence)
@@ -59,6 +56,7 @@ class BasePersistable(Base, AllFeaturesMixin):
     registered_name = Column(String, nullable=False)
     author = Column(String, default='default')
     name = Column(String, nullable=False)
+    version = Column(Integer, nullable=False)
 
     # Persistence of fitted states
     has_external_files = Column(Boolean, default=False)
@@ -66,8 +64,13 @@ class BasePersistable(Base, AllFeaturesMixin):
 
     # Generic store and metadata for all child objects
     metadata_ = Column('metadata', JSONB, default={})
-    created_timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    modified_timestamp = Column(DateTime(timezone=True), server_onupdate=func.now())
+
+    __table_args__ = (
+        # Unique constraint for versioning
+        UniqueConstraint('name', 'version', name='name_version_unique'),
+        # Index for searching through friendly names
+        Index('name_index', 'name'),
+     )
 
     def __init__(self, name, has_external_files=False,
                  author=None, metadata_={}, *args, **kwargs):
@@ -93,6 +96,9 @@ class BasePersistable(Base, AllFeaturesMixin):
         # Hash contents upon save
         self.hash_ = self._hash()
 
+        # Get the latest version for this "friendly name"
+        self.version = self._get_latest_version()
+
         super(BasePersistable, self).save()
 
     def _save_external_files(self):
@@ -111,6 +117,22 @@ class BasePersistable(Base, AllFeaturesMixin):
         identify the object contents. Consistency is important to ensure ability
         to assert identity across code definitions
         '''
+
+    def _get_latest_version(self):
+        '''
+        Versions should be autoincrementing for each object (constrained over
+        friendly name). Executes a database lookup and increments..
+        '''
+        last_version = self.__class__.query_by(
+            func.max(self.__class__.version)
+        ).filter(
+            self.__class__.name == self.name
+        ).scalar()
+
+        if last_version is None:
+            last_version = 0
+
+        return last_version + 1
 
     def load(self):
         '''
