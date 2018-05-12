@@ -1,5 +1,5 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, String, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from abc import abstractmethod
@@ -19,7 +19,6 @@ class BaseModel(BasePersistable):
     section: organizational attribute to manage many models pertaining to a single grouping
         ex: partitioning on an attribute and training an individual model for
         each instance (instead of one model with the attribute as a feature)
-    version: string version 'x.y.z' of the model
     version_description: description that explains what is new or different about this version
     pipeline_id: foreign key relation to the pipeline used to transform input to the model
         (training is also dependent on originating dataset but scoring only needs access to the pipeline)
@@ -29,22 +28,30 @@ class BaseModel(BasePersistable):
     __tablename__ = 'models'
 
     section = Column(String, default='default')
-    version = Column(String, nullable=False)
     version_description = Column(String, default='')
 
     # Only dependency is the pipeline (to score in production)
     pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
-    pipeline = relationship("BasePipeline")
+    pipeline = relationship("BaseProductionPipeline")
 
     # Additional model specific metadata
     params = Column(JSONB, default={})
     feature_metadata = Column(JSONB, default={})
 
-    def __init__(self, version, version_description=None,
+    __table_args__ = (
+        # Unique constraint for versioning
+        UniqueConstraint('name', 'version', name='model_name_version_unique'),
+        # Index for searching through friendly names
+        Index('model_name_index', 'name'),
+     )
+
+    # Unique Constraint
+    # section, version, registered_name, pipeline
+
+    def __init__(self, version_description=None,
                  section=None, has_external_files=True, **kwargs):
         super(BaseModel, self).__init__(has_external_files=has_external_files, **kwargs)
         self.section = section
-        self.version = version
         self.version_description = version_description
 
         # Instantiate model

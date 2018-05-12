@@ -4,10 +4,12 @@ database management
 '''
 
 # Import table models to register in DeclaritiveBase
-from simpleml.persistables.base_persistable import BasePersistable as base
+from simpleml.persistables.base_persistable import BasePersistable
+import simpleml.datasets.raw_datasets.base_raw_dataset
+import simpleml.pipelines.dataset_pipelines.base_dataset_pipeline
+import simpleml.datasets.processed_datasets.base_processed_dataset
+import simpleml.pipelines.production_pipelines.base_production_pipeline
 import simpleml.models.base_model
-import simpleml.pipelines.base_pipeline
-import simpleml.datasets.base_dataset
 import simpleml.metrics.base_metric
 
 from sqlalchemy import create_engine
@@ -57,7 +59,7 @@ class Database(object):
         return create_engine(self.engine_url)
 
     @staticmethod
-    def create_tables(drop_tables=False):
+    def create_tables(base, drop_tables=False):
         '''
         Creates database tables.
 
@@ -93,7 +95,7 @@ class Database(object):
         except ProgrammingError:
             pass
 
-    def initialize(self, create_database=True, drop_tables=False):
+    def initialize(self, base=BasePersistable, create_database=True, drop_tables=False):
         '''
         Initialization method to set up database connection and inject
         session manager
@@ -113,7 +115,7 @@ class Database(object):
         if create_database:
             self.create_database()
 
-        self.create_tables(drop_tables=drop_tables)
+        self.create_tables(base, drop_tables=drop_tables)
 
         base.set_session(session)
 

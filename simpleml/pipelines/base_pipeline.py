@@ -16,9 +16,6 @@ class BasePipeline(BasePersistable):
     transformers: json with list of transformer objects
     dataset_id: foreign key relation to the dataset used as input
     '''
-    __tablename__ = 'pipelines'
+    __abstract__ = True
 
     transformers = Column(JSONB, default={})
-
-    dataset_id = Column(GUID, ForeignKey("datasets.id"))
-    dataset = relationship("BaseDataset")

@@ -1,5 +1,5 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, String, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -24,9 +24,15 @@ class BaseMetric(BasePersistable):
     '''
     __tablename__ = 'metrics'
 
-    name = Column(String, nullable=False)
     values = Column(JSONB, nullable=False)
 
     # Only dependency is the model (to score in production)
     model_id = Column(GUID, ForeignKey("models.id"))
     model = relationship('BaseModel')
+
+    __table_args__ = (
+        # Unique constraint for versioning
+        UniqueConstraint('name', 'version', name='metric_name_version_unique'),
+        # Index for searching through friendly names
+        Index('metric_name_index', 'name'),
+     )

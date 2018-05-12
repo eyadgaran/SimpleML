@@ -65,12 +65,6 @@ class BasePersistable(BaseSQLAlchemy):
     # Generic store and metadata for all child objects
     metadata_ = Column('metadata', JSONB, default={})
 
-    __table_args__ = (
-        # Unique constraint for versioning
-        UniqueConstraint('name', 'version', name='name_version_unique'),
-        # Index for searching through friendly names
-        Index('name_index', 'name'),
-     )
 
     def __init__(self, name, has_external_files=False,
                  author=None, metadata_={}, *args, **kwargs):
