@@ -4,7 +4,7 @@ Optional module to persist pickled objects in database instead of filesystem
 
 from simpleml.persistables.guid import GUID
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
-from sqlalchemy import MetaData, Column, String
+from sqlalchemy import MetaData, Column, String, LargeBinary, event, DDL
 import uuid
 
 __author__ = 'Elisha Yadgaran'
@@ -13,7 +13,7 @@ BINARY_STORAGE_SCHEMA = 'BINARY'
 
 
 class BinaryBlob(BaseSQLAlchemy):
-    ___tablename__ = 'binary_blobs'
+    __tablename__ = 'binary_blobs'
     # Store binary data in its own schema
     metadata = MetaData(schema=BINARY_STORAGE_SCHEMA)
 
@@ -22,4 +22,6 @@ class BinaryBlob(BaseSQLAlchemy):
     object_type = Column(String, nullable=False)
     object_id = Column(GUID, nullable=False)
     # TODO: Figure this out and think it through...
-    binary_blob = Column()
+    binary_blob = Column(LargeBinary)
+
+    event.listen(metadata, 'before_create', DDL('''CREATE SCHEMA IF NOT EXISTS "{}";'''.format(BINARY_STORAGE_SCHEMA)))

@@ -11,6 +11,8 @@ import simpleml.datasets.processed_datasets.base_processed_dataset
 import simpleml.pipelines.production_pipelines.base_production_pipeline
 import simpleml.models.base_model
 import simpleml.metrics.base_metric
+from simpleml.persistables.dataset_storage import DatasetStorage, RawDatasetStorage
+from simpleml.persistables.binary_blob import BinaryBlob
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -95,7 +97,7 @@ class Database(object):
         except ProgrammingError:
             pass
 
-    def initialize(self, base=BasePersistable, create_database=True, drop_tables=False):
+    def _initialize(self, base, create_database, drop_tables):
         '''
         Initialization method to set up database connection and inject
         session manager
@@ -119,6 +121,23 @@ class Database(object):
 
         base.set_session(session)
 
+    def initialize(self, base_list=None, create_database=True, drop_tables=False):
+        '''
+        Initialization method to set up database connection and inject
+        session manager
+
+        :param create_database: Bool, whether to run database and user creation
+            calls before starting up
+        :param drop_tables: Bool, whether to drop existing tables in database
+        :return: None
+        '''
+        if base_list is None:
+            base_list = [BasePersistable, DatasetStorage, RawDatasetStorage, BinaryBlob]
+
+        for base in base_list:
+            self._initialize(base, create_database=create_database, drop_tables=drop_tables)
+            # Only create on the first go
+            create_database = False
 
 def run_sql_command(connection_params, command, autocommit=False):
     '''
