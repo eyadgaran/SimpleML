@@ -33,11 +33,27 @@ class BasePersistable(BaseSQLAlchemy):
     version: autoincrementing id of "friendly name"
 
     # Persistence of fitted states
-    has_external_files = boolean field to signify presence of saved files not in db
-    external_filename = path to file, relative to base simpleml folder (default ~/.simpleml)
+    has_external_files = boolean field to signify presence of saved files not in (main) db
+    filepaths = JSON object with external file details
+        Structure:
+        {
+            "disk": [
+                path to file, relative to base simpleml folder (default ~/.simpleml),
+                ...
+            ],
+            "database": [
+                (schema, table_name), (for files extractable with `select * from`)
+                ....
+            ],
+            "pickled": [
+                guid, (for files in binary blobs)
+                ...
+            ]
+        }
 
     metadata: Generic JSON store for random attributes
     '''
+
     __abstract__ = True
     __metaclass__ = MetaRegistry
     # Uses main (public) schema
@@ -54,19 +70,19 @@ class BasePersistable(BaseSQLAlchemy):
     # TODO: figure out how to hash objects in a way that signifies code content
     hash_ = Column('hash', String, nullable=False)
     registered_name = Column(String, nullable=False)
-    author = Column(String, default='default')
-    name = Column(String, nullable=False)
+    author = Column(String, default='default', nullable=False)
+    name = Column(String, default='default', nullable=False)
     version = Column(Integer, nullable=False)
 
     # Persistence of fitted states
     has_external_files = Column(Boolean, default=False)
-    external_filename = Column(String, nullable=True)
+    filepaths = Column(JSONB, default={})
 
     # Generic store and metadata for all child objects
     metadata_ = Column('metadata', JSONB, default={})
 
 
-    def __init__(self, name, has_external_files=False,
+    def __init__(self, name=None, has_external_files=False,
                  author=None, metadata_={}, *args, **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
@@ -140,7 +156,7 @@ class BasePersistable(BaseSQLAlchemy):
         # Lookup appropriate class and reinstantiate
         self.__class__ = self._load_class()
 
-        if self.has_external_files():
+        if self.has_external_files:
             self._load_external_files()
 
     def _load_class(self):
