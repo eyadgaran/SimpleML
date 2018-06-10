@@ -4,8 +4,10 @@ from sqlalchemy.dialects.postgresql import JSONB
 from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
 from simpleml.persistables.guid import GUID
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
+from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 import uuid
 from abc import abstractmethod
+import copy
 
 __author__ = 'Elisha Yadgaran'
 
@@ -82,8 +84,8 @@ class BasePersistable(BaseSQLAlchemy):
     metadata_ = Column('metadata', JSONB, default={})
 
 
-    def __init__(self, name=None, has_external_files=False,
-                 author=None, metadata_={}, *args, **kwargs):
+    def __init__(self, name='default', has_external_files=False,
+                 author='default', metadata_={}, *args, **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
@@ -91,6 +93,9 @@ class BasePersistable(BaseSQLAlchemy):
         self.name = name
         self.has_external_files = has_external_files
         self.metadata_ = metadata_
+
+        # For external loading - initialize to None
+        self.unloaded_externals = None
 
     def save(self):
         '''
@@ -108,6 +113,9 @@ class BasePersistable(BaseSQLAlchemy):
 
         # Get the latest version for this "friendly name"
         self.version = self._get_latest_version()
+
+        # Store library versions in case of future loads into unsupported environments
+        self.metadata_['library_versions'] = INSTALLED_LIBRARIES
 
         super(BasePersistable, self).save()
 
@@ -144,20 +152,26 @@ class BasePersistable(BaseSQLAlchemy):
 
         return last_version + 1
 
-    def load(self):
+    def load(self, load_externals=True):
         '''
         Counter operation for save
         Needs to load any file and db objects
 
         Class definition is stored by registered_name param and
         Pickled objects are stored in external_filename param
+
+        :param load_externals: Boolean flag whether to load the external files
+        useful for relationships that only need class definitions and not data
         '''
 
         # Lookup appropriate class and reinstantiate
         self.__class__ = self._load_class()
 
-        if self.has_external_files:
+        if self.has_external_files and load_externals:
             self._load_external_files()
+
+        if not load_externals:
+            self.unloaded_externals=True
 
     def _load_class(self):
         '''
@@ -173,3 +187,37 @@ class BasePersistable(BaseSQLAlchemy):
         Opt not to use abstractmethod for default behavior of no external files
         '''
         raise NotImplementedError
+
+    def custom_hasher(self, object_to_hash, custom_class_proxy=type(object.__dict__)):
+        """
+        Adapted from: https://stackoverflow.com/questions/5884066/hashing-a-dictionary
+        Makes a hash from a dictionary, list, tuple or set to any level, that
+        contains only other hashable types (including any lists, tuples, sets, and
+        dictionaries). In the case where other kinds of objects (like classes) need
+        to be hashed, pass in a collection of object attributes that are pertinent.
+        For example, a class can be hashed in this fashion:
+
+        custom_hasher([cls.__dict__, cls.__name__])
+
+        A function can be hashed like so:
+
+        custom_hasher([fn.__dict__, fn.__code__])
+        """
+        if type(object_to_hash) == custom_class_proxy:
+            o2 = {}
+            for k, v in object_to_hash.items():
+                if not k.startswith("__"):
+                    o2[k] = v
+            object_to_hash = o2
+
+        if isinstance(object_to_hash, (set, tuple, list)):
+            return tuple([self.custom_hasher(e) for e in object_to_hash])
+
+        elif not isinstance(object_to_hash, dict):
+            return hash(object_to_hash)
+
+        new_object_to_hash = copy.deepcopy(object_to_hash)
+        for k, v in new_object_to_hash.items():
+            new_object_to_hash[k] = self.custom_hasher(v)
+
+        return hash(tuple(frozenset(sorted(new_object_to_hash.items()))))
