@@ -1,5 +1,4 @@
 from simpleml.persistables.base_persistable import BasePersistable
-from abc import abstractmethod
 import pandas as pd
 from pandas.util import hash_pandas_object
 import cStringIO
@@ -37,15 +36,33 @@ class BaseDataset(BasePersistable):
     @property
     def dataframe(self):
         # Return dataframe if generated, otherwise generate first
+        if self.unloaded_externals:
+            self._load_external_files()
+
         if self._dataframe is None:
             self.build_dataframe()
         return self._dataframe
 
-    @abstractmethod
+    @property
+    def X(self):
+        '''
+        By default assume unsupervised dataset so dataframe is X
+        '''
+        return self.dataframe
+
+    @property
+    def y(self):
+        '''
+        By default assume unsupervised dataset so y is None
+        '''
+        return None
+
     def build_dataframe(self):
         '''
         Must set self._dataframe
+        Cant set as abstractmethod because of database lookup dependency
         '''
+        raise NotImplementedError
 
     def _hash(self):
         '''
@@ -56,18 +73,18 @@ class BaseDataset(BasePersistable):
         '''
         return hash_pandas_object(self.dataframe, index=False).sum()
 
-    def _save_external_files(self, schema, engine):
+    def _save_external_files(self):
         '''
         Shared method to save dataframe into a new table with name = GUID
 
         Hardcoded to only store in database so overwrite to use pickled
         objects or other storage mechanism
         '''
-        self.filepaths = {"database": [(schema, str(self.id))]}
-        self.df_to_sql(engine, self.dataframe,
-                       str(self.id), schema=schema)
+        self.filepaths = {"database": [(self._schema, str(self.id))]}
+        self.df_to_sql(self._engine, self.dataframe,
+                       str(self.id), schema=self._schema)
 
-    def _load_external_files(self, engine):
+    def _load_external_files(self):
         '''
         Shared method to load dataframe from database
 
@@ -77,8 +94,11 @@ class BaseDataset(BasePersistable):
         schema, tablename = self.filepaths['database'][0]
         self._dataframe = self.load_sql(
             'select * from "{}"."{}"'.format(schema, tablename),
-            engine
+            self._engine
         )
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False
 
     @staticmethod
     def load_csv(filename, **kwargs):

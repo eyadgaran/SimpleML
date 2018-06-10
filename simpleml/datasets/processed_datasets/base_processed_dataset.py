@@ -24,9 +24,10 @@ class BaseProcessedDataset(BaseDataset):
         Index('dataset_name_index', 'name'),
      )
 
-    def _save_external_files(self):
-        super(BaseProcessedDataset, self)._save_external_files(
-            DATASET_SCHEMA, DatasetStorage.metadata.bind)
+    @property
+    def _schema(self):
+        return DATASET_SCHEMA
 
-    def _load_external_files(self):
-        super(BaseProcessedDataset, self)._load_external_files(DatasetStorage.metadata.bind)
+    @property
+    def _engine(self):
+        return DatasetStorage.metadata.bind

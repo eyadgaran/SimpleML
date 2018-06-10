@@ -24,15 +24,10 @@ class BaseRawDataset(BaseDataset):
         Index('raw_dataset_name_index', 'name'),
      )
 
-    def _save_external_files(self):
-        super(BaseRawDataset, self)._save_external_files(
-            RAW_DATASET_SCHEMA, RawDatasetStorage.metadata.bind)
+    @property
+    def _schema(self):
+        return RAW_DATASET_SCHEMA
 
-    def _load_external_files(self):
-        super(BaseRawDataset, self)._load_external_files(RawDatasetStorage.metadata.bind)
-
-
-class QueryableRawDataset(BaseRawDataset):
-    '''subclass to implement dummy abstract methods'''
-    def build_dataframe(self):
-        raise "Dont use me"
+    @property
+    def _engine(self):
+        return RawDatasetStorage.metadata.bind
