@@ -61,16 +61,16 @@ class BaseProcessedDataset(BaseDataset):
         if self.pipeline is None:
             raise DatasetError('Must set dataset pipeline before saving')
 
-        super(BaseProcessedDataset, self).save()
+        super(BaseProcessedDataset, self).save(*args, **kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.pipeline.load(load_externals=False)
 
-    def load(self):
+    def load(self, **kwargs):
         '''
         Extend main load routine to load relationship class
         '''
-        super(BaseProcessedDataset, self).load()
+        super(BaseProcessedDataset, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)

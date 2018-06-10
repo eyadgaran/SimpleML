@@ -112,16 +112,16 @@ class BasePipeline(BasePersistable):
         self.metadata_['transformers'] = self.get_transformers()
         self.metadata_['feature_names'] = self.get_feature_names()
 
-        super(BasePipeline, self).save()
+        super(BasePipeline, self).save(*args, **kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.dataset.load(load_externals=False)
 
-    def load(self):
+    def load(self, **kwargs):
         '''
         Extend main load routine to load relationship class
         '''
-        super(BasePipeline, self).load()
+        super(BasePipeline, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         self.dataset.load(load_externals=False)

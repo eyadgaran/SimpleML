@@ -85,14 +85,14 @@ class BasePersistable(BaseSQLAlchemy):
 
 
     def __init__(self, name='default', has_external_files=False,
-                 author='default', metadata_={}, *args, **kwargs):
+                 author='default', *args, **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
         self.author = author
         self.name = name
         self.has_external_files = has_external_files
-        self.metadata_ = metadata_
+        self.metadata_ = {}
 
         # For external loading - initialize to None
         self.unloaded_externals = None
