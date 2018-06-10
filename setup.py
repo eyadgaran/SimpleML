@@ -1,8 +1,10 @@
 from setuptools import setup, find_packages
+from _version import __version__
+
 
 setup(
     name='simpleml',
-    version='0.1',
+    version=__version__,
     description='Simplified Machine Learning',
     author='Elisha Yadgaran',
     author_email='ElishaY@alum.mit.edu',
@@ -16,7 +18,8 @@ setup(
         'sqlalchemy_mixins',
         'psycopg2',
         'scikit-learn',
-        'numpy'
+        'numpy',
+        'dill'
     ],
     zip_safe=False,
     test_suite='nose.collector',
