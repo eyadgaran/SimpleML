@@ -42,6 +42,9 @@ class BasePipeline(BasePersistable):
         Wrapper around whatever underlying class is desired
         (eg sklearn or native)
         '''
+        if self.unloaded_externals:
+            self._load_external_files()
+
         return self._external_pipeline
 
     def _create_external_pipeline(self, transformers, pipeline_class='default',
@@ -97,6 +100,7 @@ class BasePipeline(BasePersistable):
 
         1) save params
         2) save transformer metadata
+        3) features
         '''
         if self.dataset is None:
             raise PipelineError('Must set dataset before saving')
@@ -109,6 +113,9 @@ class BasePipeline(BasePersistable):
         self.metadata_['feature_names'] = self.get_feature_names()
 
         super(BasePipeline, self).save()
+
+        # Sqlalchemy updates relationship references after save so reload class
+        self.dataset.load(load_externals=False)
 
     def load(self):
         '''
