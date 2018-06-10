@@ -1,7 +1,6 @@
 from simpleml.persistables.guid import GUID
 from simpleml.pipelines.base_pipeline import BasePipeline
-from sqlalchemy import Column, String, ForeignKey, UniqueConstraint, Index
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 
 __author__ = 'Elisha Yadgaran'
@@ -19,7 +18,7 @@ class BaseDatasetPipeline(BasePipeline):
     __tablename__ = 'dataset_pipelines'
 
     dataset_id = Column(GUID, ForeignKey("raw_datasets.id"))
-    dataset = relationship("BaseRawDataset")
+    dataset = relationship("BaseRawDataset", enable_typechecks=False)
 
     __table_args__ = (
         # Unique constraint for versioning
