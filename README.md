@@ -33,5 +33,18 @@ Future features I would like to make:
 - Browser GUI with drag-n-drop components for each step in the process (click on a dataset, pile transformers as blocks, click on a model type...)
 - App-Store style tabs for community sourced objects (datasets, transformers...)
 - Native support for transfer learning
-- Persistence mechanism for non stable models (traditional models are "deterministic" - once trained, unaltered), like online learning
+- Persistence mechanism for non stable models (traditional models are static - once trained, unaltered), like online learning
 - Automatic API hosting for models (click "deploy" for route)
+
+
+# Support
+Help support further development by making a donation to the author
+
+[Donate Now](https://donorbox.org/embed/simpleml?amount=30&show_content=true)
+
+<figure class="donation form">
+  <script src="https://donorbox.org/widget.js" paypalExpress="false"></script>
+  <iframe src="https://donorbox.org/embed/simpleml?amount=30&show_content=true" height="685px" width="100%"
+          style="max-width:100%; min-width:100%; max-height:none!important" seamless="seamless" name="donorbox" frameborder="0" scrolling="no" allowpaymentrequest>
+  </iframe>
+</figure>
