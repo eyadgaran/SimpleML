@@ -33,6 +33,7 @@ class BasePersistable(BaseSQLAlchemy):
     author: creator
     name: friendly name - primary way of tracking evolution of "same" object over time
     version: autoincrementing id of "friendly name"
+    version_description: description that explains what is new or different about this version
 
     # Persistence of fitted states
     has_external_files = boolean field to signify presence of saved files not in (main) db
@@ -75,6 +76,7 @@ class BasePersistable(BaseSQLAlchemy):
     author = Column(String, default='default', nullable=False)
     name = Column(String, default='default', nullable=False)
     version = Column(Integer, nullable=False)
+    version_description = Column(String, default='')
 
     # Persistence of fitted states
     has_external_files = Column(Boolean, default=False)
@@ -85,13 +87,14 @@ class BasePersistable(BaseSQLAlchemy):
 
 
     def __init__(self, name='default', has_external_files=False,
-                 author='default', *args, **kwargs):
+                 author='default', version_description=None, **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
         self.author = author
         self.name = name
         self.has_external_files = has_external_files
+        self.version_description = version_description
         self.metadata_ = {}
 
         # For external loading - initialize to None

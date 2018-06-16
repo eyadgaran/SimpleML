@@ -5,8 +5,12 @@ from simpleml.utils.errors import PipelineError
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
 import dill as pickle
+import logging
 
 __author__ = 'Elisha Yadgaran'
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class BasePipeline(BasePersistable):
@@ -25,12 +29,12 @@ class BasePipeline(BasePersistable):
     params = Column(JSONB, default={})
 
     def __init__(self, has_external_files=True, transformers=[],
-                 *args, **kwargs):
+                 **kwargs):
         super(BasePipeline, self).__init__(
-            has_external_files=has_external_files, *args, **kwargs)
+            has_external_files=has_external_files, **kwargs)
 
         # Instantiate pipeline
-        self._external_pipeline = self._create_external_pipeline(transformers, *args, **kwargs)
+        self._external_pipeline = self._create_external_pipeline(transformers, **kwargs)
         # Initialize as unfitted
         self._fitted = False
 
@@ -48,7 +52,7 @@ class BasePipeline(BasePersistable):
         return self._external_pipeline
 
     def _create_external_pipeline(self, transformers, pipeline_class='default',
-                                  *args, **kwargs):
+                                  **kwargs):
         '''
         should return the desired pipeline object
 
@@ -94,7 +98,7 @@ class BasePipeline(BasePersistable):
 
         return hash(self.custom_hasher((dataset_hash, transformers, params)))
 
-    def save(self, *args, **kwargs):
+    def save(self, **kwargs):
         '''
         Extend parent function with a few additional save routines
 
@@ -108,11 +112,11 @@ class BasePipeline(BasePersistable):
         if not self._fitted:
             raise PipelineError('Must fit pipeline before saving')
 
-        self.params = self.get_params(*args, **kwargs)
+        self.params = self.get_params(**kwargs)
         self.metadata_['transformers'] = self.get_transformers()
         self.metadata_['feature_names'] = self.get_feature_names()
 
-        super(BasePipeline, self).save(*args, **kwargs)
+        super(BasePipeline, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.dataset.load(load_externals=False)
@@ -128,10 +132,10 @@ class BasePipeline(BasePersistable):
 
     def _save_external_files(self):
         '''
-        Shared method to save dataframe into a new table with name = GUID
+        Shared method to save pipeline into binary schema
 
-        Hardcoded to only store in database so overwrite to use pickled
-        objects or other storage mechanism
+        Hardcoded to only store pickled objects in database so overwrite to use
+        other storage mechanism
         '''
         pickled_file = pickle.dumps(self.external_pipeline)
         pickled_record = BinaryBlob.create(
@@ -155,41 +159,56 @@ class BasePipeline(BasePersistable):
         # Indicate externals were loaded
         self.unloaded_externals = False
 
-    def fit(self, *args, **kwargs):
+    def fit(self, **kwargs):
         '''
         Pass through method to external pipeline
         '''
         if self.dataset is None:
             raise PipelineError('Must set dataset before fitting')
 
-        output = self.external_pipeline.fit(
-            self.dataset.X, self.dataset.y, *args, **kwargs)
-        self._fitted = True
-        return output
+        if self._fitted:
+            LOGGER.warning('Cannot refit pipeline, skipping operation')
+            return self
 
-    def transform(self, *args, **kwargs):
+        self.external_pipeline.fit(
+            self.dataset.X, self.dataset.y, **kwargs)
+        self._fitted = True
+
+        return self
+
+    def transform(self, X, return_y=False, **kwargs):
         '''
         Pass through method to external pipeline
-        '''
-        if self.dataset is None:
-            raise PipelineError('Must set dataset before transforming')
 
+        :param X: dataframe/matrix to transform, if None, use internal dataset
+        :param return_y: whether to return y with output - only used if X is None
+            necessary for fitting a supervised model after
+        '''
         if not self._fitted:
             raise PipelineError('Must fit pipeline before transforming')
 
-        return self.external_pipeline.transform(
-            self.dataset.X, self.dataset.y, *args, **kwargs)
+        if X is None:
+            output = self.external_pipeline.transform(self.dataset.X, **kwargs)
 
-    def fit_transform(self, *args, **kwargs):
-        '''
-        Pass through method to external pipeline
-        '''
-        if self.dataset is None:
-            raise PipelineError('Must set dataset before fitting')
+            if return_y:
+                return output, self.dataset.y
 
-        output = self.external_pipeline.fit_transform(
-            self.dataset.X, self.dataset.y, *args, **kwargs)
-        self._fitted = True
+            return output
+
+        return self.external_pipeline.transform(X, **kwargs)
+
+    def fit_transform(self, return_y=False, **kwargs):
+        '''
+        Wrapper for fit and transform methods
+
+        :param return_y: whether to return y with output
+            necessary for fitting a supervised model after
+        '''
+        self.fit(**kwargs)
+        output = self.transform(X=None, **kwargs)
+
+        if return_y:
+            return output, self.dataset.y
 
         return output
 

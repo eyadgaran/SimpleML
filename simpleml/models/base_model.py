@@ -1,10 +1,18 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
-from sqlalchemy import Column, String, ForeignKey, UniqueConstraint, Index
+from simpleml.utils.errors import ModelError
+from simpleml.persistables.binary_blob import BinaryBlob
+from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from abc import abstractmethod
+import dill as pickle
+import logging
+
 
 __author__ = 'Elisha Yadgaran'
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class BaseModel(BasePersistable):
@@ -19,7 +27,8 @@ class BaseModel(BasePersistable):
     section: organizational attribute to manage many models pertaining to a single grouping
         ex: partitioning on an attribute and training an individual model for
         each instance (instead of one model with the attribute as a feature)
-    version_description: description that explains what is new or different about this version
+        can also be used in lieu of project databases to share datasets (section == 'project')
+
     pipeline_id: foreign key relation to the pipeline used to transform input to the model
         (training is also dependent on originating dataset but scoring only needs access to the pipeline)
     params: model parameter metadata for easy insight into hyperparameters across trainings
@@ -27,12 +36,9 @@ class BaseModel(BasePersistable):
     '''
     __tablename__ = 'models'
 
-    section = Column(String, default='default')
-    version_description = Column(String, default='')
-
     # Only dependency is the pipeline (to score in production)
     pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
-    pipeline = relationship("BaseProductionPipeline")
+    pipeline = relationship("BaseProductionPipeline", enable_typechecks=False)
 
     # Additional model specific metadata
     params = Column(JSONB, default={})
@@ -45,17 +51,15 @@ class BaseModel(BasePersistable):
         Index('model_name_index', 'name'),
      )
 
-    # Unique Constraint
-    # section, version, registered_name, pipeline
 
-    def __init__(self, version_description=None,
-                 section=None, has_external_files=True, **kwargs):
-        super(BaseModel, self).__init__(has_external_files=has_external_files, **kwargs)
-        self.section = section
-        self.version_description = version_description
+    def __init__(self, has_external_files=True, **kwargs):
+        super(BaseModel, self).__init__(
+            has_external_files=has_external_files, **kwargs)
 
         # Instantiate model
         self._external_model = self._create_external_model(**kwargs)
+        # Initialize as unfitted
+        self._fitted = False
 
     @property
     def external_model(self):
@@ -65,15 +69,18 @@ class BaseModel(BasePersistable):
         Wrapper around whatever underlying class is desired
         (eg sklearn or keras)
         '''
+        if self.unloaded_externals:
+            self._load_external_files()
+
         return self._external_model
 
-    @abstractmethod
-    def _create_external_model(self, *args, **kwargs):
+    def _create_external_model(self, **kwargs):
         '''
         Abstract method for each subclass to implement
 
         should return the desired model object
         '''
+        raise NotImplementedError
 
     def add_pipeline(self, pipeline):
         '''
@@ -81,55 +88,119 @@ class BaseModel(BasePersistable):
         '''
         self.pipeline = pipeline
 
-    def save(self, *args, **kwargs):
+    def _hash(self):
+        '''
+        Hash is the combination of the:
+            1) Pipeline
+            2) Model
+            3) Params
+        '''
+        pipeline_hash = self.pipeline.hash_ or self.pipeline._hash()
+        model = self.external_model
+        params = self.get_params()
+
+        return hash(self.custom_hasher((pipeline_hash, model, params)))
+
+    def save(self, **kwargs):
         '''
         Extend parent function with a few additional save routines
 
         1) save params
         2) save feature metadata
         '''
-        self.params = self.get_params(*args, **kwargs)
-        self.feature_metadata = self.get_feature_metadata(*args, **kwargs)
+        if self.pipeline is None:
+            raise ModelError('Must set pipeline before saving')
 
-        super(BaseModel, self).save()
+        if not self._fitted:
+            raise ModelError('Must fit model before saving')
 
-    @abstractmethod
+        self.params = self.get_params(**kwargs)
+        self.feature_metadata = self.get_feature_metadata(**kwargs)
+
+        super(BaseModel, self).save(**kwargs)
+
+        # Sqlalchemy updates relationship references after save so reload class
+        self.pipeline.load(load_externals=False)
+
+    def load(self, **kwargs):
+        '''
+        Extend main load routine to load relationship class
+        '''
+        super(BaseModel, self).load(**kwargs)
+
+        # By default dont load data unless it actually gets used
+        self.pipeline.load(load_externals=False)
+
     def _save_external_files(self):
         '''
-        Each subclass needs to instantiate a save routine to persist
-        any other required files
-        '''
+        Shared method to save model into binary schema
 
-    @abstractmethod
+        Hardcoded to only store pickled objects in database so overwrite to use
+        other storage mechanism
+        '''
+        pickled_file = pickle.dumps(self.external_model)
+        pickled_record = BinaryBlob.create(
+            object_type='MODEL', object_id=self.id, binary_blob=pickled_file)
+        self.filepaths = {"pickled": [str(pickled_record.id)]}
+
     def _load_external_files(self):
         '''
-        Each subclass needs to instantiate a load routine to read in
-        any other required files
-        '''
+        Shared method to load model from database
 
-    def fit(self, X, y=None, *args, **kwargs):
+        Hardcoded to only pull from pickled so overwrite to use
+        other storage mechanism
+        '''
+        pickled_id = self.filepaths['pickled'][0]
+        pickled_file = BinaryBlob.find(pickled_id).binary_blob
+        self._external_model = pickle.loads(pickled_file)
+
+        # can only be saved if fitted, so restore state
+        self._fitted = True
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False
+
+    def fit(self, **kwargs):
+        '''
+        Pass through method to external model after running through pipeline
+        '''
+        if self.pipeline is None:
+            raise ModelError('Must set pipeline before fitting')
+
+        if self._fitted:
+            LOGGER.warning('Cannot refit model, skipping operation')
+            return self
+
+        X, y = self.pipeline.transform(return_y=True)
+        self.external_model.fit(X, y, **kwargs)
+        self._fitted = True
+
+        return self
+
+    def predict(self, X, **kwargs):
+        '''
+        Pass through method to external model after running through pipeline
+        '''
+        if not self._fitted:
+            raise ModelError('Must fit model before predicting')
+
+        transformed = self.pipeline.transform(X, **kwargs)
+
+        return self.external_model.predict(transformed)
+
+    def fit_predict(self, **kwargs):
+        '''
+        Wrapper for fit and predict methods
+        '''
+        self.fit(**kwargs)
+        # Pass X as none to cascade using internal dataset for X
+        return self.predict(X=None, **kwargs)
+
+    def get_params(self, **kwargs):
         '''
         Pass through method to external model
         '''
-        return self.external_model.fit(X, y, *args, **kwargs)
-
-    def predict(self, X):
-        '''
-        Pass through method to external model
-        '''
-        return self.external_model.predict(X)
-
-    def fit_predict(self, X, y=None, *args, **kwargs):
-        '''
-        Pass through method to external model
-        '''
-        return self.external_model.fit_predict(X, y, *args, **kwargs)
-
-    def get_params(self, *args, **kwargs):
-        '''
-        Pass through method to external model
-        '''
-        return self.external_model.get_params(*args, **kwargs)
+        return self.external_model.get_params(**kwargs)
 
     def set_params(self, **params):
         '''
@@ -137,16 +208,16 @@ class BaseModel(BasePersistable):
         '''
         return self.external_model.set_params(**params)
 
-    def score(self, X, y=None, *args, **kwargs):
+    def score(self, X, y=None, **kwargs):
         '''
         Pass through method to external model
         '''
-        return self.external_model.score(X, y, *args, **kwargs)
+        return self.external_model.score(X, y, **kwargs)
 
-    @abstractmethod
-    def get_feature_metadata(self):
+    def get_feature_metadata(self, **kwargs):
         '''
         Abstract method for each model to define
 
         Should return a dict of feature information (importance, coefficients...)
         '''
+        return self.external_model.get_feature_metadata(**kwargs)
