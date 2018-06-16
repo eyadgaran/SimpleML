@@ -25,9 +25,9 @@ class BaseDataset(BasePersistable):
 
     __abstract__ = True
 
-    def __init__(self, has_external_files=True, *args, **kwargs):
+    def __init__(self, has_external_files=True, **kwargs):
         super(BaseDataset, self).__init__(
-            has_external_files=has_external_files, *args, **kwargs)
+            has_external_files=has_external_files, **kwargs)
 
         # Instantiate dataframe variable - doesn't get populated until
         # build_dataframe() is called

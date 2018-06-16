@@ -54,14 +54,14 @@ class BaseProcessedDataset(BaseDataset):
 
         self._dataframe = self.pipeline.transform()
 
-    def save(self, *args, **kwargs):
+    def save(self, **kwargs):
         '''
         Extend parent function with a few additional save routines
         '''
         if self.pipeline is None:
             raise DatasetError('Must set dataset pipeline before saving')
 
-        super(BaseProcessedDataset, self).save(*args, **kwargs)
+        super(BaseProcessedDataset, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.pipeline.load(load_externals=False)

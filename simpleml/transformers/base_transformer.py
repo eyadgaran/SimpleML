@@ -10,10 +10,10 @@ class BaseTransformer(TransformerMixin):
 
     Default behavior is to do nothing - overwrite later
     '''
-    def fit(self, X, y=None, *args, **kwargs):
+    def fit(self, X, y=None, **kwargs):
         return self
 
-    def transform(self, X, y=None, *args, **kwargs):
+    def transform(self, X, y=None, **kwargs):
         return X
 
     def get_params(self, **kwargs):

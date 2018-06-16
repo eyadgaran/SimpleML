@@ -25,30 +25,30 @@ class DefaultPipeline(OrderedDict):
         '''
         del self[name]
 
-    def fit(self, X, y=None, *args, **kwargs):
+    def fit(self, X, y=None, **kwargs):
         '''
         Iterate through each transformation step and apply fit
         '''
         for step, transformer in self.iteritems():
-            X = transformer.fit_transform(X, y, *args, **kwargs)
+            X = transformer.fit_transform(X, y, **kwargs)
 
         return self
 
-    def transform(self, X, y=None, *args, **kwargs):
+    def transform(self, X, y=None, **kwargs):
         '''
         Iterate through each transformation step and apply transform
         '''
         for step, transformer in self.iteritems():
-            X = transformer.transform(X, y, *args, **kwargs)
+            X = transformer.transform(X, y, **kwargs)
 
         return X
 
-    def fit_transform(self, X, y=None, *args, **kwargs):
+    def fit_transform(self, X, y=None, **kwargs):
         '''
         Iterate through each transformation step and apply fit and transform
         '''
         for step, transformer in self.iteritems():
-            X = transformer.fit_transform(X, y, *args, **kwargs)
+            X = transformer.fit_transform(X, y, **kwargs)
 
         return X
 
