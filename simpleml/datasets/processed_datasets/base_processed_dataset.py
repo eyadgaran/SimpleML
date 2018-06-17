@@ -52,7 +52,7 @@ class BaseProcessedDataset(BaseDataset):
         if self.pipeline is None:
             raise DatasetError('Must set pipeline before building dataframe')
 
-        self._dataframe = self.pipeline.transform()
+        self._dataframe = self.pipeline.transform(X=None)
 
     def save(self, **kwargs):
         '''

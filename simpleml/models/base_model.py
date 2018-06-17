@@ -4,7 +4,6 @@ from simpleml.persistables.binary_blob import BinaryBlob
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-from abc import abstractmethod
 import dill as pickle
 import logging
 
@@ -24,11 +23,6 @@ class BaseModel(BasePersistable):
     -------
     Schema
     -------
-    section: organizational attribute to manage many models pertaining to a single grouping
-        ex: partitioning on an attribute and training an individual model for
-        each instance (instead of one model with the attribute as a feature)
-        can also be used in lieu of project databases to share datasets (section == 'project')
-
     pipeline_id: foreign key relation to the pipeline used to transform input to the model
         (training is also dependent on originating dataset but scoring only needs access to the pipeline)
     params: model parameter metadata for easy insight into hyperparameters across trainings
@@ -171,7 +165,7 @@ class BaseModel(BasePersistable):
             LOGGER.warning('Cannot refit model, skipping operation')
             return self
 
-        X, y = self.pipeline.transform(return_y=True)
+        X, y = self.pipeline.transform(X=None, return_y=True)
         self.external_model.fit(X, y, **kwargs)
         self._fitted = True
 
