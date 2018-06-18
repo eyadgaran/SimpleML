@@ -29,6 +29,10 @@ class BaseDataset(BasePersistable):
         super(BaseDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
+        # By default assume unsupervised so no targets
+        label_columns = kwargs.pop('label_columns', [])
+        self.metadata_['label_columns'] = label_columns
+
         # Instantiate dataframe variable - doesn't get populated until
         # build_dataframe() is called
         self._dataframe = None
@@ -44,18 +48,25 @@ class BaseDataset(BasePersistable):
         return self._dataframe
 
     @property
+    def label_columns(self):
+        '''
+        Keep column list for labels in metadata to persist through saving
+        '''
+        return self.metadata_.get('label_columns', [])
+
+    @property
     def X(self):
         '''
-        By default assume unsupervised dataset so dataframe is X
+        Return the subset that isn't in the target labels
         '''
-        return self.dataframe
+        return self.dataframe[self.dataframe.columns.difference(self.label_columns)]
 
     @property
     def y(self):
         '''
-        By default assume unsupervised dataset so y is None
+        Return the target label columns
         '''
-        return None
+        return self.dataframe[self.label_columns]
 
     def build_dataframe(self):
         '''

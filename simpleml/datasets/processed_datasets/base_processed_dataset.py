@@ -4,6 +4,7 @@ from simpleml.persistables.dataset_storage import DatasetStorage, DATASET_SCHEMA
 from simpleml.utils.errors import DatasetError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
+import pandas as pd
 
 
 __author__ = 'Elisha Yadgaran'
@@ -52,7 +53,13 @@ class BaseProcessedDataset(BaseDataset):
         if self.pipeline is None:
             raise DatasetError('Must set pipeline before building dataframe')
 
-        self._dataframe = self.pipeline.transform(X=None)
+        X, y = self.pipeline.transform(X=None, return_y=True)
+
+        if y is None:
+            y = pd.DataFrame()
+
+        self.metadata_['label_columns'] = y.columns.tolist()
+        self._dataframe = pd.concat([X, y], axis=1)
 
     def save(self, **kwargs):
         '''
