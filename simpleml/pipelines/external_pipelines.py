@@ -76,7 +76,7 @@ class DefaultPipeline(OrderedDict):
         '''
         Get list of (step, transformer) tuples
         '''
-        return self.items()
+        return [(i, j.__class__.__name__) for i, j in self.items()]
 
     def get_feature_names(self, feature_names):
         '''
@@ -118,7 +118,7 @@ class SklearnPipeline(Pipeline):
         '''
         Get list of (step, transformer) tuples
         '''
-        return self.steps
+        return [(i, j.__class__.__name__) for i, j in self.steps]
 
     def get_feature_names(self, feature_names):
         '''

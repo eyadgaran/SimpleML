@@ -61,7 +61,7 @@ class BasePipeline(BasePersistable):
         if pipeline_class == 'default':
             return DefaultPipeline(transformers)
         elif pipeline_class == 'sklearn':
-            return SklearnPipeline(transformers)
+            return SklearnPipeline(transformers, **kwargs)
         else:
             raise NotImplementedError('Only default or sklearn pipelines supported')
 

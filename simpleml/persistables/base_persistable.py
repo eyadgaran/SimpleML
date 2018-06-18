@@ -1,5 +1,4 @@
-from sqlalchemy import MetaData, Column, func, String, Boolean, Integer,\
-    UniqueConstraint, Index
+from sqlalchemy import MetaData, Column, func, String, Boolean, Integer
 from sqlalchemy.dialects.postgresql import JSONB
 from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
 from simpleml.persistables.guid import GUID
