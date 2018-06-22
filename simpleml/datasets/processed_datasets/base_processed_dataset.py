@@ -53,13 +53,17 @@ class BaseProcessedDataset(BaseDataset):
         if self.pipeline is None:
             raise DatasetError('Must set pipeline before building dataframe')
 
-        X, y = self.pipeline.transform(X=None, return_y=True)
+        X, y, administrative = self.pipeline.transform(X=None, return_y=True, return_administrative=True)
 
         if y is None:
             y = pd.DataFrame()
 
+        if administrative is None:
+            administrative = pd.DataFrame()
+
         self.metadata_['label_columns'] = y.columns.tolist()
-        self._dataframe = pd.concat([X, y], axis=1)
+        self.metadata_['administrative_columns'] = administrative.columns.tolist()
+        self._dataframe = pd.concat([X, y, administrative], axis=1)
 
     def save(self, **kwargs):
         '''

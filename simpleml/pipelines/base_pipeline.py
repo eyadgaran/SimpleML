@@ -1,5 +1,6 @@
 from simpleml.persistables.base_persistable import BasePersistable
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
+from simpleml.datasets.base_dataset import TRAIN_CATEGORY
 from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.utils.errors import PipelineError
 from sqlalchemy import Column
@@ -170,29 +171,36 @@ class BasePipeline(BasePersistable):
             LOGGER.warning('Cannot refit pipeline, skipping operation')
             return self
 
+        # Only use train fold to fit
         self.external_pipeline.fit(
-            self.dataset.X, self.dataset.y, **kwargs)
+            self.dataset.X(sample_category=TRAIN_CATEGORY),
+            self.dataset.y(sample_category=TRAIN_CATEGORY), **kwargs)
         self._fitted = True
 
         return self
 
-    def transform(self, X, return_y=False, **kwargs):
+    def transform(self, X, sample_category=None, return_y=False,
+                  return_administrative=False, **kwargs):
         '''
         Pass through method to external pipeline
 
         :param X: dataframe/matrix to transform, if None, use internal dataset
         :param return_y: whether to return y with output - only used if X is None
             necessary for fitting a supervised model after
+        :param return_administrative: whether to return administrative with output - only used if X is None
+            necessary for splitting dataset after (train/validation/test)
         '''
         if not self._fitted:
             raise PipelineError('Must fit pipeline before transforming')
 
         if X is None:
-            output = self.external_pipeline.transform(self.dataset.X, **kwargs)
+            output = self.external_pipeline.transform(
+                self.dataset.X(sample_category=sample_category), **kwargs)
 
-            if return_y:
-                return output, self.dataset.y
-
+            if return_y and return_administrative:
+                return output, self.dataset.y(sample_category=sample_category), self.dataset.administrative_df(sample_category=sample_category)
+            elif return_y:
+                return output, self.dataset.y(sample_category=sample_category)
             return output
 
         return self.external_pipeline.transform(X, **kwargs)
@@ -200,15 +208,16 @@ class BasePipeline(BasePersistable):
     def fit_transform(self, return_y=False, **kwargs):
         '''
         Wrapper for fit and transform methods
+        ASSUMES only applies to train split
 
         :param return_y: whether to return y with output
             necessary for fitting a supervised model after
         '''
         self.fit(**kwargs)
-        output = self.transform(X=None, **kwargs)
+        output = self.transform(X=None, sample_category=TRAIN_CATEGORY, **kwargs)
 
         if return_y:
-            return output, self.dataset.y
+            return output, self.dataset.y(sample_category=TRAIN_CATEGORY)
 
         return output
 

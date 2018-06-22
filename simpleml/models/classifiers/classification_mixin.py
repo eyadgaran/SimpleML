@@ -17,4 +17,4 @@ class ClassificationMixin(object):
 
         transformed = self.pipeline.transform(X, **kwargs)
 
-        return self.external_model.predict(transformed)
+        return self.external_model.predict_proba(transformed)
