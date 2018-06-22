@@ -1,6 +1,6 @@
 from simpleml.persistables.base_persistable import BasePersistable
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
-from simpleml.datasets.base_dataset import TRAIN_CATEGORY
+from simpleml.datasets.base_dataset import TRAIN_SPLIT
 from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.utils.errors import PipelineError
 from sqlalchemy import Column
@@ -173,13 +173,13 @@ class BasePipeline(BasePersistable):
 
         # Only use train fold to fit
         self.external_pipeline.fit(
-            self.dataset.X(sample_category=TRAIN_CATEGORY),
-            self.dataset.y(sample_category=TRAIN_CATEGORY), **kwargs)
+            self.dataset.X(dataset_split=TRAIN_SPLIT),
+            self.dataset.y(dataset_split=TRAIN_SPLIT), **kwargs)
         self._fitted = True
 
         return self
 
-    def transform(self, X, sample_category=None, return_y=False,
+    def transform(self, X, dataset_split=None, return_y=False,
                   return_administrative=False, **kwargs):
         '''
         Pass through method to external pipeline
@@ -195,12 +195,12 @@ class BasePipeline(BasePersistable):
 
         if X is None:
             output = self.external_pipeline.transform(
-                self.dataset.X(sample_category=sample_category), **kwargs)
+                self.dataset.X(dataset_split=dataset_split), **kwargs)
 
             if return_y and return_administrative:
-                return output, self.dataset.y(sample_category=sample_category), self.dataset.administrative_df(sample_category=sample_category)
+                return output, self.dataset.y(dataset_split=dataset_split), self.dataset.administrative_df(dataset_split=dataset_split)
             elif return_y:
-                return output, self.dataset.y(sample_category=sample_category)
+                return output, self.dataset.y(dataset_split=dataset_split)
             return output
 
         return self.external_pipeline.transform(X, **kwargs)
@@ -214,10 +214,10 @@ class BasePipeline(BasePersistable):
             necessary for fitting a supervised model after
         '''
         self.fit(**kwargs)
-        output = self.transform(X=None, sample_category=TRAIN_CATEGORY, **kwargs)
+        output = self.transform(X=None, dataset_split=TRAIN_SPLIT, **kwargs)
 
         if return_y:
-            return output, self.dataset.y(sample_category=TRAIN_CATEGORY)
+            return output, self.dataset.y(dataset_split=TRAIN_SPLIT)
 
         return output
 

@@ -7,10 +7,10 @@ import cStringIO
 __author__ = 'Elisha Yadgaran'
 
 # Define a few constants shared for sample categorization
-CATEGORY_COLUMN = 'sample_category'
-TRAIN_CATEGORY = 'TRAIN'
-VALIDATION_CATEGORY = 'VALIDATION'
-TEST_CATEGORY = 'TEST'
+DATASET_SPLIT_COLUMN = 'dataset_split'
+TRAIN_SPLIT = 'TRAIN'
+VALIDATION_SPLIT = 'VALIDATION'
+TEST_SPLIT = 'TEST'
 
 
 class BaseDataset(BasePersistable):
@@ -38,7 +38,7 @@ class BaseDataset(BasePersistable):
         # By default assume unsupervised so no targets
         label_columns = kwargs.pop('label_columns', [])
         self.metadata_['label_columns'] = label_columns
-        administrative_columns = kwargs.pop('administrative_columns', [CATEGORY_COLUMN])
+        administrative_columns = kwargs.pop('administrative_columns', [DATASET_SPLIT_COLUMN])
         self.metadata_['administrative_columns'] = administrative_columns
 
         # Instantiate dataframe variable - doesn't get populated until
@@ -53,10 +53,6 @@ class BaseDataset(BasePersistable):
 
         if self._dataframe is None:
             self.build_dataframe()
-
-        # If build dataframe doesnt specify the sample category, assume training
-        if CATEGORY_COLUMN not in self._dataframe.columns:
-            self._dataframe[CATEGORY_COLUMN] = TRAIN_CATEGORY
 
         return self._dataframe
 
@@ -74,40 +70,40 @@ class BaseDataset(BasePersistable):
         '''
         return self.metadata_.get('administrative_columns', [])
 
-    def X(self, sample_category=None):
+    def X(self, dataset_split=None):
         '''
         Return the subset that isn't in the target labels or sample category
 
-        :param sample_category: dataset split for train/validation/test
+        :param dataset_split: dataset split for train/validation/test
         '''
-        if sample_category is None:
+        if dataset_split is None:
             return self.dataframe[
-                self.dataframe.columns.difference(self.label_columns + [CATEGORY_COLUMN])]
+                self.dataframe.columns.difference(self.label_columns + [DATASET_SPLIT_COLUMN])]
 
-        return self.dataframe.query('{}==@sample_category'.format(CATEGORY_COLUMN))[
-                self.dataframe.columns.difference(self.label_columns + [CATEGORY_COLUMN])]
+        return self.dataframe.query('{}==@dataset_split'.format(DATASET_SPLIT_COLUMN))[
+                self.dataframe.columns.difference(self.label_columns + [DATASET_SPLIT_COLUMN])]
 
-    def y(self, sample_category=None):
+    def y(self, dataset_split=None):
         '''
         Return the target label columns
 
-        :param sample_category: dataset split for train/validation/test
+        :param dataset_split: dataset split for train/validation/test
         '''
-        if sample_category is None:
+        if dataset_split is None:
             return self.dataframe[self.label_columns]
 
-        return self.dataframe.query('{}==@sample_category'.format(CATEGORY_COLUMN))[self.label_columns]
+        return self.dataframe.query('{}==@dataset_split'.format(DATASET_SPLIT_COLUMN))[self.label_columns]
 
-    def administrative_df(self, sample_category=None):
+    def administrative_df(self, dataset_split=None):
         '''
         Return the administrative metadata columns
 
-        :param sample_category: dataset split for train/validation/test
+        :param dataset_split: dataset split for train/validation/test
         '''
-        if sample_category is None:
+        if dataset_split is None:
             return self.dataframe[self.administrative_columns]
 
-        return self.dataframe.query('@CATEGORY_COLUMN==@sample_category')[self.administrative_columns]
+        return self.dataframe.query('@DATASET_SPLIT_COLUMN==@dataset_split')[self.administrative_columns]
 
     def build_dataframe(self):
         '''

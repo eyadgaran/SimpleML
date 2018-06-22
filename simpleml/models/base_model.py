@@ -1,7 +1,7 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
 from simpleml.utils.errors import ModelError
 from simpleml.persistables.binary_blob import BinaryBlob
-from simpleml.datasets.base_dataset import TRAIN_CATEGORY
+from simpleml.datasets.base_dataset import TRAIN_SPLIT
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -167,7 +167,7 @@ class BaseModel(BasePersistable):
             return self
 
         # Explicitly fit only on train split
-        X, y = self.pipeline.transform(X=None, sample_category=TRAIN_CATEGORY, return_y=True)
+        X, y = self.pipeline.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True)
         self.external_model.fit(X, y.squeeze(), **kwargs)
         self._fitted = True
 
@@ -191,7 +191,7 @@ class BaseModel(BasePersistable):
         self.fit(**kwargs)
         # Pass X as none to cascade using internal dataset for X
         # Assumes only applies to training split
-        return self.predict(X=None, sample_category=TRAIN_CATEGORY, **kwargs)
+        return self.predict(X=None, dataset_split=TRAIN_SPLIT, **kwargs)
 
     def get_params(self, **kwargs):
         '''
