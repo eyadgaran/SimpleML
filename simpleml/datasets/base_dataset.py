@@ -6,12 +6,6 @@ import cStringIO
 
 __author__ = 'Elisha Yadgaran'
 
-# Define a few constants shared for sample categorization
-DATASET_SPLIT_COLUMN = 'dataset_split'
-TRAIN_SPLIT = 'TRAIN'
-VALIDATION_SPLIT = 'VALIDATION'
-TEST_SPLIT = 'TEST'
-
 
 class BaseDataset(BasePersistable):
     '''
@@ -38,8 +32,6 @@ class BaseDataset(BasePersistable):
         # By default assume unsupervised so no targets
         label_columns = kwargs.pop('label_columns', [])
         self.metadata_['label_columns'] = label_columns
-        administrative_columns = kwargs.pop('administrative_columns', [DATASET_SPLIT_COLUMN])
-        self.metadata_['administrative_columns'] = administrative_columns
 
         # Instantiate dataframe variable - doesn't get populated until
         # build_dataframe() is called
@@ -64,46 +56,18 @@ class BaseDataset(BasePersistable):
         return self.metadata_.get('label_columns', [])
 
     @property
-    def administrative_columns(self):
+    def X(self):
         '''
-        Keep column list for non dataset columns in metadata to persist through saving
+        Return the subset that isn't in the target labels
         '''
-        return self.metadata_.get('administrative_columns', [])
+        return self.dataframe[self.dataframe.columns.difference(self.label_columns)]
 
-    def X(self, dataset_split=None):
-        '''
-        Return the subset that isn't in the target labels or sample category
-
-        :param dataset_split: dataset split for train/validation/test
-        '''
-        if dataset_split is None:
-            return self.dataframe[
-                self.dataframe.columns.difference(self.label_columns + [DATASET_SPLIT_COLUMN])]
-
-        return self.dataframe.query('{}==@dataset_split'.format(DATASET_SPLIT_COLUMN))[
-                self.dataframe.columns.difference(self.label_columns + [DATASET_SPLIT_COLUMN])]
-
-    def y(self, dataset_split=None):
+    @property
+    def y(self):
         '''
         Return the target label columns
-
-        :param dataset_split: dataset split for train/validation/test
         '''
-        if dataset_split is None:
-            return self.dataframe[self.label_columns]
-
-        return self.dataframe.query('{}==@dataset_split'.format(DATASET_SPLIT_COLUMN))[self.label_columns]
-
-    def administrative_df(self, dataset_split=None):
-        '''
-        Return the administrative metadata columns
-
-        :param dataset_split: dataset split for train/validation/test
-        '''
-        if dataset_split is None:
-            return self.dataframe[self.administrative_columns]
-
-        return self.dataframe.query('@DATASET_SPLIT_COLUMN==@dataset_split')[self.administrative_columns]
+        return self.dataframe[self.label_columns]
 
     def build_dataframe(self):
         '''

@@ -1,7 +1,7 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
 from simpleml.utils.errors import ModelError
 from simpleml.persistables.binary_blob import BinaryBlob
-from simpleml.datasets.base_dataset import TRAIN_SPLIT
+from simpleml.pipelines.base_pipeline import TRAIN_SPLIT
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -168,6 +168,7 @@ class BaseModel(BasePersistable):
 
         # Explicitly fit only on train split
         X, y = self.pipeline.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True)
+        # Reduce dimensionality of y if it is only 1 column
         self.external_model.fit(X, y.squeeze(), **kwargs)
         self._fitted = True
 
@@ -217,4 +218,4 @@ class BaseModel(BasePersistable):
 
         Should return a dict of feature information (importance, coefficients...)
         '''
-        return self.external_model.get_feature_metadata(**kwargs)
+        return self.external_model.get_feature_metadata(features=self.pipeline.get_feature_names, **kwargs)

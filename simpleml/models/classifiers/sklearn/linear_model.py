@@ -17,7 +17,7 @@ Logistic Regression
 '''
 
 class WrappedSklearnLogisticRegression(LogisticRegression, DefaultClassificationExternalModel):
-    def get_feature_metadata(self, **kwargs):
+    def get_feature_metadata(self, features, **kwargs):
         pass
 
 class SklearnLogisticRegression(BaseModel, ClassificationMixin):
