@@ -1,5 +1,6 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
-from sqlalchemy import Column, String, ForeignKey, UniqueConstraint, Index
+from simpleml.utils.errors import MetricError
+from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -28,11 +29,79 @@ class BaseMetric(BasePersistable):
 
     # Only dependency is the model (to score in production)
     model_id = Column(GUID, ForeignKey("models.id"))
-    model = relationship('BaseModel')
+    model = relationship('BaseModel', enable_typechecks=False)
 
     __table_args__ = (
+        # Metrics don't have the notion of versions, values should be deterministic
+        # by class, model, and dataset - name should be the combination of class and dataset
         # Unique constraint for versioning
-        UniqueConstraint('name', 'version', name='metric_name_version_unique'),
+        UniqueConstraint('name', 'model_id', 'version', name='metric_name_model_version_unique'),
         # Index for searching through friendly names
         Index('metric_name_index', 'name'),
      )
+
+    def add_model(self, model):
+        '''
+        Setter method for model used
+        '''
+        self.model = model
+
+    def _hash(self):
+        '''
+        Hash is the combination of the:
+            1) Model
+            2) Metric
+        '''
+        model_hash = self.model.hash_ or self.model._hash()
+        metric = self
+
+        return hash(self.custom_hasher((model_hash, metric)))
+
+    def _get_latest_version(self):
+        '''
+        Versions should be autoincrementing for each object (constrained over
+        friendly name and model). Executes a database lookup and increments..
+        '''
+        last_version = self.__class__.query_by(
+            func.max(self.__class__.version)
+        ).filter(
+            self.__class__.name == self.name,
+            self.__class__.model_id == self.model_id
+        ).scalar()
+
+        if last_version is None:
+            last_version = 0
+
+        return last_version + 1
+
+    def save(self, **kwargs):
+        '''
+        Extend parent function with a few additional save routines
+        '''
+        if self.model is None:
+            raise MetricError('Must set model before saving')
+
+        if self.values is None:
+            raise MetricError('Must score metric before saving')
+
+        super(BaseMetric, self).save(**kwargs)
+
+        # Sqlalchemy updates relationship references after save so reload class
+        self.model.load(load_externals=False)
+
+    def load(self, **kwargs):
+        '''
+        Extend main load routine to load relationship class
+        '''
+        super(BaseMetric, self).load(**kwargs)
+
+        # By default dont load data unless it actually gets used
+        self.model.load(load_externals=False)
+
+    def score(self, **kwargs):
+        '''
+        Abstract method for each metric to define
+
+        Should set self.values
+        '''
+        raise NotImplementedError

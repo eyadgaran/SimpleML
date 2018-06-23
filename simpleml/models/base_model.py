@@ -194,6 +194,12 @@ class BaseModel(BasePersistable):
         # Assumes only applies to training split
         return self.predict(X=None, dataset_split=TRAIN_SPLIT, **kwargs)
 
+    def get_labels(self, dataset_split=None):
+        '''
+        Wrapper method to return labels from dataset
+        '''
+        return self.pipeline.get_dataset_split(dataset_split)[1]
+
     def get_params(self, **kwargs):
         '''
         Pass through method to external model
