@@ -1,4 +1,4 @@
-from sqlalchemy import MetaData, Column, func, String, Boolean, Integer
+from sqlalchemy import MetaData, Column, func, String, Boolean, Integer, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
 from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
 from simpleml.persistables.guid import GUID
@@ -7,6 +7,9 @@ from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 import uuid
 from abc import abstractmethod
 import copy
+import pandas as pd
+from pandas.util import hash_pandas_object
+
 
 __author__ = 'Elisha Yadgaran'
 
@@ -70,7 +73,7 @@ class BasePersistable(BaseSQLAlchemy):
     # Use registered name for internal object pointer - internal code can
     # still get updated between trainings (hence hash)
     # TODO: figure out how to hash objects in a way that signifies code content
-    hash_ = Column('hash', String, nullable=False)
+    hash_ = Column('hash', BigInteger, nullable=False)
     registered_name = Column(String, nullable=False)
     author = Column(String, default='default', nullable=False)
     name = Column(String, default='default', nullable=False)
@@ -215,6 +218,13 @@ class BasePersistable(BaseSQLAlchemy):
         if isinstance(object_to_hash, (set, tuple, list)):
             return tuple([self.custom_hasher(e) for e in object_to_hash])
 
+        elif isinstance(object_to_hash, (pd.DataFrame, pd.Series)):
+            return hash_pandas_object(object_to_hash, index=False).sum()
+
+        elif object_to_hash is None:
+            # hash of None is unstable between systems
+            return -12345678987654321
+            
         elif not isinstance(object_to_hash, dict):
             return hash(object_to_hash)
 
