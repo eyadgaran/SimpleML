@@ -126,7 +126,7 @@ dataset_pipeline = DatasetPipelineCreator.retrieve_or_create(raw_dataset=raw_dat
 dataset = DatasetCreator.retrieve_or_create(dataset_pipeline=dataset_pipeline, **dataset_kwargs)
 pipeline = PipelineCreator.retrieve_or_create(dataset=dataset, **pipeline_kwargs)
 
-# Option 2: Implicit object creation (pass in dependency references - recursively)
+# Option 2: Implicit object creation (pass in dependency references - nested)
 # Does not require dependency existence at this time, good for compiling job definitions and executing on remote, distributed nodes
 dataset_pipeline = DatasetPipelineCreator.retrieve_or_create(raw_dataset_kwargs=raw_dataset_kwargs, **dataset_pipeline_kwargs)
 dataset = DatasetCreator.retrieve_or_create(dataset_pipeline_kwargs=dependent_dataset_pipeline_kwargs, **dataset_kwargs)
