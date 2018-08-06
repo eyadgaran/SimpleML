@@ -23,7 +23,7 @@ Evaluation
 
 
 # Usage
-There are a few workflows to using SimpleML.
+There are a few workflows for using SimpleML.
 
 At the core SimpleML defines few constraints allowing for developer flexibility - see extensions SimpleML-Service and SimpleML-Server for blueprints of ready made microservices (just inherit and extend for project specific nuances).
 
@@ -86,37 +86,77 @@ metric.score()
 metric.save()
 ```
 
-This block (or any subset) can be executed as many times as desired and will create a new object each time with an autoincrementing version (for each "name"). Utilities have been defined to share references so that duplication of identical information is not required. Use if so desired.
+This block (or any subset) can be executed as many times as desired and will create a new object each time with an autoincrementing version (for each "name"). Utilities have been defined to share references so that duplication of identical information is not required. Use as follows:
+
+This workflow is modeled as a DAG, which means that there is room for parallelization, but dependencies are assumed to exist upon execution. Persistable creators are intentionally designed to take a dependent object as input or a reference. This allows for job definition before dependencies exist with lazy loading when they are required. Note that this comes at the cost of additional computations. In order to match up dependencies to a reference, a dummy persistable must be created and compared, with the exception of a unique reference - like `name, version` which mean the dependency already exists but is memory efficient to load later.
+
+
+```python
+from simpleml.utils.training.create_persistable import RawDatasetCreator, DatasetPipelineCreator, DatasetCreator, PipelineCreator
+
+# Initialize Database Connection
+db = Database(database='titanic').initialize()
+
+# Create Raw Dataset Definition and point to loading file
+class TitanicRaw(BaseRawDataset):
+    def build_dataframe(self):
+        self._dataframe = self.load_csv('filepath/to/train.csv')
+
+transformers = [
+    ('fill_zeros', FillWithValue(values=0.)),
+    ('record_coverter', DataframeToRecords()),
+    ('vectorizer', SklearnDictVectorizer())
+]
+
+# Object defining parameters
+raw_dataset_kwargs = {'name': 'titanic', 'registered_name': 'TitanicRaw', 'label_columns': ['Survived']}
+dataset_pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseDatasetPipeline'}
+dataset_kwargs = {'name': 'titanic', 'registered_name': 'BaseProcessedDataset'}
+pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseProductionPipeline', 'transformers': transformers}
+
+# With nested dependencies
+dependent_dataset_pipeline_kwargs = dataset_pipeline_kwargs.copy()
+dependent_dataset_pipeline_kwargs['raw_dataset_kwargs'] = raw_dataset_kwargs
+dependent_dataset_kwargs = dataset_kwargs.copy()
+dependent_dataset_kwargs['dataset_pipeline_kwargs'] = dependent_dataset_pipeline_kwargs
+
+# Option 1: Explicit object creation (pass in dependencies)
+raw_dataset = RawDatasetCreator.retrieve_or_create(**raw_dataset_kwargs)
+dataset_pipeline = DatasetPipelineCreator.retrieve_or_create(raw_dataset=raw_dataset, **dataset_pipeline_kwargs)
+dataset = DatasetCreator.retrieve_or_create(dataset_pipeline=dataset_pipeline, **dataset_kwargs)
+pipeline = PipelineCreator.retrieve_or_create(dataset=dataset, **pipeline_kwargs)
+
+# Option 2: Implicit object creation (pass in dependency references - recursively)
+# Does not require dependency existence at this time, good for compiling job definitions and executing on remote, distributed nodes
+dataset_pipeline = DatasetPipelineCreator.retrieve_or_create(raw_dataset_kwargs=raw_dataset_kwargs, **dataset_pipeline_kwargs)
+dataset = DatasetCreator.retrieve_or_create(dataset_pipeline_kwargs=dependent_dataset_pipeline_kwargs, **dataset_kwargs)
+pipeline = PipelineCreator.retrieve_or_create(dataset_kwargs=dependent_dataset_kwargs, **pipeline_kwargs)
+
+```
 
 Once objects have been created, they can be retrieved at whim by their name attribute (with the exception of metrics - which also need reference to the model). By default the latest version for a name will be returned, but this can be overridden by explicitly passing a version number.
 
-ex:
 ```python
+from simpleml.utils.scoring.load_persistable import PersistableLoader
+
 # Initialize Database Connection
 db = Database(database='titanic').initialize()
 
 # Notice versions are not shared between objects and can increment differently depending on iterations
-raw_dataset = BaseRawDataset.where(name='titanic', version=1)
-dataset_pipeline = BaseDatasetPipeline.where(name='titanic', version=3)
-dataset = BaseProcessedDataset.where(name='titanic', version=7)
-pipeline = BaseProductionPipeline.where(name='titanic', version=6)
-
-model = BaseModel.where(name='titanic', version=8)
-
-# Once references are returned, class properties and external files can be loaded via the load method
-raw_dataset.load()
-dataset_pipeline.load()
-dataset.load()
-pipeline.load()
+raw_dataset = PersistableLoader.load_raw_dataset(name='titanic', version=1)
+dataset_pipeline = PersistableLoader.load_dataset_pipeline(name='titanic', version=3)
+dataset = PersistableLoader.load_dataset(name='titanic', version=7)
+pipeline = PersistableLoader.load_pipeline(name='titanic', version=6)
+model = PersistableLoader.load_model(name='titanic', version=8)
 ```
 
-When it comes to production, once typically does not need all the training data so this mechanism becomes as simple as:
+When it comes to production, one typically does not need all the training data so this mechanism becomes as simple as:
 
 ```python
 # Initialize Database Connection
 db = Database(database='titanic').initialize()
 
-desired_model = BaseModel.where(name='titanic', version=10).load()
+desired_model = PersistableLoader.load_model(name='titanic', version=10)
 
 desired_model.predict_proba(new_dataframe)
 ```
