@@ -100,7 +100,7 @@ class FprTprMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs.pop('name', '')
-        name = 'fpr_tpr'
+        name = 'fpr_tpr_curve'
         super(FprTprMetric, self).__init__(name=name, **kwargs)
 
     def score(self):
