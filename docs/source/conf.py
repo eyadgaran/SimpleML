@@ -184,7 +184,7 @@ def run_apidoc(_):
         "-e", # --separate Put documentation for each module on its own page.
         "-M", # --module-first Put module documentation before submodule documentation
         "-o", ".", # Directory to place the output files. If it does not exist, it is created.
-        "../simpleml/" # <MODULE_PATH>
+        "../../simpleml/" # <MODULE_PATH>
     ] + ignore_paths
 
     try:
