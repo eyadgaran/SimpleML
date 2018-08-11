@@ -30,7 +30,7 @@ class DefaultPipeline(OrderedDict):
         Iterate through each transformation step and apply fit
         '''
         for step, transformer in self.iteritems():
-            X = transformer.fit_transform(X, y, **kwargs)
+            X = transformer.fit_transform(X, y=y, **kwargs)
 
         return self
 
@@ -39,7 +39,7 @@ class DefaultPipeline(OrderedDict):
         Iterate through each transformation step and apply transform
         '''
         for step, transformer in self.iteritems():
-            X = transformer.transform(X, y, **kwargs)
+            X = transformer.transform(X, y=y, **kwargs)
 
         return X
 
@@ -48,7 +48,7 @@ class DefaultPipeline(OrderedDict):
         Iterate through each transformation step and apply fit and transform
         '''
         for step, transformer in self.iteritems():
-            X = transformer.fit_transform(X, y, **kwargs)
+            X = transformer.fit_transform(X, y=y, **kwargs)
 
         return X
 
