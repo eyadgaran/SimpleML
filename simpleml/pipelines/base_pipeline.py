@@ -1,5 +1,6 @@
 from simpleml.persistables.base_persistable import BasePersistable
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
+from simpleml.pipelines.validation_split_mixins import TRAIN_SPLIT
 from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.utils.errors import PipelineError
 from sqlalchemy import Column
@@ -11,10 +12,6 @@ __author__ = 'Elisha Yadgaran'
 
 
 LOGGER = logging.getLogger(__name__)
-
-TRAIN_SPLIT = 'TRAIN'
-VALIDATION_SPLIT = 'VALIDATION'
-TEST_SPLIT = 'TEST'
 
 
 class BasePipeline(BasePersistable):
@@ -94,13 +91,15 @@ class BasePipeline(BasePersistable):
         Hash is the combination of the:
             1) Dataset
             2) Transformers
-            3) Params
+            3) Transformer Params
+            4) Pipeline Params
         '''
         dataset_hash = self.dataset.hash_ or self.dataset._hash()
         transformers = self.get_transformers()
-        params = self.get_params()
+        transformer_params = self.get_params()
+        pipeline_params = self.metadata_.get('params')
 
-        return hash(self.custom_hasher((dataset_hash, transformers, params)))
+        return hash(self.custom_hasher((dataset_hash, transformers, transformer_params, pipeline_params)))
 
     def save(self, **kwargs):
         '''
@@ -162,15 +161,6 @@ class BasePipeline(BasePersistable):
 
         # Indicate externals were loaded
         self.unloaded_externals = False
-
-    def split_dataset(self):
-        '''
-        Method to split the dataframe into different sets. By default sets
-        everything to `TRAIN`, but can be overwritten to add validation, test...
-
-        TODO: Work in support for generators (k-fold)
-        '''
-        return {TRAIN_SPLIT: (self.dataset.X, self.dataset.y)}
 
     def get_dataset_split(self, split=None):
         '''

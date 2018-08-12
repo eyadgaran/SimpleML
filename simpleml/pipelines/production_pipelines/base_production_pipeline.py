@@ -1,5 +1,7 @@
 from simpleml.persistables.guid import GUID
 from simpleml.pipelines.base_pipeline import BasePipeline
+from simpleml.pipelines.validation_split_mixins import NoSplitMixin, RandomSplitMixin,\
+    ChronologicalSplitMixin
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 
@@ -26,3 +28,15 @@ class BaseProductionPipeline(BasePipeline):
         # Index for searching through friendly names
         Index('pipeline_name_index', 'name'),
      )
+
+
+# Mixin implementations for convenience
+# Needs to be used as base class because of MRO initialization
+class BaseNoSplitProductionPipeline(NoSplitMixin, BaseProductionPipeline):
+    pass
+
+class BaseRandomSplitProductionPipeline(RandomSplitMixin, BaseProductionPipeline):
+    pass
+
+class BaseChronologicalSplitProductionPipeline(ChronologicalSplitMixin, BaseProductionPipeline):
+    pass

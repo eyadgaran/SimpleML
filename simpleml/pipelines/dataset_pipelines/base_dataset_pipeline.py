@@ -1,5 +1,6 @@
 from simpleml.persistables.guid import GUID
 from simpleml.pipelines.base_pipeline import BasePipeline
+from simpleml.pipelines.validation_split_mixins import NoSplitMixin
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 
@@ -26,3 +27,9 @@ class BaseDatasetPipeline(BasePipeline):
         # Index for searching through friendly names
         Index('dataset_pipeline_name_index', 'name'),
      )
+
+
+# Mixin implementations for convenience
+# Needs to be used as base class because of MRO initialization
+class BaseNoSplitDatasetPipeline(NoSplitMixin, BaseDatasetPipeline):
+    pass
