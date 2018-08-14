@@ -47,7 +47,7 @@ class RandomSplitMixin(SplitMixin):
     '''
     Class to randomly split dataset into different sets
     '''
-    def __init__(self, train_size=None, test_size=None, validation_size=0.0,
+    def __init__(self, train_size, test_size=None, validation_size=0.0,
                  random_state=123, **kwargs):
         '''
         Set splitting params:

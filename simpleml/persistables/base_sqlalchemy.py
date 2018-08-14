@@ -46,8 +46,7 @@ class BaseSQLAlchemy(Base, AllFeaturesMixin):
         '''
         Upsert statement requires PostgreSQL >= 9.5
         '''
-        instantiated_class = cls._instantiate()
-        table = instantiated_class.__table__
+        table = cls.__table__
 
         # Force no update on created timestamp column
         no_update_cols.append(created_column)
@@ -63,18 +62,12 @@ class BaseSQLAlchemy(Base, AllFeaturesMixin):
             set_={k: getattr(stmt.excluded, k) for k in update_cols}
         )
 
-        instantiated_class._session.execute(on_conflict_stmt)
+        cls._session.execute(on_conflict_stmt)
 
     @classmethod
     def filter(cls, *filters):
-        instantiated_class = cls._instantiate()
-        return instantiated_class._session.query(cls).filter(*filters)
+        return cls._session.query(cls).filter(*filters)
 
     @classmethod
     def query_by(cls, *queries):
-        instantiated_class = cls._instantiate()
-        return instantiated_class._session.query(*queries)
-
-    @classmethod
-    def _instantiate(cls):
-        return cls()
+        return cls._session.query(*queries)
