@@ -29,13 +29,6 @@ class SplitMixin(object):
 
 
 class NoSplitMixin(SplitMixin):
-    def __init__(self, **kwargs):
-        super(NoSplitMixin, self).__init__(**kwargs)
-
-        # Pipeline Params
-        self.metadata_['params'] = {}
-
-
     def split_dataset(self):
         '''
         Method to split the dataframe into different sets. By default sets
@@ -70,22 +63,21 @@ class RandomSplitMixin(SplitMixin):
             test_size = 1.0 - train_size - validation_size
 
         # Pipeline Params
-        self.metadata_['params'] = {
+        self.config.update({
             'train_size': train_size,
             'validation_size': validation_size,
             'test_size': test_size,
             'random_state': random_state
-        }
+        })
 
     def split_dataset(self):
         '''
         Overwrite method to split by percentage
         '''
-        params = self.metadata_.get('params')
-        train_size = params.get('train_size')
-        validation_size = params.get('validation_size')
-        test_size = params.get('test_size')
-        random_state = params.get('random_state')
+        train_size = self.config.get('train_size')
+        validation_size = self.config.get('validation_size')
+        test_size = self.config.get('test_size')
+        random_state = self.config.get('random_state')
 
         # Sklearn's train test split can only accomodate one split per iteration
         X_remaining, X_test, y_remaining, y_test = train_test_split(
@@ -106,9 +98,6 @@ class RandomSplitMixin(SplitMixin):
 class ChronologicalSplitMixin(SplitMixin):
     def __init__(self, **kwargs):
         super(ChronologicalSplitMixin, self).__init__(**kwargs)
-
-        # Pipeline Params
-        self.metadata_['params'] = {}
 
 
 

@@ -1,6 +1,5 @@
 from simpleml.persistables.base_persistable import BasePersistable
 import pandas as pd
-from pandas.util import hash_pandas_object
 import cStringIO
 
 
@@ -26,12 +25,13 @@ class BaseDataset(BasePersistable):
     __abstract__ = True
 
     def __init__(self, has_external_files=True, **kwargs):
+        # By default assume unsupervised so no targets
+        label_columns = kwargs.pop('label_columns', [])
+
         super(BaseDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
-        # By default assume unsupervised so no targets
-        label_columns = kwargs.pop('label_columns', [])
-        self.metadata_['label_columns'] = label_columns
+        self.config['label_columns'] = label_columns
 
         # Instantiate dataframe variable - doesn't get populated until
         # build_dataframe() is called
@@ -53,7 +53,7 @@ class BaseDataset(BasePersistable):
         '''
         Keep column list for labels in metadata to persist through saving
         '''
-        return self.metadata_.get('label_columns', [])
+        return self.config.get('label_columns', [])
 
     @property
     def X(self):
@@ -78,12 +78,16 @@ class BaseDataset(BasePersistable):
 
     def _hash(self):
         '''
-        Datasets rely on external data so instead of hashing the config,
+        Datasets rely on external data so instead of hashing only the config,
         hash the actual resulting dataframe
         This requires loading the data before determining duplication
         so overwrite for differing behavior
+
+        Hash is the combination of the:
+            1) Dataframe
+            2) Config
         '''
-        return hash_pandas_object(self.dataframe, index=False).sum()
+        return hash(self.custom_hasher((self.dataframe, self.config)))
 
     def _save_external_files(self):
         '''

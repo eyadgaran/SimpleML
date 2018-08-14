@@ -97,10 +97,23 @@ class BasePersistable(BaseSQLAlchemy):
         self.name = name
         self.has_external_files = has_external_files
         self.version_description = version_description
-        self.metadata_ = {}
+
+        # Special place for SimpleML internal params
+        # Think of as the config to initialize objects
+        self.metadata_ = {}  # Place for any arbitrary metadata
+        self.metadata_['config'] = {}  # Place for parameters that uniquely configure an instance on initialization
+        self.metadata_['state'] = {}  # Place for transitory values that may be set post initialization (and want to be persisted)
 
         # For external loading - initialize to None
         self.unloaded_externals = None
+
+    @property
+    def config(self):
+        return self.metadata_['config']
+
+    @property
+    def state(self):
+        return self.metadata_['state']
 
     def save(self):
         '''
@@ -224,7 +237,7 @@ class BasePersistable(BaseSQLAlchemy):
         elif object_to_hash is None:
             # hash of None is unstable between systems
             return -12345678987654321
-            
+
         elif not isinstance(object_to_hash, dict):
             return hash(object_to_hash)
 

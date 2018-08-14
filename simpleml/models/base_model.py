@@ -47,14 +47,18 @@ class BaseModel(BasePersistable):
      )
 
 
-    def __init__(self, has_external_files=True, **kwargs):
+    def __init__(self, has_external_files=True, external_model_kwargs={}, **kwargs):
+        '''
+        Need to explicitly separate passthrough kwargs to external models since
+        most do not support arbitrary **kwargs in the constructors
+        '''
         super(BaseModel, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate model
-        self._external_model = self._create_external_model(**kwargs)
+        self._external_model = self._create_external_model(**external_model_kwargs)
         # Initialize as unfitted
-        self._fitted = False
+        self.state['fitted'] = False
 
     @property
     def external_model(self):
@@ -89,12 +93,14 @@ class BaseModel(BasePersistable):
             1) Pipeline
             2) Model
             3) Params
+            4) Config
         '''
         pipeline_hash = self.pipeline.hash_ or self.pipeline._hash()
-        model = self.external_model
+        model = self.external_model.__class__.__name__
         params = self.get_params()
+        config = self.config
 
-        return hash(self.custom_hasher((pipeline_hash, model, params)))
+        return hash(self.custom_hasher((pipeline_hash, model, params, config)))
 
     def save(self, **kwargs):
         '''
@@ -106,7 +112,7 @@ class BaseModel(BasePersistable):
         if self.pipeline is None:
             raise ModelError('Must set pipeline before saving')
 
-        if not self._fitted:
+        if not self.state['fitted']:
             raise ModelError('Must fit model before saving')
 
         self.params = self.get_params(**kwargs)
@@ -149,9 +155,6 @@ class BaseModel(BasePersistable):
         pickled_file = BinaryBlob.find(pickled_id).binary_blob
         self._external_model = pickle.loads(pickled_file)
 
-        # can only be saved if fitted, so restore state
-        self._fitted = True
-
         # Indicate externals were loaded
         self.unloaded_externals = False
 
@@ -162,7 +165,7 @@ class BaseModel(BasePersistable):
         if self.pipeline is None:
             raise ModelError('Must set pipeline before fitting')
 
-        if self._fitted:
+        if self.state['fitted']:
             LOGGER.warning('Cannot refit model, skipping operation')
             return self
 
@@ -170,7 +173,7 @@ class BaseModel(BasePersistable):
         X, y = self.pipeline.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True)
         # Reduce dimensionality of y if it is only 1 column
         self.external_model.fit(X, y.squeeze(), **kwargs)
-        self._fitted = True
+        self.state['fitted'] = True
 
         return self
 
@@ -178,7 +181,7 @@ class BaseModel(BasePersistable):
         '''
         Pass through method to external model after running through pipeline
         '''
-        if not self._fitted:
+        if not self.state['fitted']:
             raise ModelError('Must fit model before predicting')
 
         transformed = self.pipeline.transform(X, **kwargs)

@@ -17,6 +17,10 @@ class BaseTransformer(TransformerMixin):
         return X
 
     def get_params(self, **kwargs):
+        '''
+        Should only return seeding parameters, not fit ones
+        (ie params of unfit object should be identical to fit object)
+        '''
         return {}
 
     def set_params(self, **kwargs):

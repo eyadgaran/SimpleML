@@ -51,11 +51,13 @@ class BaseMetric(BasePersistable):
         Hash is the combination of the:
             1) Model
             2) Metric
+            3) Config
         '''
         model_hash = self.model.hash_ or self.model._hash()
-        metric = self
+        metric = self.__class__.__name__
+        config = self.config
 
-        return hash(self.custom_hasher((model_hash, metric)))
+        return hash(self.custom_hasher((model_hash, metric, config)))
 
     def _get_latest_version(self):
         '''

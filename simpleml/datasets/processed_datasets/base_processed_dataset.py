@@ -58,7 +58,7 @@ class BaseProcessedDataset(BaseDataset):
         if y is None:
             y = pd.DataFrame()
 
-        self.metadata_['label_columns'] = y.columns.tolist()
+        self.config['label_columns'] = y.columns.tolist()
         self._dataframe = pd.concat([X, y], axis=1)
 
     def save(self, **kwargs):

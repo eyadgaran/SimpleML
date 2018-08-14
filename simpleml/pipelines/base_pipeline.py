@@ -31,13 +31,17 @@ class BasePipeline(BasePersistable):
 
     def __init__(self, has_external_files=True, transformers=[],
                  **kwargs):
+        external_pipeline_class = kwargs.pop('external_pipeline_class', 'default')
+
         super(BasePipeline, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate pipeline
-        self._external_pipeline = self._create_external_pipeline(transformers, **kwargs)
+        self.config['external_pipeline_class'] = external_pipeline_class
+        self._external_pipeline = self._create_external_pipeline(
+            external_pipeline_class, transformers, **kwargs)
         # Initialize as unfitted
-        self._fitted = False
+        self.state['fitted'] = False
 
     @property
     def external_pipeline(self):
@@ -52,16 +56,16 @@ class BasePipeline(BasePersistable):
 
         return self._external_pipeline
 
-    def _create_external_pipeline(self, transformers, pipeline_class='default',
+    def _create_external_pipeline(self, external_pipeline_class, transformers,
                                   **kwargs):
         '''
         should return the desired pipeline object
 
-        :param pipeline_class: str of class to use, can be 'default' or 'sklearn'
+        :param external_pipeline_class: str of class to use, can be 'default' or 'sklearn'
         '''
-        if pipeline_class == 'default':
+        if external_pipeline_class == 'default':
             return DefaultPipeline(transformers)
-        elif pipeline_class == 'sklearn':
+        elif external_pipeline_class == 'sklearn':
             return SklearnPipeline(transformers, **kwargs)
         else:
             raise NotImplementedError('Only default or sklearn pipelines supported')
@@ -77,14 +81,16 @@ class BasePipeline(BasePersistable):
         Setter method for new transformer step
         '''
         self.external_pipeline.add_transformer(name, transformer)
-        self._fitted = False
+        # Need to refit now
+        self.state['fitted'] = False
 
     def remove_transformer(self, name):
         '''
         Delete method for transformer step
         '''
         self.external_pipeline.remove_transformer(name)
-        self._fitted = False
+        # Need to refit now
+        self.state['fitted'] = False
 
     def _hash(self):
         '''
@@ -92,14 +98,14 @@ class BasePipeline(BasePersistable):
             1) Dataset
             2) Transformers
             3) Transformer Params
-            4) Pipeline Params
+            4) Pipeline Config
         '''
         dataset_hash = self.dataset.hash_ or self.dataset._hash()
         transformers = self.get_transformers()
         transformer_params = self.get_params()
-        pipeline_params = self.metadata_.get('params')
+        pipeline_config = self.config
 
-        return hash(self.custom_hasher((dataset_hash, transformers, transformer_params, pipeline_params)))
+        return hash(self.custom_hasher((dataset_hash, transformers, transformer_params, pipeline_config)))
 
     def save(self, **kwargs):
         '''
@@ -112,7 +118,7 @@ class BasePipeline(BasePersistable):
         if self.dataset is None:
             raise PipelineError('Must set dataset before saving')
 
-        if not self._fitted:
+        if not self.state['fitted']:
             raise PipelineError('Must fit pipeline before saving')
 
         self.params = self.get_params(**kwargs)
@@ -156,9 +162,6 @@ class BasePipeline(BasePersistable):
         pickled_file = BinaryBlob.find(pickled_id).binary_blob
         self._external_pipeline = pickle.loads(pickled_file)
 
-        # can only be saved if fitted, so restore state
-        self._fitted = True
-
         # Indicate externals were loaded
         self.unloaded_externals = False
 
@@ -181,14 +184,14 @@ class BasePipeline(BasePersistable):
         if self.dataset is None:
             raise PipelineError('Must set dataset before fitting')
 
-        if self._fitted:
+        if self.state['fitted']:
             LOGGER.warning('Cannot refit pipeline, skipping operation')
             return self
 
         # Only use train fold to fit
         X, y = self.get_dataset_split(TRAIN_SPLIT)
         self.external_pipeline.fit(X, y, **kwargs)
-        self._fitted = True
+        self.state['fitted'] = True
 
         return self
 
@@ -200,7 +203,7 @@ class BasePipeline(BasePersistable):
         :param return_y: whether to return y with output - only used if X is None
             necessary for fitting a supervised model after
         '''
-        if not self._fitted:
+        if not self.state['fitted']:
             raise PipelineError('Must fit pipeline before transforming')
 
         if X is None:
