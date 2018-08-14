@@ -12,7 +12,7 @@ class ClassificationMixin(object):
         '''
         Pass through method to external model after running through pipeline
         '''
-        if not self._fitted:
+        if not self.state['fitted']:
             raise ModelError('Must fit model before predicting')
 
         transformed = self.pipeline.transform(X, **kwargs)

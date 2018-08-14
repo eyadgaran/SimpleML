@@ -68,7 +68,7 @@ class BaseMetric(BasePersistable):
             func.max(self.__class__.version)
         ).filter(
             self.__class__.name == self.name,
-            self.__class__.model_id == self.model_id
+            self.__class__.model_id == self.model.id
         ).scalar()
 
         if last_version is None:
