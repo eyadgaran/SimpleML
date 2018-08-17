@@ -7,7 +7,7 @@ Inherit and extend for particular models
 __author__ = 'Elisha Yadgaran'
 
 
-class DefaultExternalModel(object):
+class ExternalModelMixin(object):
     '''
     Wrapper class for a pickleable model with expected methods
 
@@ -18,12 +18,12 @@ class DefaultExternalModel(object):
 
     from some_model_library import ActualModelClass
 
-    class SomeExternalModel(ActualModelClass, DefaultExternalModel):
+    class WrappedActualModelClass(ActualModelClass, ExternalModelMixin):
         pass
 
-    class SimpleMLSomeExternalModel(BaseModel, [optional mixins]):
+    class some_model_libraryActualModelClass(BaseModel, [optional mixins]):
         def _create_external_model(self, **kwargs):
-            return SomeExternalModel(**kwargs)
+            return WrappedActualModelClass(**kwargs)
     '''
 
     def fit(self, *args, **kwargs):
@@ -42,13 +42,12 @@ class DefaultExternalModel(object):
         '''
         By default nothing is implemented
         '''
-        raise NotImplementedError
+        return {}
 
     def set_params(self, *args, **kwargs):
         '''
         By default nothing is implemented
         '''
-        raise NotImplementedError
 
     def score(self, *args, **kwargs):
         '''
@@ -60,4 +59,4 @@ class DefaultExternalModel(object):
         '''
         By default nothing is implemented
         '''
-        raise NotImplementedError
+        return None

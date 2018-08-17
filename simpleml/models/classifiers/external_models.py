@@ -1,10 +1,14 @@
-from simpleml.models.external_models import DefaultExternalModel
+from simpleml.models.external_models import ExternalModelMixin
+import logging
 
 
 __author__ = 'Elisha Yadgaran'
 
 
-class DefaultClassificationExternalModel(DefaultExternalModel):
+LOGGER = logging.getLogger(__name__)
+
+
+class ClassificationExternalModelMixin(ExternalModelMixin):
     '''
     Wrapper class for a pickleable model with expected methods
 
@@ -17,16 +21,17 @@ class DefaultClassificationExternalModel(DefaultExternalModel):
 
     from some_model_library import ActualModelClass
 
-    class SomeClassificationExternalModel(ActualModelClass, DefaultClassificationExternalModel):
+    class WrappedActualModelClass(ActualModelClass, ClassificationExternalModelMixin):
         pass
 
-    class SimpleMLSomeClassificationExternalModel(BaseModel, [optional mixins]):
+    class some_model_libraryActualModelClass(BaseModel, [optional mixins]):
         def _create_external_model(self, **kwargs):
-            return SomeClassificationExternalModel(**kwargs)
+            return WrappedActualModelClass(**kwargs)
     '''
 
     def predict_proba(self, *args, **kwargs):
         '''
-        By default nothing is implemented
+        By default fall back to predict method
         '''
-        raise NotImplementedError
+        LOGGER.warning('No predict_proba method defined, using predict')
+        return self.predict(*args, **kwargs)
