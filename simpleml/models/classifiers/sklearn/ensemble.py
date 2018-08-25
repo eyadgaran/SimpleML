@@ -21,6 +21,15 @@ class WrappedSklearnAdaBoostClassifier(AdaBoostClassifier, ClassificationExterna
     def get_feature_metadata(self, features, **kwargs):
         pass
 
+    def get_params(self, **kwargs):
+        '''
+        Overwrite base to make sure return is json serializable
+        '''
+        json = super(WrappedSklearnAdaBoostClassifier, self).get_params(**kwargs)
+        json['base_estimator'] = str(json['base_estimator'])
+
+        return json
+
 class SklearnAdaBoostClassifier(BaseModel, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnAdaBoostClassifier(**kwargs)
@@ -33,6 +42,15 @@ Bagging Classfier
 class WrappedSklearnBaggingClassifier(BaggingClassifier, ClassificationExternalModelMixin):
     def get_feature_metadata(self, features, **kwargs):
         pass
+
+    def get_params(self, **kwargs):
+        '''
+        Overwrite base to make sure return is json serializable
+        '''
+        json = super(WrappedSklearnBaggingClassifier, self).get_params(**kwargs)
+        json['base_estimator'] = str(json['base_estimator'])
+
+        return json
 
 class SklearnBaggingClassifier(BaseModel, ClassificationMixin):
     def _create_external_model(self, **kwargs):
@@ -85,6 +103,8 @@ Voting Classifier
 class WrappedSklearnVotingClassifier(VotingClassifier, ClassificationExternalModelMixin):
     def get_feature_metadata(self, features, **kwargs):
         pass
+
+    # TODO: get params json safe
 
 class SklearnVotingClassifier(BaseModel, ClassificationMixin):
     def _create_external_model(self, **kwargs):
