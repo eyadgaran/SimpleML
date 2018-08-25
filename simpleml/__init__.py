@@ -10,3 +10,12 @@ logging.basicConfig(
 
 
 __author__ = 'Elisha Yadgaran'
+
+
+'''
+Import modules to register class names in global registry
+'''
+import datasets
+import metrics
+import models
+import pipelines
