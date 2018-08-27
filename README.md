@@ -33,32 +33,36 @@ To start a project is as simple as defining the raw data and guiding the transfo
 from simpleml.utils.initialization import Database
 from simpleml.datasets.raw_datasets.base_raw_dataset import BaseRawDataset
 from simpleml.datasets.processed_datasets.base_processed_dataset import BaseProcessedDataset
-from simpleml.pipelines.dataset_pipelines.base_dataset_pipeline import BaseDatasetPipeline
-from simpleml.pipelines.production_pipelines.base_production_pipeline import BaseProductionPipeline
+from simpleml.pipelines.dataset_pipelines.base_dataset_pipeline import BaseNoSplitDatasetPipeline
+from simpleml.pipelines.production_pipelines.base_production_pipeline import BaseRandomSplitProductionPipeline
 from simpleml.transformers.fitful_transformers.vectorizers import SklearnDictVectorizer
 from simpleml.transformers.fitless_transformers.converters import DataframeToRecords
 from simpleml.transformers.fitful_transformers.fill import FillWithValue
 from simpleml.models.classifiers.sklearn.linear_model import SklearnLogisticRegression
-from simpleml.metrics.classification import FprTprMetric
+from simpleml.metrics.classification import AccuracyMetric
+from simpleml.pipelines.validation_split_mixins import TEST_SPLIT
 
 
 # Initialize Database Connection
 db = Database(database='titanic').initialize()
 
-# Create Raw Dataset and point to loading file
+# Define Raw Dataset and point to loading file
 class TitanicRaw(BaseRawDataset):
     def build_dataframe(self):
         self._dataframe = self.load_csv('filepath/to/train.csv')
 
+# Create Raw Dataset and save it
 raw_dataset = TitanicRaw(name='titanic', label_columns=['Survived'])
 raw_dataset.build_dataframe()
 raw_dataset.save()
 
-dataset_pipeline = BaseDatasetPipeline(name='titanic')
+# Create Dataset Pipeline and save it
+dataset_pipeline = BaseNoSplitDatasetPipeline(name='titanic')
 dataset_pipeline.add_dataset(raw_dataset)
 dataset_pipeline.fit()
 dataset_pipeline.save()
 
+# Create Dataset and save it
 dataset = BaseProcessedDataset(name='titanic')
 dataset.add_pipeline(dataset_pipeline)
 dataset.build_dataframe()
@@ -70,17 +74,22 @@ transformers = [
     ('record_coverter', DataframeToRecords()),
     ('vectorizer', SklearnDictVectorizer())
 ]
-pipeline = BaseProductionPipeline(name='titanic', transformers=transformers)
+
+# Create Pipeline and save it - Use basic 80-20 test split
+pipeline = BaseRandomSplitProductionPipeline(name='titanic', transformers=transformers,
+                                             train_size=0.8, validation_size=0.0, test_size=0.2)
 pipeline.add_dataset(dataset)
 pipeline.fit()
 pipeline.save()
 
+# Create Model and save it
 model = SklearnLogisticRegression(name='titanic')
 model.add_pipeline(pipeline)
 model.fit()
 model.save()
 
-metric = FprTprMetric()
+# Create Metric and save it
+metric = AccuracyMetric(dataset_split=TEST_SPLIT)
 metric.add_model(model)
 metric.score()
 metric.save()
@@ -92,45 +101,46 @@ This workflow is modeled as a DAG, which means that there is room for paralleliz
 
 
 ```python
-from simpleml.utils.training.create_persistable import RawDatasetCreator, DatasetPipelineCreator, DatasetCreator, PipelineCreator
+from simpleml.utils.training.create_persistable import RawDatasetCreator,\
+    DatasetPipelineCreator, DatasetCreator, PipelineCreator, ModelCreator, MetricCreator
 
-# Initialize Database Connection
-db = Database(database='titanic').initialize()
 
-# Create Raw Dataset Definition and point to loading file
-class TitanicRaw(BaseRawDataset):
-    def build_dataframe(self):
-        self._dataframe = self.load_csv('filepath/to/train.csv')
-
-transformers = [
-    ('fill_zeros', FillWithValue(values=0.)),
-    ('record_coverter', DataframeToRecords()),
-    ('vectorizer', SklearnDictVectorizer())
-]
-
+# ---------------------------------------------------------------------------- #
+# Option 1: Explicit object creation (pass in dependencies)
+# ---------------------------------------------------------------------------- #
 # Object defining parameters
 raw_dataset_kwargs = {'name': 'titanic', 'registered_name': 'TitanicRaw', 'label_columns': ['Survived']}
-dataset_pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseDatasetPipeline'}
+dataset_pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseNoSplitDatasetPipeline'}
 dataset_kwargs = {'name': 'titanic', 'registered_name': 'BaseProcessedDataset'}
-pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseProductionPipeline', 'transformers': transformers}
+pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseRandomSplitProductionPipeline', 'transformers': transformers, 'train_size': 0.8, 'validation_size': 0.0, 'test_size': 0.2}
+model_kwargs = {'name': 'titanic', 'registered_name': 'SklearnLogisticRegression'}
+metric_kwargs = {'registered_name': 'AccuracyMetric', 'dataset_split': TEST_SPLIT}
 
-# With nested dependencies
-dependent_dataset_pipeline_kwargs = dataset_pipeline_kwargs.copy()
-dependent_dataset_pipeline_kwargs['raw_dataset_kwargs'] = raw_dataset_kwargs
-dependent_dataset_kwargs = dataset_kwargs.copy()
-dependent_dataset_kwargs['dataset_pipeline_kwargs'] = dependent_dataset_pipeline_kwargs
-
-# Option 1: Explicit object creation (pass in dependencies)
 raw_dataset = RawDatasetCreator.retrieve_or_create(**raw_dataset_kwargs)
 dataset_pipeline = DatasetPipelineCreator.retrieve_or_create(raw_dataset=raw_dataset, **dataset_pipeline_kwargs)
 dataset = DatasetCreator.retrieve_or_create(dataset_pipeline=dataset_pipeline, **dataset_kwargs)
 pipeline = PipelineCreator.retrieve_or_create(dataset=dataset, **pipeline_kwargs)
+model = ModelCreator.retrieve_or_create(pipeline=pipeline, **model_kwargs)
+metric = MetricCreator.retrieve_or_create(model=model, **metric_kwargs)     
 
+# ---------------------------------------------------------------------------- #
 # Option 2: Implicit object creation (pass in dependency references - nested)
 # Does not require dependency existence at this time, good for compiling job definitions and executing on remote, distributed nodes
+# ---------------------------------------------------------------------------- #
+# Nested dependencies
+dataset_pipeline_kwargs['raw_dataset_kwargs'] = raw_dataset_kwargs
+dataset_kwargs['dataset_pipeline_kwargs'] = dataset_pipeline_kwargs
+pipeline_kwargs['dataset_kwargs'] = dataset_kwargs
+model_kwargs['pipeline_kwargs'] = pipeline_kwargs
+metric_kwargs['model_kwargs'] = model_kwargs
+
+raw_dataset = RawDatasetCreator.retrieve_or_create(**raw_dataset_kwargs)
 dataset_pipeline = DatasetPipelineCreator.retrieve_or_create(raw_dataset_kwargs=raw_dataset_kwargs, **dataset_pipeline_kwargs)
-dataset = DatasetCreator.retrieve_or_create(dataset_pipeline_kwargs=dependent_dataset_pipeline_kwargs, **dataset_kwargs)
-pipeline = PipelineCreator.retrieve_or_create(dataset_kwargs=dependent_dataset_kwargs, **pipeline_kwargs)
+dataset = DatasetCreator.retrieve_or_create(dataset_pipeline_kwargse=dataset_pipeline_kwargs, **dataset_kwargs)
+pipeline = PipelineCreator.retrieve_or_create(dataset_kwargs=dataset_kwargs, **pipeline_kwargs)
+model = ModelCreator.retrieve_or_create(pipeline_kwargs=pipeline_kwargs, **model_kwargs)
+metric = MetricCreator.retrieve_or_create(model_kwargs=model_kwargs, **metric_kwargs)     
+
 
 ```
 
@@ -148,6 +158,7 @@ dataset_pipeline = PersistableLoader.load_dataset_pipeline(name='titanic', versi
 dataset = PersistableLoader.load_dataset(name='titanic', version=7)
 pipeline = PersistableLoader.load_pipeline(name='titanic', version=6)
 model = PersistableLoader.load_model(name='titanic', version=8)
+metric = PersistableLoader.load_metric(name='classification_accuracy', model_id=model.id)
 ```
 
 When it comes to production, one typically does not need all the training data so this mechanism becomes as simple as:
