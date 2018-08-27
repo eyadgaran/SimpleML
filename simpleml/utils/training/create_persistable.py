@@ -7,6 +7,9 @@ from simpleml.datasets.raw_datasets.base_raw_dataset import BaseRawDataset
 from simpleml.pipelines.dataset_pipelines.base_dataset_pipeline import BaseDatasetPipeline
 from simpleml.datasets.processed_datasets.base_processed_dataset import BaseProcessedDataset
 from simpleml.pipelines.production_pipelines.base_production_pipeline import BaseProductionPipeline
+from simpleml.models.base_model import BaseModel
+from simpleml.metrics.base_metric import BaseMetric
+from simpleml.utils.errors import TrainingError
 import logging
 
 LOGGER = logging.getLogger(__name__)
@@ -45,11 +48,29 @@ class PersistableCreator(object):
         '''
         return cls.where(**filters).order_by(cls.version.desc()).first()
 
+    @staticmethod
+    def retrieve_dependency(dependency_cls, **dependency_kwargs):
+        '''
+        Base method to query for dependency
+        Raises TrainingError if dependency does not exist
+        '''
+        dependency = dependency_cls.retrieve(
+            *dependency_cls.determine_filters(**dependency_kwargs))
+        if dependency is None:
+            raise TrainingError('Expected dependency is missing')
+        dependency.load()
+        return dependency
+
     @abstractmethod
-    def determine_filters(**kwargs):
+    def determine_filters(strict=False, **kwargs):
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
+
+        :param strict: whether to fit objects first before assuming they are identical
+        In theory if all inputs and classes are the same, the outputs should deterministically
+        be the same as well (up to random iter). So, you dont need to fit objects
+        to be sure they are the same
 
         Default design iterates through 2 (or 3) options when retrieving persistables:
             1) By name and version (unique properties that define persistables)
@@ -78,8 +99,8 @@ class RawDatasetCreator(PersistableCreator):
         Returns: database class, filter dictionary
 
         :param registered_name: Class name registered in SimpleML
-        :param strict: Specific to datasets, whether to assume same class and
-        name = same persistable, or, load the data and compare the hash
+        :param strict: whether to assume same class and name == same persistable,
+        or, load the data and compare the hash
         '''
         if version is not None:
             filters = {
@@ -121,7 +142,7 @@ class RawDatasetCreator(PersistableCreator):
 
 class DatasetPipelineCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, name='', version=None, **kwargs):
+    def determine_filters(cls, name='', version=None, strict=False, **kwargs):
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -129,7 +150,10 @@ class DatasetPipelineCreator(PersistableCreator):
         Returns: database class, filter dictionary
 
         :param registered_name: Class name registered in SimpleML
-        :param dataset: dataset class or registered name
+        :param strict: whether to fit objects first before assuming they are identical
+        In theory if all inputs and classes are the same, the outputs should deterministically
+        be the same as well (up to random iter). So, you dont need to fit objects
+        to be sure they are the same
         '''
         if version is not None:
             filters = {
@@ -138,14 +162,18 @@ class DatasetPipelineCreator(PersistableCreator):
             }
 
         else:
+            # Check if dependency object was passed
             dataset = kwargs.pop('raw_dataset', None)
-            registered_name = kwargs.pop('registered_name')
             if dataset is None:
+                # Use dependency reference to retrieve object
                 dataset = cls.retrieve_dataset(**kwargs.pop('raw_dataset_kwargs', {}))
 
+            # Build dummy object to retrieve hash to look for
+            registered_name = kwargs.pop('registered_name')
             new_pipeline = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
             new_pipeline.add_dataset(dataset)
-            new_pipeline.fit()
+            if strict:
+                new_pipeline.fit()
 
             filters = {
                 'name': name,
@@ -162,9 +190,10 @@ class DatasetPipelineCreator(PersistableCreator):
         kwargs are passed directly to persistable
 
         :param registered_name: Class name registered in SimpleML
-        :param dataset: dataset class or registered name
+        :param raw_dataset: raw dataset object
         '''
         if raw_dataset is None:
+            # Use dependency reference to retrieve object
             raw_dataset = cls.retrieve_dataset(**kwargs.pop('raw_dataset_kwargs', {}))
 
         new_pipeline = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
@@ -174,10 +203,9 @@ class DatasetPipelineCreator(PersistableCreator):
 
         return new_pipeline
 
-    @staticmethod
-    def retrieve_dataset(**dataset_kwargs):
-        return RawDatasetCreator.retrieve(
-            *RawDatasetCreator.determine_filters(**dataset_kwargs))
+    @classmethod
+    def retrieve_dataset(cls, **dataset_kwargs):
+        return cls.retrieve_dependency(RawDatasetCreator, **dataset_kwargs)
 
 
 class DatasetCreator(PersistableCreator):
@@ -190,9 +218,8 @@ class DatasetCreator(PersistableCreator):
         Returns: database class, filter dictionary
 
         :param registered_name: Class name registered in SimpleML
-        :param dataset_pipeline: dataset pipeline class or registered name
-        :param strict: Specific to datasets, whether to assume same class and
-        name = same persistable, or, load the data and compare the hash
+        :param strict: whether to assume same class and name = same persistable,
+        or, load the data and compare the hash
         '''
 
         if version is not None:
@@ -202,15 +229,19 @@ class DatasetCreator(PersistableCreator):
             }
 
         else:
-            dataset_pipeline = kwargs.pop('dataset_pipeline', None)
             registered_name = kwargs.pop('registered_name')
+            # Check if dependency object was passed
+            dataset_pipeline = kwargs.pop('dataset_pipeline', None)
 
             if dataset_pipeline is None:
+                # Use dependency reference to retrieve object
                 dataset_pipeline = cls.retrieve_pipeline(**kwargs.pop('dataset_pipeline_kwargs', {}))
 
             if strict:
+                # Build dummy object to retrieve hash to look for
                 new_dataset = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
                 new_dataset.add_pipeline(dataset_pipeline)
+                new_dataset.build_dataframe()
 
                 filters = {
                     'name': name,
@@ -219,6 +250,7 @@ class DatasetCreator(PersistableCreator):
                 }
 
             else:
+                # Assume combo of name, class, and pipeline will be unique
                 filters =  {
                     'name': name,
                     'registered_name': registered_name,
@@ -234,9 +266,10 @@ class DatasetCreator(PersistableCreator):
         kwargs are passed directly to persistable
 
         :param registered_name: Class name registered in SimpleML
-        :param dataset_pipeline: dataset pipeline class or registered name
+        :param dataset_pipeline: dataset pipeline object
         '''
         if dataset_pipeline is None:
+            # Use dependency reference to retrieve object
             dataset_pipeline = cls.retrieve_pipeline(**kwargs.pop('dataset_pipeline_kwargs', {}))
 
         new_dataset = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
@@ -246,15 +279,14 @@ class DatasetCreator(PersistableCreator):
 
         return new_dataset
 
-    @staticmethod
-    def retrieve_pipeline(**pipeline_kwargs):
-        return DatasetPipelineCreator.retrieve(
-            *DatasetPipelineCreator.determine_filters(**pipeline_kwargs))
+    @classmethod
+    def retrieve_pipeline(cls, **pipeline_kwargs):
+        return cls.retrieve_dependency(DatasetPipelineCreator, **pipeline_kwargs)
 
 
 class PipelineCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, name='', version=None, **kwargs):
+    def determine_filters(cls, name='', version=None, strict=False, **kwargs):
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -262,7 +294,10 @@ class PipelineCreator(PersistableCreator):
         Returns: database class, filter dictionary
 
         :param registered_name: Class name registered in SimpleML
-        :param dataset: dataset class or registered name
+        :param strict: whether to fit objects first before assuming they are identical
+        In theory if all inputs and classes are the same, the outputs should deterministically
+        be the same as well (up to random iter). So, you dont need to fit objects
+        to be sure they are the same
         '''
         if version is not None:
             filters = {
@@ -271,14 +306,18 @@ class PipelineCreator(PersistableCreator):
             }
 
         else:
+            # Check if dependency object was passed
             dataset = kwargs.pop('dataset', None)
-            registered_name = kwargs.pop('registered_name')
             if dataset is None:
+                # Use dependency reference to retrieve object
                 dataset = cls.retrieve_dataset(**kwargs.pop('dataset_kwargs', {}))
 
+            # Build dummy object to retrieve hash to look for
+            registered_name = kwargs.pop('registered_name')
             new_pipeline = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
             new_pipeline.add_dataset(dataset)
-            new_pipeline.fit()
+            if strict:
+                new_pipeline.fit()
 
             filters = {
                 'name': name,
@@ -295,9 +334,10 @@ class PipelineCreator(PersistableCreator):
         kwargs are passed directly to persistable
 
         :param registered_name: Class name registered in SimpleML
-        :param dataset: dataset class or registered name
+        :param dataset: dataset object
         '''
         if dataset is None:
+            # Use dependency reference to retrieve object
             dataset = cls.retrieve_dataset(**kwargs.pop('dataset_kwargs', {}))
 
         new_pipeline = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
@@ -307,15 +347,143 @@ class PipelineCreator(PersistableCreator):
 
         return new_pipeline
 
-    @staticmethod
-    def retrieve_dataset(**dataset_kwargs):
-        return DatasetCreator.retrieve(
-            *DatasetCreator.determine_filters(**dataset_kwargs))
+    @classmethod
+    def retrieve_dataset(cls, **dataset_kwargs):
+        return cls.retrieve_dependency(DatasetCreator, **dataset_kwargs)
 
 
 class ModelCreator(PersistableCreator):
-    pass
+    @classmethod
+    def determine_filters(cls, name='', version=None, strict=False, **kwargs):
+        '''
+        stateless method to determine which filters to apply when looking for
+        existing persistable
+
+        Returns: database class, filter dictionary
+
+        :param registered_name: Class name registered in SimpleML
+        :param strict: whether to fit objects first before assuming they are identical
+        In theory if all inputs and classes are the same, the outputs should deterministically
+        be the same as well (up to random iter). So, you dont need to fit objects
+        to be sure they are the same
+        '''
+        if version is not None:
+            filters = {
+                'name': name,
+                'version': version
+            }
+
+        else:
+            # Check if dependency object was passed
+            pipeline = kwargs.pop('pipeline', None)
+            if pipeline is None:
+                # Use dependency reference to retrieve object
+                pipeline = cls.retrieve_pipeline(**kwargs.pop('pipeline_kwargs', {}))
+
+            # Build dummy object to retrieve hash to look for
+            registered_name = kwargs.pop('registered_name')
+            new_model = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
+            new_model.add_pipeline(pipeline)
+            if strict:
+                new_model.fit()
+
+            filters = {
+                'name': name,
+                'registered_name': registered_name,
+                'hash_': new_model._hash()
+            }
+
+        return BaseModel, filters
+
+    @classmethod
+    def create_new(cls, registered_name, pipeline=None, **kwargs):
+        '''
+        Stateless method to create a new persistable with the desired parameters
+        kwargs are passed directly to persistable
+
+        :param registered_name: Class name registered in SimpleML
+        :param pipeline: pipeline object
+        '''
+        if pipeline is None:
+            # Use dependency reference to retrieve object
+            pipeline = cls.retrieve_pipeline(**kwargs.pop('pipeline_kwargs', {}))
+
+        new_model = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
+        new_model.add_pipeline(pipeline)
+        new_model.fit()
+        new_model.save()
+
+        return new_model
+
+    @classmethod
+    def retrieve_pipeline(cls, **pipeline_kwargs):
+        return cls.retrieve_dependency(PipelineCreator, **pipeline_kwargs)
 
 
 class MetricCreator(PersistableCreator):
-    pass
+    @classmethod
+    def determine_filters(cls, name=None, model_id=None, strict=False, **kwargs):
+        '''
+        stateless method to determine which filters to apply when looking for
+        existing persistable
+
+        Returns: database class, filter dictionary
+
+        :param registered_name: Class name registered in SimpleML
+        :param strict: whether to fit objects first before assuming they are identical
+        In theory if all inputs and classes are the same, the outputs should deterministically
+        be the same as well (up to random iter). So, you dont need to fit objects
+        to be sure they are the same
+        '''
+        if name is not None and model_id is not None:
+            # Can't use default name because metrics are hard coded to reflect dataset split + class
+            filters = {
+                'name': name,
+                'model_id': model_id,
+            }
+
+        else:
+            # Check if dependency object was passed
+            model = kwargs.pop('model', None)
+            if model is None:
+                # Use dependency reference to retrieve object
+                model = cls.retrieve_model(**kwargs.pop('model_kwargs', {}))
+
+            # Build dummy object to retrieve hash to look for
+            registered_name = kwargs.pop('registered_name')
+            new_metric = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
+            new_metric.add_model(model)
+            if strict:
+                new_metric.score()
+
+            filters = {
+                'name': new_metric.name,
+                'registered_name': registered_name,
+                'hash_': new_metric._hash()
+            }
+
+        return BaseMetric, filters
+
+    @classmethod
+    def create_new(cls, registered_name, model=None, **kwargs):
+        '''
+        Stateless method to create a new persistable with the desired parameters
+        kwargs are passed directly to persistable
+
+        :param registered_name: Class name registered in SimpleML
+        :param model: model class
+        '''
+        if model is None:
+            # Use dependency reference to retrieve object
+            model = cls.retrieve_model(**kwargs.pop('model_kwargs', {}))
+
+        new_metric = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
+        new_metric.add_model(model)
+        new_metric.score()
+        new_metric.save()
+
+        return new_metric
+
+    @classmethod
+    def retrieve_model(cls, **model_kwargs):
+        return cls.retrieve_dependency(ModelCreator, **model_kwargs)
