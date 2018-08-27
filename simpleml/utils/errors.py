@@ -35,3 +35,17 @@ class MetricError(SimpleMLError):
         super(MetricError, self).__init__(*args, **kwargs)
         custom_prefix = 'SimpleML Metric Error: '
         self.message = custom_prefix + self.message
+
+
+class TrainingError(SimpleMLError):
+    def __init__(self, *args, **kwargs):
+        super(MetricError, self).__init__(*args, **kwargs)
+        custom_prefix = 'SimpleML Training Error: '
+        self.message = custom_prefix + self.message
+
+
+class ScoringError(SimpleMLError):
+    def __init__(self, *args, **kwargs):
+        super(MetricError, self).__init__(*args, **kwargs)
+        custom_prefix = 'SimpleML Scoring Error: '
+        self.message = custom_prefix + self.message
