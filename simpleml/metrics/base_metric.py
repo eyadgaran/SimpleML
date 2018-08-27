@@ -34,6 +34,9 @@ class BaseMetric(BasePersistable):
     __table_args__ = (
         # Metrics don't have the notion of versions, values should be deterministic
         # by class, model, and dataset - name should be the combination of class and dataset
+        # Still exists to stay consistent with the persistables style of unrestricted duplication
+        # (otherwise would be impossible to distinguish a duplicated metric -- name and model_id would be the same)
+
         # Unique constraint for versioning
         UniqueConstraint('name', 'model_id', 'version', name='metric_name_model_version_unique'),
         # Index for searching through friendly names
