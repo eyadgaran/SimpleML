@@ -1,6 +1,10 @@
 # SimpleML
 Machine learning that just works, for simple production applications
 
+Documentation: https://simpleml.readthedocs.io/en/latest
+
+Installation:  `pip install simpleml`
+
 # Inspiration
 I built SimpleML to simplify some of the most common pain points in new modeling projects. At the heart, SimpleML acts as an abstraction layer to implicitly version, persist, and load training iterations. It is compatible out of the box with popular modeling libraries (Scikit-Learn, Keras, etc) so it shouldn't interfere with normal workflows.
 
