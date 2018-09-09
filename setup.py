@@ -10,7 +10,7 @@ setup(
     author_email='ElishaY@alum.mit.edu',
     license='BSD-3',
     url='https://github.com/eyadgaran/SimpleML',
-    download_url='https://github.com/eyadgaran/SimpleML/archive/0.1.tar.gz',
+    download_url='https://github.com/eyadgaran/SimpleML/archive/{}.tar.gz'.format(__version__),
     packages=find_packages(),
     keywords = ['machine-learning'],
     install_requires=[
