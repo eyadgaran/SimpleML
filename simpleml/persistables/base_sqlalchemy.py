@@ -8,8 +8,6 @@ __author__ = 'Elisha Yadgaran'
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, DateTime, func
 from sqlalchemy_mixins import AllFeaturesMixin
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.dialects import postgresql
 
 
 Base = declarative_base()
@@ -35,34 +33,6 @@ class BaseSQLAlchemy(Base, AllFeaturesMixin):
 
     created_timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     modified_timestamp = Column(DateTime(timezone=True), server_onupdate=func.now())
-
-    @staticmethod
-    def compile_query(query):
-        compiler = query.compile if not hasattr(query, 'statement') else query.statement.compile
-        return compiler(dialect=postgresql.dialect())
-
-    @classmethod
-    def upsert(cls, df, no_update_cols=[], created_column='created_timestamp'):
-        '''
-        Upsert statement requires PostgreSQL >= 9.5
-        '''
-        table = cls.__table__
-
-        # Force no update on created timestamp column
-        no_update_cols.append(created_column)
-
-        stmt = insert(table).values(df.to_dict('records'))
-
-        update_cols = [c.name for c in table.c
-                       if c not in list(table.primary_key.columns)
-                       and c.name not in no_update_cols]
-
-        on_conflict_stmt = stmt.on_conflict_do_update(
-            index_elements=table.primary_key.columns,
-            set_={k: getattr(stmt.excluded, k) for k in update_cols}
-        )
-
-        cls._session.execute(on_conflict_stmt)
 
     @classmethod
     def filter(cls, *filters):
