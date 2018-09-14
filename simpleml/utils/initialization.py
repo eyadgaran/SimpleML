@@ -121,7 +121,7 @@ class Database(object):
 
         base.set_session(session)
 
-    def initialize(self, base_list=None, create_database=True, drop_tables=False):
+    def initialize(self, base_list=None, create_database=False, drop_tables=False):
         '''
         Initialization method to set up database connection and inject
         session manager
