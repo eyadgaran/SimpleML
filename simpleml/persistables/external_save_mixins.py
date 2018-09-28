@@ -1,0 +1,158 @@
+'''
+Module to define the mixins that support different persistence
+patterns for external objects
+
+- Dataframe saving (as tables in dedicated schema)
+- Pickled Object saving
+    - In database as a binary blob
+    - To local filestore
+- HDF5 object saving
+    - In database as a binary blob
+    - To local filestore
+- Remote filestore saving
+    - S3
+    - Google Cloud
+    - Azure
+'''
+
+__author__ = 'Elisha Yadgaran'
+
+
+from simpleml.persistables.binary_blob import BinaryBlob
+from abc import ABCMeta, abstractmethod
+import cStringIO
+import dill as pickle
+
+
+class BaseExternalSaveMixin(object):
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def _save_external_files(self):
+        '''
+        Define pattern for saving external files
+        '''
+
+    @abstractmethod
+    def _load_external_files(self):
+        '''
+        Define pattern for loading external files
+
+        should set the self._external_file attribute
+        '''
+
+
+class DataframeTableSaveMixin(BaseExternalSaveMixin):
+    '''
+    Mixin class to save dataframes to a database table
+
+    Expects the following available attributes:
+        - self._external_file
+        - self._schema
+        - self.id
+        - self._engine
+        - self.dataframe
+
+    Sets the following attributes:
+        - self.filepaths
+    '''
+    def _save_external_files(self):
+        '''
+        Shared method to save dataframe into a new table with name = GUID
+
+        Hardcoded to only store in database so overwrite to use pickled
+        objects or other storage mechanism
+        '''
+        self.filepaths = {"database": [(self._schema, str(self.id))]}
+        self.df_to_sql(self._engine, self.dataframe,
+                       str(self.id), schema=self._schema)
+
+    def _load_external_files(self):
+        '''
+        Shared method to load dataframe from database
+
+        Hardcoded to only pull from database so overwrite to use pickled
+        objects or other storage mechanism
+        '''
+        schema, tablename = self.filepaths['database'][0]
+        self._external_file = self.load_sql(
+            'select * from "{}"."{}"'.format(schema, tablename),
+            self._engine
+        )
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False
+
+    @staticmethod
+    def df_to_sql(engine, df, table, dtype=None, schema='public',
+                    if_exists='replace', sep='|', encoding='utf8', index=False):
+        '''
+        Utility to bulk insert pandas dataframe via `copy from`
+
+        :param df: dataframe to insert
+        :param table: destination table
+        :param dtype: column schema of destination table
+        :param schema: destination schema
+        :param if_exists: what to do if destination table exists; valid inputs are:
+        [`replace`, `append`, `fail`]
+        :param sep: separator key between cells
+        :param encoding: character encoding to use
+        :param index: whether to output index with data
+        '''
+
+        # Create Table
+        df.head(0).to_sql(table, con=engine, if_exists=if_exists,
+                          index=index, schema=schema, dtype=dtype)
+
+        # Prepare data
+        output = cStringIO.StringIO()
+        df.to_csv(output, sep=sep, header=False, encoding=encoding, index=index)
+        output.seek(0)
+
+        # Insert data
+        connection = engine.raw_connection()
+        cursor = connection.cursor()
+        cursor.copy_from(output, '"' + '"."'.join([schema, table]) + '"', sep=sep, null='',
+                         columns=['"{}"'.format(i) for i in df.columns])
+        connection.commit()
+        connection.close()
+
+
+class DatabasePickleSaveMixin(BaseExternalSaveMixin):
+    '''
+    Mixin class to save binary objects to a database table
+
+    Expects the following available attributes:
+        - self._external_file
+        - self.id
+        - self.object_type
+
+    Sets the following attributes:
+        - self.filepaths
+        - self.unloaded_externals
+    '''
+    def _save_external_files(self):
+        '''
+        Shared method to save files into binary schema
+
+        Hardcoded to only store pickled objects in database so overwrite to use
+        other storage mechanism
+        '''
+        pickled_file = pickle.dumps(self._external_file)
+        pickled_record = BinaryBlob.create(
+            object_type=self.object_type, object_id=self.id, binary_blob=pickled_file)
+        self.filepaths = {"pickled": [str(pickled_record.id)]}
+
+    def _load_external_files(self):
+        '''
+        Shared method to load files from database
+
+        Hardcoded to only pull from pickled so overwrite to use
+        other storage mechanism
+        '''
+        pickled_id = self.filepaths['pickled'][0]
+        pickled_file = BinaryBlob.find(pickled_id).binary_blob
+        self._external_file = pickle.loads(pickled_file)
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False

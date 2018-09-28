@@ -59,7 +59,7 @@ class BaseProcessedDataset(BaseDataset):
             y = pd.DataFrame()
 
         self.config['label_columns'] = y.columns.tolist()
-        self._dataframe = pd.concat([X, y], axis=1)
+        self._external_file = pd.concat([X, y], axis=1)
 
     def save(self, **kwargs):
         '''

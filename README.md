@@ -53,7 +53,7 @@ db = Database(database='titanic').initialize()
 # Define Raw Dataset and point to loading file
 class TitanicRaw(BaseRawDataset):
     def build_dataframe(self):
-        self._dataframe = self.load_csv('filepath/to/train.csv')
+        self._external_file = self.load_csv('filepath/to/train.csv')
 
 # Create Raw Dataset and save it
 raw_dataset = TitanicRaw(name='titanic', label_columns=['Survived'])

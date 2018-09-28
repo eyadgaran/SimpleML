@@ -1,4 +1,5 @@
 from simpleml.persistables.base_persistable import BasePersistable
+from simpleml.persistables.external_save_mixins import DatabasePickleSaveMixin
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
 from simpleml.pipelines.validation_split_mixins import TRAIN_SPLIT
 from simpleml.persistables.binary_blob import BinaryBlob
@@ -14,7 +15,7 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class BasePipeline(BasePersistable):
+class BasePipeline(BasePersistable, DatabasePickleSaveMixin):
     '''
     Base class for all Pipelines objects.
 
@@ -38,7 +39,8 @@ class BasePipeline(BasePersistable):
 
         # Instantiate pipeline
         self.config['external_pipeline_class'] = external_pipeline_class
-        self._external_pipeline = self._create_external_pipeline(
+        self.object_type = 'PIPELINE'
+        self._external_file = self._create_external_pipeline(
             external_pipeline_class, transformers, **kwargs)
         # Initialize as unfitted
         self.state['fitted'] = False
@@ -54,7 +56,7 @@ class BasePipeline(BasePersistable):
         if self.unloaded_externals:
             self._load_external_files()
 
-        return self._external_pipeline
+        return self._external_file
 
     def _create_external_pipeline(self, external_pipeline_class, transformers,
                                   **kwargs):
@@ -138,32 +140,6 @@ class BasePipeline(BasePersistable):
 
         # By default dont load data unless it actually gets used
         self.dataset.load(load_externals=False)
-
-    def _save_external_files(self):
-        '''
-        Shared method to save pipeline into binary schema
-
-        Hardcoded to only store pickled objects in database so overwrite to use
-        other storage mechanism
-        '''
-        pickled_file = pickle.dumps(self.external_pipeline)
-        pickled_record = BinaryBlob.create(
-            object_type='PIPELINE', object_id=self.id, binary_blob=pickled_file)
-        self.filepaths = {"pickled": [str(pickled_record.id)]}
-
-    def _load_external_files(self):
-        '''
-        Shared method to load pipeline from database
-
-        Hardcoded to only pull from pickled so overwrite to use
-        other storage mechanism
-        '''
-        pickled_id = self.filepaths['pickled'][0]
-        pickled_file = BinaryBlob.find(pickled_id).binary_blob
-        self._external_pipeline = pickle.loads(pickled_file)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
 
     def get_dataset_split(self, split=None):
         '''

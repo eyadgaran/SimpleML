@@ -1,12 +1,12 @@
 from simpleml.persistables.base_persistable import BasePersistable
+from simpleml.persistables.external_save_mixins import DataframeTableSaveMixin
 import pandas as pd
-import cStringIO
 
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseDataset(BasePersistable):
+class BaseDataset(BasePersistable, DataframeTableSaveMixin):
     '''
     Base class for all Dataset objects.
 
@@ -32,10 +32,11 @@ class BaseDataset(BasePersistable):
             has_external_files=has_external_files, **kwargs)
 
         self.config['label_columns'] = label_columns
+        self.object_type = 'DATASET'
 
         # Instantiate dataframe variable - doesn't get populated until
         # build_dataframe() is called
-        self._dataframe = None
+        self._external_file = None
 
     @property
     def dataframe(self):
@@ -43,10 +44,10 @@ class BaseDataset(BasePersistable):
         if self.unloaded_externals:
             self._load_external_files()
 
-        if self._dataframe is None:
+        if self._external_file is None:
             self.build_dataframe()
 
-        return self._dataframe
+        return self._external_file
 
     @property
     def label_columns(self):
@@ -71,7 +72,7 @@ class BaseDataset(BasePersistable):
 
     def build_dataframe(self):
         '''
-        Must set self._dataframe
+        Must set self._external_file
         Cant set as abstractmethod because of database lookup dependency
         '''
         raise NotImplementedError
@@ -89,33 +90,6 @@ class BaseDataset(BasePersistable):
         '''
         return hash(self.custom_hasher((self.dataframe, self.config)))
 
-    def _save_external_files(self):
-        '''
-        Shared method to save dataframe into a new table with name = GUID
-
-        Hardcoded to only store in database so overwrite to use pickled
-        objects or other storage mechanism
-        '''
-        self.filepaths = {"database": [(self._schema, str(self.id))]}
-        self.df_to_sql(self._engine, self.dataframe,
-                       str(self.id), schema=self._schema)
-
-    def _load_external_files(self):
-        '''
-        Shared method to load dataframe from database
-
-        Hardcoded to only pull from database so overwrite to use pickled
-        objects or other storage mechanism
-        '''
-        schema, tablename = self.filepaths['database'][0]
-        self._dataframe = self.load_sql(
-            'select * from "{}"."{}"'.format(schema, tablename),
-            self._engine
-        )
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
-
     @staticmethod
     def load_csv(filename, **kwargs):
         '''Helper method to read in a csv file'''
@@ -125,37 +99,3 @@ class BaseDataset(BasePersistable):
     def load_sql(query, connection, **kwargs):
         '''Helper method to read in sql data'''
         return pd.read_sql_query(query, connection, **kwargs)
-
-    @staticmethod
-    def df_to_sql(engine, df, table, dtype=None, schema='public',
-                    if_exists='replace', sep='|', encoding='utf8', index=False):
-        '''
-        Utility to bulk insert pandas dataframe via `copy from`
-
-        :param df: dataframe to insert
-        :param table: destination table
-        :param dtype: column schema of destination table
-        :param schema: destination schema
-        :param if_exists: what to do if destination table exists; valid inputs are:
-        [`replace`, `append`, `fail`]
-        :param sep: separator key between cells
-        :param encoding: character encoding to use
-        :param index: whether to output index with data
-        '''
-
-        # Create Table
-        df.head(0).to_sql(table, con=engine, if_exists=if_exists,
-                          index=index, schema=schema, dtype=dtype)
-
-        # Prepare data
-        output = cStringIO.StringIO()
-        df.to_csv(output, sep=sep, header=False, encoding=encoding, index=index)
-        output.seek(0)
-
-        # Insert data
-        connection = engine.raw_connection()
-        cursor = connection.cursor()
-        cursor.copy_from(output, '"' + '"."'.join([schema, table]) + '"', sep=sep, null='',
-                         columns=['"{}"'.format(i) for i in df.columns])
-        connection.commit()
-        connection.close()

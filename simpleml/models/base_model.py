@@ -1,11 +1,10 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
+from simpleml.persistables.external_save_mixins import DatabasePickleSaveMixin
 from simpleml.utils.errors import ModelError
-from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.pipelines.base_pipeline import TRAIN_SPLIT
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-import dill as pickle
 import logging
 
 
@@ -15,7 +14,7 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class BaseModel(BasePersistable):
+class BaseModel(BasePersistable, DatabasePickleSaveMixin):
     '''
     Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
@@ -56,7 +55,8 @@ class BaseModel(BasePersistable):
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate model
-        self._external_model = self._create_external_model(**external_model_kwargs)
+        self.object_type = 'MODEL'
+        self._external_file = self._create_external_model(**external_model_kwargs)
         # Initialize as unfitted
         self.state['fitted'] = False
 
@@ -71,7 +71,7 @@ class BaseModel(BasePersistable):
         if self.unloaded_externals:
             self._load_external_files()
 
-        return self._external_model
+        return self._external_file
 
     def _create_external_model(self, **kwargs):
         '''
@@ -131,32 +131,6 @@ class BaseModel(BasePersistable):
 
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)
-
-    def _save_external_files(self):
-        '''
-        Shared method to save model into binary schema
-
-        Hardcoded to only store pickled objects in database so overwrite to use
-        other storage mechanism
-        '''
-        pickled_file = pickle.dumps(self.external_model)
-        pickled_record = BinaryBlob.create(
-            object_type='MODEL', object_id=self.id, binary_blob=pickled_file)
-        self.filepaths = {"pickled": [str(pickled_record.id)]}
-
-    def _load_external_files(self):
-        '''
-        Shared method to load model from database
-
-        Hardcoded to only pull from pickled so overwrite to use
-        other storage mechanism
-        '''
-        pickled_id = self.filepaths['pickled'][0]
-        pickled_file = BinaryBlob.find(pickled_id).binary_blob
-        self._external_model = pickle.loads(pickled_file)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
 
     def fit(self, **kwargs):
         '''
