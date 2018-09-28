@@ -2,6 +2,8 @@
 Helper module to track installed libraries
 '''
 
+__author__ = 'Elisha Yadgaran'
+
 import simpleml
 import sqlalchemy
 import sqlalchemy_mixins

@@ -19,9 +19,11 @@ __author__ = 'Elisha Yadgaran'
 
 
 from simpleml.persistables.binary_blob import BinaryBlob
+from simpleml.utils.system_path import PICKLED_FILESTORE_DIRECTORY
 from abc import ABCMeta, abstractmethod
 import cStringIO
 import dill as pickle
+from os.path import join
 
 
 class BaseExternalSaveMixin(object):
@@ -138,7 +140,7 @@ class DatabasePickleSaveMixin(BaseExternalSaveMixin):
         Hardcoded to only store pickled objects in database so overwrite to use
         other storage mechanism
         '''
-        pickled_file = pickle.dumps(self._external_file)
+        pickled_file = pickle.dumps(self._external_file, protocol=pickle.HIGHEST_PROTOCOL)
         pickled_record = BinaryBlob.create(
             object_type=self.object_type, object_id=self.id, binary_blob=pickled_file)
         self.filepaths = {"pickled": [str(pickled_record.id)]}
@@ -153,6 +155,38 @@ class DatabasePickleSaveMixin(BaseExternalSaveMixin):
         pickled_id = self.filepaths['pickled'][0]
         pickled_file = BinaryBlob.find(pickled_id).binary_blob
         self._external_file = pickle.loads(pickled_file)
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False
+
+
+class DiskPickleSaveMixin(BaseExternalSaveMixin):
+    '''
+    Mixin class to save objects to disk in pickled format
+
+    Expects the following available attributes:
+        - self._external_file
+        - self.id
+
+    Sets the following attributes:
+        - self.filepaths
+        - self.unloaded_externals
+    '''
+    def _save_external_files(self):
+        '''
+        Shared method to save files to disk in pickled format
+        '''
+        with open(join(PICKLED_FILESTORE_DIRECTORY, str(self.id)), 'wb') as pickled_file:
+            pickle.dump(self._external_file, pickled_file, protocol=pickle.HIGHEST_PROTOCOL)
+        self.filepaths = {"disk_pickled": [str(self.id)]}
+
+    def _load_external_files(self):
+        '''
+        Shared method to load files from disk in pickled format
+        '''
+        pickled_id = self.filepaths['disk_pickled'][0]
+        with open(join(PICKLED_FILESTORE_DIRECTORY, pickled_id), 'rb') as pickled_file:
+            self._external_file = pickle.load(pickled_file)
 
         # Indicate externals were loaded
         self.unloaded_externals = False
