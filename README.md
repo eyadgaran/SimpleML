@@ -31,7 +31,7 @@ There are a few workflows for using SimpleML.
 
 At the core SimpleML defines few constraints allowing for developer flexibility - see extensions SimpleML-Service and SimpleML-Server for blueprints of ready made microservices (just inherit and extend for project specific nuances).
 
-To start a project is as simple as defining the raw data and guiding the transformations. An example using the kaggle Titanic dataset is demonstrated below:
+Starting a project is as simple as defining the raw data and guiding the transformations. An example using the kaggle Titanic dataset is demonstrated below:
 
 ```python
 from simpleml.utils.initialization import Database
@@ -192,3 +192,7 @@ Future features I would like to make:
 Help support further development by making a donation to the author
 
 [Donate Now](https://donorbox.org/embed/simpleml?amount=30&show_content=true)
+
+
+# Contract & Technical Support
+For support implementing and extending SimpleML or architecting a machine learning tech stack, contact the author [Elisha Yadgaran](https://www.linkedin.com/in/elishayadgaran/) [:email:](mailto:ElishaY@alum.MIT.edu) for rates.
