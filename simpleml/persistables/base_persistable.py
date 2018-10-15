@@ -3,18 +3,16 @@ from sqlalchemy.dialects.postgresql import JSONB
 from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
 from simpleml.persistables.guid import GUID
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
+from simpleml.persistables.external_save_mixins import AllSaveMixin
 from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 import uuid
 from abc import abstractmethod
-import copy
-import pandas as pd
-from pandas.util import hash_pandas_object
 
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BasePersistable(BaseSQLAlchemy):
+class BasePersistable(BaseSQLAlchemy, AllSaveMixin, CustomHasherMixin):
     '''
     Base class for all SimpleML database objects. Defaults to PostgreSQL
     but can be swapped out for any supported SQLAlchemy backend.
@@ -89,7 +87,8 @@ class BasePersistable(BaseSQLAlchemy):
 
 
     def __init__(self, name='default', has_external_files=False,
-                 author='default', version_description=None, **kwargs):
+                 author='default', version_description=None,
+                 save_method='disk_pickled', **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
@@ -106,6 +105,9 @@ class BasePersistable(BaseSQLAlchemy):
 
         # For external loading - initialize to None
         self.unloaded_externals = None
+        # Store save method in state metadata as an operational setting, otherwise
+        # it could affect the hash and result in a different object per save location
+        self.state['save_method'] = save_method
 
     @property
     def config(self):
@@ -114,37 +116,6 @@ class BasePersistable(BaseSQLAlchemy):
     @property
     def state(self):
         return self.metadata_['state']
-
-    def save(self):
-        '''
-        Each subclass needs to instantiate a save routine to persist to the
-        database and any other required filestore
-
-        sqlalchemy_mixins supports active record style TableModel.save()
-        so can still call super(BasePersistable, self).save()
-        '''
-        if self.has_external_files:
-            self._save_external_files()
-
-        # Hash contents upon save
-        self.hash_ = self._hash()
-
-        # Get the latest version for this "friendly name"
-        self.version = self._get_latest_version()
-
-        # Store library versions in case of future loads into unsupported environments
-        self.metadata_['library_versions'] = INSTALLED_LIBRARIES
-
-        super(BasePersistable, self).save()
-
-    def _save_external_files(self):
-        '''
-        Each subclass needs to instantiate a save routine to persist
-        any other required files
-
-        Opt not to use abstractmethod for default behavior of no external files
-        '''
-        raise NotImplementedError
 
     @abstractmethod
     def _hash(self):
@@ -169,6 +140,28 @@ class BasePersistable(BaseSQLAlchemy):
             last_version = 0
 
         return last_version + 1
+
+    def save(self):
+        '''
+        Each subclass needs to instantiate a save routine to persist to the
+        database and any other required filestore
+
+        sqlalchemy_mixins supports active record style TableModel.save()
+        so can still call super(BasePersistable, self).save()
+        '''
+        if self.has_external_files:
+            self._save_external_files()
+
+        # Hash contents upon save
+        self.hash_ = self._hash()
+
+        # Get the latest version for this "friendly name"
+        self.version = self._get_latest_version()
+
+        # Store library versions in case of future loads into unsupported environments
+        self.metadata_['library_versions'] = INSTALLED_LIBRARIES
+
+        super(BasePersistable, self).save()
 
     def load(self, load_externals=True):
         '''
@@ -196,15 +189,6 @@ class BasePersistable(BaseSQLAlchemy):
         Wrapper function to call global registry of all imported class names
         '''
         return SIMPLEML_REGISTRY.get(self.registered_name)
-
-    def _load_external_files(self):
-        '''
-        Each subclass needs to instantiate a load routine to read in
-        any other required files
-
-        Opt not to use abstractmethod for default behavior of no external files
-        '''
-        raise NotImplementedError
 
     def custom_hasher(self, object_to_hash, custom_class_proxy=type(object.__dict__)):
         """

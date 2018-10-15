@@ -60,21 +60,27 @@ class DataframeTableSaveMixin(BaseExternalSaveMixin):
     '''
     def _save_external_files(self):
         '''
-        Shared method to save dataframe into a new table with name = GUID
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._save_dataframe_to_table()
 
-        Hardcoded to only store in database so overwrite to use pickled
-        objects or other storage mechanism
+    def _load_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._load_dataframe_from_table()
+
+    def _save_dataframe_to_table(self):
+        '''
+        Shared method to save dataframe into a new table with name = GUID
         '''
         self.filepaths = {"database": [(self._schema, str(self.id))]}
         self.df_to_sql(self._engine, self.dataframe,
                        str(self.id), schema=self._schema)
 
-    def _load_external_files(self):
+    def _load_dataframe_from_table(self):
         '''
         Shared method to load dataframe from database
-
-        Hardcoded to only pull from database so overwrite to use pickled
-        objects or other storage mechanism
         '''
         schema, tablename = self.filepaths['database'][0]
         self._external_file = self.load_sql(
@@ -135,6 +141,18 @@ class DatabasePickleSaveMixin(BaseExternalSaveMixin):
     '''
     def _save_external_files(self):
         '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._save_pickle_to_database()
+
+    def _load_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._load_pickle_from_database()
+
+    def _save_pickle_to_database(self):
+        '''
         Shared method to save files into binary schema
 
         Hardcoded to only store pickled objects in database so overwrite to use
@@ -143,16 +161,16 @@ class DatabasePickleSaveMixin(BaseExternalSaveMixin):
         pickled_file = pickle.dumps(self._external_file, protocol=pickle.HIGHEST_PROTOCOL)
         pickled_record = BinaryBlob.create(
             object_type=self.object_type, object_id=self.id, binary_blob=pickled_file)
-        self.filepaths = {"pickled": [str(pickled_record.id)]}
+        self.filepaths = {"database_pickled": [str(pickled_record.id)]}
 
-    def _load_external_files(self):
+    def _load_pickle_from_database(self):
         '''
         Shared method to load files from database
 
         Hardcoded to only pull from pickled so overwrite to use
         other storage mechanism
         '''
-        pickled_id = self.filepaths['pickled'][0]
+        pickled_id = self.filepaths['database_pickled'][0]
         pickled_file = BinaryBlob.find(pickled_id).binary_blob
         self._external_file = pickle.loads(pickled_file)
 
@@ -174,13 +192,25 @@ class DiskPickleSaveMixin(BaseExternalSaveMixin):
     '''
     def _save_external_files(self):
         '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._save_pickle_to_disk()
+
+    def _load_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._load_pickle_from_disk()
+
+    def _save_pickle_to_disk(self):
+        '''
         Shared method to save files to disk in pickled format
         '''
         with open(join(PICKLED_FILESTORE_DIRECTORY, str(self.id)), 'wb') as pickled_file:
             pickle.dump(self._external_file, pickled_file, protocol=pickle.HIGHEST_PROTOCOL)
         self.filepaths = {"disk_pickled": [str(self.id)]}
 
-    def _load_external_files(self):
+    def _load_pickle_from_disk(self):
         '''
         Shared method to load files from disk in pickled format
         '''
@@ -190,3 +220,31 @@ class DiskPickleSaveMixin(BaseExternalSaveMixin):
 
         # Indicate externals were loaded
         self.unloaded_externals = False
+
+
+class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleSaveMixin):
+    def _save_external_files(self):
+        '''
+        Wrapper method around save mixins for different persistence patterns
+        '''
+        save_method = self.state['save_method']
+
+        if save_method == 'database':
+            self._save_dataframe_to_table()
+        elif save_method == 'database_pickled':
+            self._save_pickle_to_database()
+        elif save_method == 'disk_pickled':
+            self._save_pickle_to_disk()
+
+    def _load_external_files(self):
+        '''
+        Wrapper method around save mixins for different persistence patterns
+        '''
+        save_method = self.state['save_method']
+
+        if save_method == 'database':
+            self._load_dataframe_from_table()
+        elif save_method == 'database_pickled':
+            self._load_pickle_from_database()
+        elif save_method == 'disk_pickled':
+            self._load_pickle_from_disk()
