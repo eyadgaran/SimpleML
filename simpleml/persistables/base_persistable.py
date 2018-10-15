@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
 from simpleml.persistables.guid import GUID
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
-from simpleml.persistables.external_save_mixins import AllSaveMixin
+from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.hashing import CustomHasherMixin
 from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 import uuid
