@@ -177,24 +177,6 @@ class BaseModel(BasePersistable, AllSaveMixin):
         '''
         return self.pipeline.get_dataset_split(dataset_split)[1]
 
-    def get_params(self, **kwargs):
-        '''
-        Pass through method to external model
-        '''
-        return self.external_model.get_params(**kwargs)
-
-    def set_params(self, **params):
-        '''
-        Pass through method to external model
-        '''
-        return self.external_model.set_params(**params)
-
-    def score(self, X, y=None, **kwargs):
-        '''
-        Pass through method to external model
-        '''
-        return self.external_model.score(X, y, **kwargs)
-
     def get_feature_metadata(self, **kwargs):
         '''
         Abstract method for each model to define
@@ -202,3 +184,9 @@ class BaseModel(BasePersistable, AllSaveMixin):
         Should return a dict of feature information (importance, coefficients...)
         '''
         return self.external_model.get_feature_metadata(features=self.pipeline.get_feature_names, **kwargs)
+
+    def __getattr__(self, attribute):
+        '''
+        Catch-all to passthrough any other methods directly to the external model
+        '''
+        return getattr(self.external_model, attribute)

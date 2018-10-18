@@ -207,24 +207,6 @@ class BasePipeline(BasePersistable, AllSaveMixin):
 
         return output
 
-    def get_params(self, **kwargs):
-        '''
-        Pass through method to external pipeline
-        '''
-        return self.external_pipeline.get_params(**kwargs)
-
-    def set_params(self, **params):
-        '''
-        Pass through method to external pipeline
-        '''
-        return self.external_pipeline.set_params(**params)
-
-    def get_transformers(self):
-        '''
-        Pass through method to external pipeline
-        '''
-        return self.external_pipeline.get_transformers()
-
     def get_feature_names(self):
         '''
         Pass through method to external pipeline
@@ -232,3 +214,9 @@ class BasePipeline(BasePersistable, AllSaveMixin):
         '''
         initial_features = self.dataset.dataframe.columns.tolist()
         return self.external_pipeline.get_feature_names(feature_names=initial_features)
+
+    def __getattr__(self, attribute):
+        '''
+        Catch-all to passthrough any other methods directly to the external pipeline
+        '''
+        return getattr(self.external_pipeline, attribute)

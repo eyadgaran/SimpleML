@@ -99,3 +99,9 @@ class BaseDataset(BasePersistable, AllSaveMixin):
     def load_sql(query, connection, **kwargs):
         '''Helper method to read in sql data'''
         return pd.read_sql_query(query, connection, **kwargs)
+
+    def __getattr__(self, attribute):
+        '''
+        Catch-all to passthrough any other methods directly to the dataframe
+        '''
+        return getattr(self.dataframe, attribute)
