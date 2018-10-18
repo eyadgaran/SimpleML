@@ -1,12 +1,12 @@
 from simpleml.persistables.base_persistable import BasePersistable
-from simpleml.persistables.external_save_mixins import DataframeTableSaveMixin
+from simpleml.persistables.saving import AllSaveMixin
 import pandas as pd
 
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseDataset(BasePersistable, DataframeTableSaveMixin):
+class BaseDataset(BasePersistable, AllSaveMixin):
     '''
     Base class for all Dataset objects.
 

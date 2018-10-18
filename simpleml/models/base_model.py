@@ -1,5 +1,5 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
-from simpleml.persistables.external_save_mixins import DatabasePickleSaveMixin
+from simpleml.persistables.saving import AllSaveMixin
 from simpleml.utils.errors import ModelError
 from simpleml.pipelines.base_pipeline import TRAIN_SPLIT
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
@@ -14,7 +14,7 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class BaseModel(BasePersistable, DatabasePickleSaveMixin):
+class BaseModel(BasePersistable, AllSaveMixin):
     '''
     Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be

@@ -1,12 +1,10 @@
 from simpleml.persistables.base_persistable import BasePersistable
-from simpleml.persistables.external_save_mixins import DatabasePickleSaveMixin
+from simpleml.persistables.saving import AllSaveMixin
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
 from simpleml.pipelines.validation_split_mixins import TRAIN_SPLIT
-from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.utils.errors import PipelineError
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
-import dill as pickle
 import logging
 
 __author__ = 'Elisha Yadgaran'
@@ -15,7 +13,7 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class BasePipeline(BasePersistable, DatabasePickleSaveMixin):
+class BasePipeline(BasePersistable, AllSaveMixin):
     '''
     Base class for all Pipelines objects.
 
