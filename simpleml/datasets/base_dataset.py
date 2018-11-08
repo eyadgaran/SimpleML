@@ -24,12 +24,12 @@ class BaseDataset(BasePersistable, AllSaveMixin):
 
     __abstract__ = True
 
-    def __init__(self, has_external_files=True, **kwargs):
+    def __init__(self, has_external_files=True, save_method='database', **kwargs):
         # By default assume unsupervised so no targets
         label_columns = kwargs.pop('label_columns', [])
 
         super(BaseDataset, self).__init__(
-            has_external_files=has_external_files, **kwargs)
+            has_external_files=has_external_files, save_method=save_method, **kwargs)
 
         self.config['label_columns'] = label_columns
         self.object_type = 'DATASET'
