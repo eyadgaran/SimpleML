@@ -7,6 +7,9 @@ Inherit and extend for particular models
 __author__ = 'Elisha Yadgaran'
 
 
+from simpleml.persistables.meta_registry import KerasRegistry
+
+
 class ExternalModelMixin(object):
     '''
     Wrapper class for a pickleable model with expected methods
@@ -25,6 +28,7 @@ class ExternalModelMixin(object):
         def _create_external_model(self, **kwargs):
             return WrappedActualModelClass(**kwargs)
     '''
+    __metaclass__ = KerasRegistry
 
     def fit(self, *args, **kwargs):
         '''

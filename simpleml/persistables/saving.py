@@ -19,11 +19,13 @@ __author__ = 'Elisha Yadgaran'
 
 
 from simpleml.persistables.binary_blob import BinaryBlob
-from simpleml.utils.system_path import PICKLED_FILESTORE_DIRECTORY
+from simpleml.utils.system_path import PICKLED_FILESTORE_DIRECTORY, HDF5_FILESTORE_DIRECTORY
+from simpleml.persistables.meta_registry import KERAS_REGISTRY
 from abc import ABCMeta, abstractmethod
 import cStringIO
 import dill as pickle
 from os.path import join
+from keras.models import load_model
 
 
 class BaseExternalSaveMixin(object):
@@ -206,9 +208,9 @@ class DiskPickleSaveMixin(BaseExternalSaveMixin):
         '''
         Shared method to save files to disk in pickled format
         '''
-        with open(join(PICKLED_FILESTORE_DIRECTORY, str(self.id)), 'wb') as pickled_file:
+        with open(join(PICKLED_FILESTORE_DIRECTORY, str(self.id)) + '.pkl', 'wb') as pickled_file:
             pickle.dump(self._external_file, pickled_file, protocol=pickle.HIGHEST_PROTOCOL)
-        self.filepaths = {"disk_pickled": [str(self.id)]}
+        self.filepaths = {"disk_pickled": [str(self.id) + '.pkl']}
 
     def _load_pickle_from_disk(self):
         '''
@@ -222,7 +224,51 @@ class DiskPickleSaveMixin(BaseExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleSaveMixin):
+class KerasDiskHDF5SaveMixin(BaseExternalSaveMixin):
+    '''
+    Mixin class to save objects to disk in Keras's HDF5 format
+    Keras's internal persistence mechanism utilizes HDF5 and implements a custom pattern
+
+    Expects the following available attributes:
+        - self._external_file
+        - self.id
+
+    Sets the following attributes:
+        - self.filepaths
+        - self.unloaded_externals
+    '''
+    def _save_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._save_hdf5_to_disk()
+
+    def _load_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._load_hdf5_from_disk()
+
+    def _save_hdf5_to_disk(self):
+        '''
+        Shared method to save files to disk in Keras's HDF5 format
+        '''
+        filepath = join(HDF5_FILESTORE_DIRECTORY, str(self.id) + '.h5')
+        self._external_file.save(filepath)
+        self.filepaths = {"disk_hdf5": [str(self.id) + '.h5']}
+
+    def _load_hdf5_from_disk(self):
+        '''
+        Shared method to load files from disk in Keras's HDF5 format
+        '''
+        object_id = self.filepaths['disk_hdf5'][0]
+        self._external_file = load_model(join(HDF5_FILESTORE_DIRECTORY, object_id), custom_objects=KERAS_REGISTRY.registry)
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False
+
+
+class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleSaveMixin, KerasDiskHDF5SaveMixin):
     def _save_external_files(self):
         '''
         Wrapper method around save mixins for different persistence patterns
@@ -235,6 +281,8 @@ class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleS
             self._save_pickle_to_database()
         elif save_method == 'disk_pickled':
             self._save_pickle_to_disk()
+        elif save_method == 'disk_hdf5':
+            self._save_hdf5_to_disk()
 
     def _load_external_files(self):
         '''
@@ -248,3 +296,5 @@ class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleS
             self._load_pickle_from_database()
         elif save_method == 'disk_pickled':
             self._load_pickle_from_disk()
+        elif save_method == 'disk_hdf5':
+            self._load_hdf5_from_disk()

@@ -132,6 +132,12 @@ class BaseModel(BasePersistable, AllSaveMixin):
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)
 
+    def _fit(self, X, y):
+        '''
+        Separate out actual fit call for optional overwrite in subclasses
+        '''
+        self.external_model.fit(X, y)
+
     def fit(self, **kwargs):
         '''
         Pass through method to external model after running through pipeline
@@ -145,11 +151,20 @@ class BaseModel(BasePersistable, AllSaveMixin):
 
         # Explicitly fit only on train split
         X, y = self.pipeline.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True)
+
         # Reduce dimensionality of y if it is only 1 column
-        self.external_model.fit(X, y.squeeze(), **kwargs)
+        self._fit(X, y.squeeze())
+
+        # Mark the state so it doesnt get refit and can now be saved
         self.state['fitted'] = True
 
         return self
+
+    def _predict(self, X):
+        '''
+        Separate out actual predict call for optional overwrite in subclasses
+        '''
+        return self.external_model.predict(X)
 
     def predict(self, X, **kwargs):
         '''
@@ -160,7 +175,7 @@ class BaseModel(BasePersistable, AllSaveMixin):
 
         transformed = self.pipeline.transform(X, **kwargs)
 
-        return self.external_model.predict(transformed)
+        return self._predict(transformed)
 
     def fit_predict(self, **kwargs):
         '''
