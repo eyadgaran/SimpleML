@@ -48,7 +48,7 @@ class RandomSplitMixin(SplitMixin):
     Class to randomly split dataset into different sets
     '''
     def __init__(self, train_size, test_size=None, validation_size=0.0,
-                 random_state=123, **kwargs):
+                 random_state=123, shuffle=True, **kwargs):
         '''
         Set splitting params:
         By default validation is 0.0 because it is only used for hyperparameter
@@ -67,7 +67,8 @@ class RandomSplitMixin(SplitMixin):
             'train_size': train_size,
             'validation_size': validation_size,
             'test_size': test_size,
-            'random_state': random_state
+            'random_state': random_state,
+            'shuffle': shuffle
         })
 
     def split_dataset(self):
@@ -78,15 +79,16 @@ class RandomSplitMixin(SplitMixin):
         validation_size = self.config.get('validation_size')
         test_size = self.config.get('test_size')
         random_state = self.config.get('random_state')
+        shuffle = self.config.get('shuffle')
 
         # Sklearn's train test split can only accomodate one split per iteration
         X_remaining, X_test, y_remaining, y_test = train_test_split(
-             self.dataset.X, self.dataset.y, test_size=test_size, random_state=random_state)
+             self.dataset.X, self.dataset.y, test_size=test_size, random_state=random_state, shuffle=shuffle)
 
         calibrated_validation_size = float(validation_size) / (validation_size + train_size)
 
         X_train, X_val, y_train, y_val = train_test_split(
-            X_remaining, y_remaining, test_size=calibrated_validation_size, random_state=random_state)
+            X_remaining, y_remaining, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
 
         return {
             TRAIN_SPLIT: (X_train, y_train),
