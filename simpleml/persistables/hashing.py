@@ -7,6 +7,7 @@ __author__ = 'Elisha Yadgaran'
 
 import copy
 import pandas as pd
+import numpy as np
 from pandas.util import hash_pandas_object
 
 
@@ -37,10 +38,22 @@ class CustomHasherMixin(object):
             object_to_hash = o2
 
         if isinstance(object_to_hash, (set, tuple, list)):
-            return tuple([self.custom_hasher(e) for e in object_to_hash])
+            return hash(tuple([self.custom_hasher(e) for e in object_to_hash]))
 
-        elif isinstance(object_to_hash, (pd.DataFrame, pd.Series)):
-            return hash_pandas_object(object_to_hash, index=False).sum()
+        elif isinstance(object_to_hash, np.ndarray):
+            return self.custom_hasher(object_to_hash.tostring())
+
+        elif isinstance(object_to_hash, pd.DataFrame):
+            # Pandas is unable to hash numpy arrays so prehash those
+            return hash_pandas_object(object_to_hash.applymap(
+                lambda element: self.custom_hasher(element) if isinstance(element, np.ndarray) else element),
+                index=False).sum()
+
+        elif isinstance(object_to_hash, pd.Series):
+            # Pandas is unable to hash numpy arrays so prehash those
+            return hash_pandas_object(object_to_hash.apply(
+                lambda element: self.custom_hasher(element) if isinstance(element, np.ndarray) else element),
+                index=False).sum()
 
         elif object_to_hash is None:
             # hash of None is unstable between systems
