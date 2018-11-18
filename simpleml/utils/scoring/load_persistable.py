@@ -26,7 +26,7 @@ class PersistableLoader(object):
     def load_persistable(cls, filters):
         persistable = cls.where(**filters).order_by(cls.version.desc()).first()
         if persistable is not None:
-            persistable.load()
+            persistable.load(load_externals=False)
             return persistable
         else:
             raise SimpleMLError('No persistable found for specified filters: {}'.format(filters))
