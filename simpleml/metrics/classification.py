@@ -21,7 +21,7 @@ This module is organized by metric and prediction dependencies:
 
 from simpleml.metrics.base_metric import BaseMetric
 from simpleml.pipelines.validation_split_mixins import TRAIN_SPLIT, VALIDATION_SPLIT
-from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score
+from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_score
 import numpy as np
 import pandas as pd
 
@@ -90,11 +90,14 @@ class BinaryClassificationMetric(ClassificationMetric):
         Iterate through each threshold and compute confusion matrix
         '''
         probabilities = self.probabilities
+        if probabilities.shape[1] > 1:
+            # Indicates multiple class probsbbilites are returned (class_0, class_1)
+            probabilities = probabilities[:, 1]
         labels = self.labels
 
         results = []
         for threshold in self.thresholds:
-            predictions = np.where(probabilities[:, 1] >= threshold, 1, 0)
+            predictions = np.where(probabilities >= threshold, 1, 0)
             tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
             results.append((threshold, tn, fp, fn, tp))
 
@@ -170,6 +173,20 @@ class FprMetric(BinaryClassificationMetric):
 
         self.values = {'agg': fpr}
 
+class F1ScoreMetric(BinaryClassificationMetric):
+    def __init__(self, **kwargs):
+        # Drop whatever name was passed and explicitly rename
+        kwargs.pop('name', '')
+        name = 'f1_score'
+        super(F1ScoreMetric, self).__init__(name=name, **kwargs)
+
+    def score(self):
+        predictions = self.predictions
+        labels = self.labels
+        f1_score_ = f1_score(y_true=labels, y_pred=predictions)
+
+        self.values = {'agg': f1_score_}
+
 
 '''
 Aggregate metrics computed by evaluating over entire curves
@@ -184,7 +201,10 @@ class RocAucMetric(BinaryClassificationMetric):
         super(RocAucMetric, self).__init__(name=name, **kwargs)
 
     def score(self):
-        probabilities = self.probabilities[:, 1]
+        probabilities = self.probabilities
+        if probabilities.shape[1] > 1:
+            # Indicates multiple class probsbbilites are returned (class_0, class_1)
+            probabilities = probabilities[:, 1]
         labels = self.labels
         auc = roc_auc_score(y_true=labels, y_score=probabilities)
 
@@ -330,10 +350,10 @@ class ThresholdF1ScoreMetric(BinaryClassificationMetric):
         super(ThresholdF1ScoreMetric, self).__init__(name=name, **kwargs)
 
     def score(self):
-        f1_score = (2.0 * self.confusion_matrix.tp) / (2.0 * self.confusion_matrix.tp + self.confusion_matrix.fp + self.confusion_matrix.fn)
+        f1_score_ = (2.0 * self.confusion_matrix.tp) / (2.0 * self.confusion_matrix.tp + self.confusion_matrix.fp + self.confusion_matrix.fn)
         thresholds = self.confusion_matrix.threshold
 
-        self.values = self.dedupe_curve(thresholds, f1_score)
+        self.values = self.dedupe_curve(thresholds, f1_score_)
 
 
 class ThresholdMccMetric(BinaryClassificationMetric):
