@@ -172,8 +172,9 @@ When it comes to production, one typically does not need all the training data s
 db = Database(database='titanic').initialize()
 
 desired_model = PersistableLoader.load_model(name='titanic', version=10)
+pipeline = desired_model.pipeline
 
-desired_model.predict_proba(new_dataframe)
+desired_model.predict_proba(pipeline.transform(new_dataframe))
 ```
 
 
