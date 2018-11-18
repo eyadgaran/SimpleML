@@ -26,6 +26,7 @@ import cStringIO
 import dill as pickle
 from os.path import join
 from keras.models import load_model
+import hickle
 
 
 class BaseExternalSaveMixin(object):
@@ -224,10 +225,9 @@ class DiskPickleSaveMixin(BaseExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class KerasDiskHDF5SaveMixin(BaseExternalSaveMixin):
+class DiskHDF5SaveMixin(BaseExternalSaveMixin):
     '''
-    Mixin class to save objects to disk in Keras's HDF5 format
-    Keras's internal persistence mechanism utilizes HDF5 and implements a custom pattern
+    Mixin class to save objects to disk in HDF5 format with hickle
 
     Expects the following available attributes:
         - self._external_file
@@ -251,24 +251,71 @@ class KerasDiskHDF5SaveMixin(BaseExternalSaveMixin):
 
     def _save_hdf5_to_disk(self):
         '''
-        Shared method to save files to disk in Keras's HDF5 format
+        Shared method to save files to disk in hickle's HDF5 format
         '''
         filepath = join(HDF5_FILESTORE_DIRECTORY, str(self.id) + '.h5')
-        self._external_file.save(filepath)
+        hickle.dump(self._external_file, filepath)
         self.filepaths = {"disk_hdf5": [str(self.id) + '.h5']}
 
     def _load_hdf5_from_disk(self):
         '''
-        Shared method to load files from disk in Keras's HDF5 format
+        Shared method to load files from disk in hickle's HDF5 format
         '''
         object_id = self.filepaths['disk_hdf5'][0]
-        self._external_file = load_model(join(HDF5_FILESTORE_DIRECTORY, object_id), custom_objects=KERAS_REGISTRY.registry)
+        self._external_file = hickle.load(join(HDF5_FILESTORE_DIRECTORY, object_id))
 
         # Indicate externals were loaded
         self.unloaded_externals = False
 
 
-class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleSaveMixin, KerasDiskHDF5SaveMixin):
+class KerasDiskHDF5SaveMixin(BaseExternalSaveMixin):
+    '''
+    Mixin class to save objects to disk in Keras's HDF5 format
+    Keras's internal persistence mechanism utilizes HDF5 and implements a custom pattern
+
+    Expects the following available attributes:
+        - self._external_file
+        - self.id
+
+    Sets the following attributes:
+        - self.filepaths
+        - self.unloaded_externals
+    '''
+    def _save_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._save_keras_hdf5_to_disk()
+
+    def _load_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._load_keras_hdf5_from_disk()
+
+    def _save_keras_hdf5_to_disk(self):
+        '''
+        Shared method to save files to disk in Keras's HDF5 format
+        '''
+        filepath = join(HDF5_FILESTORE_DIRECTORY, str(self.id) + '.h5')
+        self._external_file.save(filepath)
+        self.filepaths = {"disk_keras_hdf5": [str(self.id) + '.h5']}
+
+    def _load_keras_hdf5_from_disk(self):
+        '''
+        Shared method to load files from disk in Keras's HDF5 format
+        '''
+        object_id = self.filepaths['disk_keras_hdf5'][0]
+        self._external_file = load_model(
+            str(join(HDF5_FILESTORE_DIRECTORY, object_id)),
+            custom_objects=KERAS_REGISTRY.registry)
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False
+
+
+class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleSaveMixin,
+                   DiskHDF5SaveMixin, KerasDiskHDF5SaveMixin):
     def _save_external_files(self):
         '''
         Wrapper method around save mixins for different persistence patterns
@@ -283,6 +330,10 @@ class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleS
             self._save_pickle_to_disk()
         elif save_method == 'disk_hdf5':
             self._save_hdf5_to_disk()
+        elif save_method == 'disk_keras_hdf5':
+            self._save_keras_hdf5_to_disk()
+        else:
+            raise ValueError('Unsupported Save Method: {}'.format(save_method))
 
     def _load_external_files(self):
         '''
@@ -298,3 +349,7 @@ class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleS
             self._load_pickle_from_disk()
         elif save_method == 'disk_hdf5':
             self._load_hdf5_from_disk()
+        elif save_method == 'disk_keras_hdf5':
+            self._load_keras_hdf5_to_disk()
+        else:
+            raise ValueError('Unsupported Load Method: {}'.format(save_method))

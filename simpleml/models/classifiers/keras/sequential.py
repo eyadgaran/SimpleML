@@ -1,5 +1,5 @@
 '''
-Uses Keras's scikit-learn wrapper API to create a Keras sequential classifier
+Uses Keras's API to create a sequential classifier
 '''
 
 __author__ = 'Elisha Yadgaran'

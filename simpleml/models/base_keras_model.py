@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class BaseKerasModel(BaseModel):
-    def __init__(self, save_method='disk_hdf5', **kwargs):
+    def __init__(self, save_method='disk_keras_hdf5', **kwargs):
         '''
         Pass default save method as Keras's persistence pattern
         '''
@@ -73,7 +73,7 @@ class BaseKerasModel(BaseModel):
 
         For now going with option 2 - cannot refit models
         '''
-        if self.state['fitted']:
+        if self.state.get('fitted'):
             LOGGER.warning('Cannot change fit params and retrain model, skipping operation')
             LOGGER.warning('Initialize a new model for new fit params')
             return None
