@@ -46,7 +46,7 @@ class BaseModel(BasePersistable, AllSaveMixin):
      )
 
 
-    def __init__(self, has_external_files=True, external_model_kwargs={}, **kwargs):
+    def __init__(self, has_external_files=True, external_model_kwargs={}, params={}, **kwargs):
         '''
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
@@ -57,6 +57,8 @@ class BaseModel(BasePersistable, AllSaveMixin):
         # Instantiate model
         self.object_type = 'MODEL'
         self._external_file = self._create_external_model(**external_model_kwargs)
+        self.set_params(**params)
+
         # Initialize as unfitted
         self.state['fitted'] = False
 
