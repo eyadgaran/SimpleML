@@ -1,6 +1,5 @@
 from simpleml.persistables.base_persistable import BasePersistable
 from simpleml.persistables.saving import AllSaveMixin
-import pandas as pd
 
 
 __author__ = 'Elisha Yadgaran'
@@ -56,20 +55,6 @@ class BaseDataset(BasePersistable, AllSaveMixin):
         '''
         return self.config.get('label_columns', [])
 
-    @property
-    def X(self):
-        '''
-        Return the subset that isn't in the target labels
-        '''
-        return self.dataframe[self.dataframe.columns.difference(self.label_columns)]
-
-    @property
-    def y(self):
-        '''
-        Return the target label columns
-        '''
-        return self.dataframe[self.label_columns]
-
     def build_dataframe(self):
         '''
         Must set self._external_file
@@ -89,13 +74,3 @@ class BaseDataset(BasePersistable, AllSaveMixin):
             2) Config
         '''
         return hash(self.custom_hasher((self.dataframe, self.config)))
-
-    @staticmethod
-    def load_csv(filename, **kwargs):
-        '''Helper method to read in a csv file'''
-        return pd.read_csv(filename, **kwargs)
-
-    @staticmethod
-    def load_sql(query, connection, **kwargs):
-        '''Helper method to read in sql data'''
-        return pd.read_sql_query(query, connection, **kwargs)

@@ -1,5 +1,7 @@
 from simpleml.persistables.guid import GUID
 from simpleml.datasets.base_dataset import BaseDataset
+from simpleml.datasets.pandas_mixin import PandasDatasetMixin
+from simpleml.datasets.numpy_mixin import NumpyDatasetMixin
 from simpleml.persistables.dataset_storage import DatasetStorage, DATASET_SCHEMA
 from simpleml.utils.errors import DatasetError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
@@ -46,21 +48,6 @@ class BaseProcessedDataset(BaseDataset):
         '''
         self.pipeline = pipeline
 
-    def build_dataframe(self):
-        '''
-        Transform raw dataset via dataset pipeline for production ready dataset
-        '''
-        if self.pipeline is None:
-            raise DatasetError('Must set pipeline before building dataframe')
-
-        X, y = self.pipeline.transform(X=None, return_y=True)
-
-        if y is None:
-            y = pd.DataFrame()
-
-        self.config['label_columns'] = y.columns.tolist()
-        self._external_file = pd.concat([X, y], axis=1)
-
     def save(self, **kwargs):
         '''
         Extend parent function with a few additional save routines
@@ -81,3 +68,36 @@ class BaseProcessedDataset(BaseDataset):
 
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)
+
+
+# Mixin implementations for convenience
+class BasePandasProcessedDataset(BaseProcessedDataset, PandasDatasetMixin):
+    def build_dataframe(self):
+        '''
+        Transform raw dataset via dataset pipeline for production ready dataset
+        '''
+        if self.pipeline is None:
+            raise DatasetError('Must set pipeline before building dataframe')
+
+        X, y = self.pipeline.transform(X=None, return_y=True)
+
+        if y is None:
+            y = pd.DataFrame()
+
+        self.config['label_columns'] = y.columns.tolist()
+        self._external_file = pd.concat([X, y], axis=1)
+
+class BaseNumpyProcessedDataset(BaseProcessedDataset, NumpyDatasetMixin):
+    def build_dataframe(self):
+        '''
+        Transform raw dataset via dataset pipeline for production ready dataset
+        '''
+        if self.pipeline is None:
+            raise DatasetError('Must set pipeline before building dataframe')
+
+        X, y = self.pipeline.transform(X=None, return_y=True)
+
+        if y is not None:
+            self.config['label_columns'] = ['y']
+
+        self._external_file = {'X': X, 'y': y}

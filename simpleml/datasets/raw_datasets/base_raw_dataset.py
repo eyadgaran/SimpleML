@@ -1,5 +1,7 @@
 from simpleml.datasets.base_dataset import BaseDataset
 from simpleml.persistables.dataset_storage import RawDatasetStorage, RAW_DATASET_SCHEMA
+from simpleml.datasets.pandas_mixin import PandasDatasetMixin
+from simpleml.datasets.numpy_mixin import NumpyDatasetMixin
 from sqlalchemy import UniqueConstraint, Index
 
 __author__ = 'Elisha Yadgaran'
@@ -31,3 +33,11 @@ class BaseRawDataset(BaseDataset):
     @property
     def _engine(self):
         return RawDatasetStorage.metadata.bind
+
+
+# Mixin implementations for convenience
+class BasePandasRawDataset(BaseRawDataset, PandasDatasetMixin):
+    pass
+
+class BaseNumpyRawDataset(BaseRawDataset, NumpyDatasetMixin):
+    pass

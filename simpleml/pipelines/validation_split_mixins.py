@@ -25,6 +25,8 @@ class SplitMixin(object):
     def split_dataset(self):
         '''
         Set the split criteria
+
+        Must set self._dataset_splits
         '''
 
 
@@ -36,10 +38,10 @@ class NoSplitMixin(SplitMixin):
 
         TODO: Work in support for generators (k-fold)
         '''
-        return {
+        self._dataset_splits = {
             TRAIN_SPLIT: (self.dataset.X, self.dataset.y),
-            VALIDATION_SPLIT: (self.dataset.X.head(0), self.dataset.y.head(0)),
-            TEST_SPLIT: (self.dataset.X.head(0), self.dataset.y.head(0))
+            VALIDATION_SPLIT: (None, None),
+            TEST_SPLIT: (None, None)
         }
 
 
@@ -90,7 +92,7 @@ class RandomSplitMixin(SplitMixin):
         X_train, X_val, y_train, y_val = train_test_split(
             X_remaining, y_remaining, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
 
-        return {
+        self._dataset_splits = {
             TRAIN_SPLIT: (X_train, y_train),
             VALIDATION_SPLIT: (X_val, y_val),
             TEST_SPLIT: (X_test, y_test)
