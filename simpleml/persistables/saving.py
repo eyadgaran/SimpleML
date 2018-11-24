@@ -350,6 +350,6 @@ class AllSaveMixin(DataframeTableSaveMixin, DatabasePickleSaveMixin, DiskPickleS
         elif save_method == 'disk_hdf5':
             self._load_hdf5_from_disk()
         elif save_method == 'disk_keras_hdf5':
-            self._load_keras_hdf5_to_disk()
+            self._load_keras_hdf5_from_disk()
         else:
             raise ValueError('Unsupported Load Method: {}'.format(save_method))

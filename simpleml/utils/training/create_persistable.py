@@ -35,8 +35,8 @@ class PersistableCreator(object):
             return persistable
 
         else:
-            LOGGER.info('Existing persistable not found. Creating new one now')
-            persistable = self.create_new(**kwargs)
+            LOGGER.info('Existing {} not found. Creating new one now'.format(cls.__tablename__))
+            persistable = self.create(**kwargs)
             LOGGER.info('Using new persistable: {}, {}, {}'.format(cls.__tablename__, persistable.name, persistable.version))
             return persistable
 
@@ -62,9 +62,9 @@ class PersistableCreator(object):
         return dependency
 
     @abstractmethod
-    def determine_filters(strict=False, **kwargs):
+    def determine_filters(cls, strict=False, **kwargs):
         '''
-        stateless method to determine which filters to apply when looking for
+        method to determine which filters to apply when looking for
         existing persistable
 
         :param strict: whether to fit objects first before assuming they are identical
@@ -82,16 +82,26 @@ class PersistableCreator(object):
         '''
 
     @abstractmethod
-    def create_new(**kwargs):
+    def create(cls, **kwargs):
         '''
-        Stateless method to create a new persistable with the desired parameters
+        method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
         '''
 
+    @staticmethod
+    def retrieve_from_registry(registered_name):
+        '''
+        stateless method to query registry for class definitions. handles errors
+        '''
+        cls = SIMPLEML_REGISTRY.get(registered_name)
+        if cls is None:
+            raise TrainingError('Referenced class unregistered: {}'.format(registered_name))
+        return cls
+
 
 class RawDatasetCreator(PersistableCreator):
-    @staticmethod
-    def determine_filters(name='', version=None, strict=True, **kwargs):
+    @classmethod
+    def determine_filters(cls, name='', version=None, strict=True, **kwargs):
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -110,7 +120,7 @@ class RawDatasetCreator(PersistableCreator):
         # Datasets are special because we cannot assert the data is the same until we load it
         elif strict:
             registered_name = kwargs.get('registered_name')
-            new_dataset = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
+            new_dataset = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
             filters = {
                 'name': name,
                 'registered_name': registered_name,
@@ -125,15 +135,15 @@ class RawDatasetCreator(PersistableCreator):
 
         return BaseRawDataset, filters
 
-    @staticmethod
-    def create_new(registered_name, **kwargs):
+    @classmethod
+    def create(cls, registered_name, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
 
         :param registered_name: Class name registered in SimpleML
         '''
-        new_dataset = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
+        new_dataset = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_dataset.build_dataframe()
         new_dataset.save()
 
@@ -170,7 +180,7 @@ class DatasetPipelineCreator(PersistableCreator):
 
             # Build dummy object to retrieve hash to look for
             registered_name = kwargs.pop('registered_name')
-            new_pipeline = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
+            new_pipeline = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
             new_pipeline.add_dataset(dataset)
             if strict:
                 new_pipeline.fit()
@@ -184,7 +194,7 @@ class DatasetPipelineCreator(PersistableCreator):
         return BaseDatasetPipeline, filters
 
     @classmethod
-    def create_new(cls, registered_name, raw_dataset=None, **kwargs):
+    def create(cls, registered_name, raw_dataset=None, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -196,7 +206,7 @@ class DatasetPipelineCreator(PersistableCreator):
             # Use dependency reference to retrieve object
             raw_dataset = cls.retrieve_dataset(**kwargs.pop('raw_dataset_kwargs', {}))
 
-        new_pipeline = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
+        new_pipeline = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_pipeline.add_dataset(raw_dataset)
         new_pipeline.fit()
         new_pipeline.save()
@@ -239,7 +249,7 @@ class DatasetCreator(PersistableCreator):
 
             if strict:
                 # Build dummy object to retrieve hash to look for
-                new_dataset = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
+                new_dataset = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
                 new_dataset.add_pipeline(dataset_pipeline)
                 new_dataset.build_dataframe()
 
@@ -260,7 +270,7 @@ class DatasetCreator(PersistableCreator):
         return BaseProcessedDataset, filters
 
     @classmethod
-    def create_new(cls, registered_name, dataset_pipeline=None, **kwargs):
+    def create(cls, registered_name, dataset_pipeline=None, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -272,7 +282,7 @@ class DatasetCreator(PersistableCreator):
             # Use dependency reference to retrieve object
             dataset_pipeline = cls.retrieve_pipeline(**kwargs.pop('dataset_pipeline_kwargs', {}))
 
-        new_dataset = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
+        new_dataset = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_dataset.add_pipeline(dataset_pipeline)
         new_dataset.build_dataframe()
         new_dataset.save()
@@ -314,7 +324,7 @@ class PipelineCreator(PersistableCreator):
 
             # Build dummy object to retrieve hash to look for
             registered_name = kwargs.pop('registered_name')
-            new_pipeline = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
+            new_pipeline = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
             new_pipeline.add_dataset(dataset)
             if strict:
                 new_pipeline.fit()
@@ -328,7 +338,7 @@ class PipelineCreator(PersistableCreator):
         return BaseProductionPipeline, filters
 
     @classmethod
-    def create_new(cls, registered_name, dataset=None, **kwargs):
+    def create(cls, registered_name, dataset=None, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -340,7 +350,7 @@ class PipelineCreator(PersistableCreator):
             # Use dependency reference to retrieve object
             dataset = cls.retrieve_dataset(**kwargs.pop('dataset_kwargs', {}))
 
-        new_pipeline = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
+        new_pipeline = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_pipeline.add_dataset(dataset)
         new_pipeline.fit()
         new_pipeline.save()
@@ -382,7 +392,7 @@ class ModelCreator(PersistableCreator):
 
             # Build dummy object to retrieve hash to look for
             registered_name = kwargs.pop('registered_name')
-            new_model = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
+            new_model = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
             new_model.add_pipeline(pipeline)
             if strict:
                 new_model.fit()
@@ -396,7 +406,7 @@ class ModelCreator(PersistableCreator):
         return BaseModel, filters
 
     @classmethod
-    def create_new(cls, registered_name, pipeline=None, **kwargs):
+    def create(cls, registered_name, pipeline=None, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -408,7 +418,7 @@ class ModelCreator(PersistableCreator):
             # Use dependency reference to retrieve object
             pipeline = cls.retrieve_pipeline(**kwargs.pop('pipeline_kwargs', {}))
 
-        new_model = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
+        new_model = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_model.add_pipeline(pipeline)
         new_model.fit()
         new_model.save()
@@ -435,23 +445,23 @@ class MetricCreator(PersistableCreator):
         be the same as well (up to random iter). So, you dont need to fit objects
         to be sure they are the same
         '''
-        if name is not None and model_id is not None:
+        # Check if dependency object was passed
+        model = kwargs.pop('model', None)
+        if name is not None and (model_id is not None or model is not None):
             # Can't use default name because metrics are hard coded to reflect dataset split + class
             filters = {
                 'name': name,
-                'model_id': model_id,
+                'model_id': model_id if model_id is not None else model.id,
             }
 
         else:
-            # Check if dependency object was passed
-            model = kwargs.pop('model', None)
             if model is None:
                 # Use dependency reference to retrieve object
                 model = cls.retrieve_model(**kwargs.pop('model_kwargs', {}))
 
             # Build dummy object to retrieve hash to look for
             registered_name = kwargs.pop('registered_name')
-            new_metric = SIMPLEML_REGISTRY.get(registered_name)(name=name, **kwargs)
+            new_metric = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
             new_metric.add_model(model)
             if strict:
                 new_metric.score()
@@ -465,7 +475,7 @@ class MetricCreator(PersistableCreator):
         return BaseMetric, filters
 
     @classmethod
-    def create_new(cls, registered_name, model=None, **kwargs):
+    def create(cls, registered_name, model=None, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -477,7 +487,7 @@ class MetricCreator(PersistableCreator):
             # Use dependency reference to retrieve object
             model = cls.retrieve_model(**kwargs.pop('model_kwargs', {}))
 
-        new_metric = SIMPLEML_REGISTRY.get(registered_name)(**kwargs)
+        new_metric = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_metric.add_model(model)
         new_metric.score()
         new_metric.save()
