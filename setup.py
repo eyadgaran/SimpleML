@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from _version import __version__
+from .simpleml._version import __version__
 
 
 setup(
@@ -19,7 +19,10 @@ setup(
         'psycopg2',
         'scikit-learn',
         'numpy',
-        'dill'
+        'dill',
+        'hickle',
+        'keras',
+        'pandas'
     ],
     zip_safe=False,
     test_suite='nose.collector',
