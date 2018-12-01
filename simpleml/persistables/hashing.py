@@ -59,11 +59,12 @@ class CustomHasherMixin(object):
             # hash of None is unstable between systems
             return -12345678987654321
 
-        elif not isinstance(object_to_hash, dict):
+        elif isinstance(object_to_hash, dict):
+            new_object_to_hash = {}
+            for k, v in object_to_hash.items():
+                new_object_to_hash[k] = self.custom_hasher(v)
+
+            return hash(tuple(frozenset(sorted(new_object_to_hash.items()))))
+
+        else:
             return hash(object_to_hash)
-
-        new_object_to_hash = copy.deepcopy(object_to_hash)
-        for k, v in new_object_to_hash.items():
-            new_object_to_hash[k] = self.custom_hasher(v)
-
-        return hash(tuple(frozenset(sorted(new_object_to_hash.items()))))
