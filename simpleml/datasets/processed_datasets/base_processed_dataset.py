@@ -1,3 +1,4 @@
+from simpleml.persistables.meta_registry import DatasetRegistry
 from simpleml.persistables.guid import GUID
 from simpleml.datasets.base_dataset import BaseDataset
 from simpleml.datasets.pandas_mixin import PandasDatasetMixin
@@ -23,6 +24,7 @@ class BaseProcessedDataset(BaseDataset):
     '''
 
     __tablename__ = 'datasets'
+    __metaclass__ = DatasetRegistry
 
     pipeline_id = Column(GUID, ForeignKey("dataset_pipelines.id"))
     pipeline = relationship("BaseDatasetPipeline", enable_typechecks=False)

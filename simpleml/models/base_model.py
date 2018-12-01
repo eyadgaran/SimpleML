@@ -1,4 +1,5 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
+from simpleml.persistables.meta_registry import ModelRegistry
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.utils.errors import ModelError
 from simpleml.pipelines.base_pipeline import TRAIN_SPLIT
@@ -29,6 +30,7 @@ class BaseModel(BasePersistable, AllSaveMixin):
     feature_metadata: metadata insight into resulting features and importances
     '''
     __tablename__ = 'models'
+    __metaclass__ = ModelRegistry
 
     # Only dependency is the pipeline (to score in production)
     pipeline_id = Column(GUID, ForeignKey("pipelines.id"))

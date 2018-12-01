@@ -1,3 +1,4 @@
+from simpleml.persistables.meta_registry import RawDatasetRegistry
 from simpleml.datasets.base_dataset import BaseDataset
 from simpleml.persistables.dataset_storage import RawDatasetStorage, RAW_DATASET_SCHEMA
 from simpleml.datasets.pandas_mixin import PandasDatasetMixin
@@ -18,6 +19,7 @@ class BaseRawDataset(BaseDataset):
     '''
 
     __tablename__ = 'raw_datasets'
+    __metaclass__ = RawDatasetRegistry
 
     __table_args__ = (
         # Unique constraint for versioning

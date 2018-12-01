@@ -59,6 +59,50 @@ class MetaRegistry(MetaBase, ABCMeta):
         return iter(cls.registry)
     '''
 
+# Instantiate specific persistable registries for easy lookup of object types
+RAW_DATASET_REGISTRY = Registry()
+DATASET_PIPELINE_REGISTRY = Registry()
+DATASET_REGISTRY = Registry()
+PIPELINE_REGISTRY = Registry()
+MODEL_REGISTRY = Registry()
+METRIC_REGISTRY = Registry()
+
+class RawDatasetRegistry(MetaRegistry):
+    def __new__(cls, clsname, bases, attrs):
+        newclass = super(RawDatasetRegistry, cls).__new__(cls, clsname, bases, attrs)
+        RAW_DATASET_REGISTRY.register(newclass)
+        return newclass
+
+class DatasetPipelineRegistry(MetaRegistry):
+    def __new__(cls, clsname, bases, attrs):
+        newclass = super(DatasetPipelineRegistry, cls).__new__(cls, clsname, bases, attrs)
+        DATASET_PIPELINE_REGISTRY.register(newclass)
+        return newclass
+
+class DatasetRegistry(MetaRegistry):
+    def __new__(cls, clsname, bases, attrs):
+        newclass = super(DatasetRegistry, cls).__new__(cls, clsname, bases, attrs)
+        DATASET_REGISTRY.register(newclass)
+        return newclass
+
+class PipelineRegistry(MetaRegistry):
+    def __new__(cls, clsname, bases, attrs):
+        newclass = super(PipelineRegistry, cls).__new__(cls, clsname, bases, attrs)
+        PIPELINE_REGISTRY.register(newclass)
+        return newclass
+
+class ModelRegistry(MetaRegistry):
+    def __new__(cls, clsname, bases, attrs):
+        newclass = super(ModelRegistry, cls).__new__(cls, clsname, bases, attrs)
+        MODEL_REGISTRY.register(newclass)
+        return newclass
+
+class MetricRegistry(MetaRegistry):
+    def __new__(cls, clsname, bases, attrs):
+        newclass = super(MetricRegistry, cls).__new__(cls, clsname, bases, attrs)
+        METRIC_REGISTRY.register(newclass)
+        return newclass
+
 
 # Importable registry for all custom keras objects
 # Keras has an annoying persistence pattern that only supports native class references

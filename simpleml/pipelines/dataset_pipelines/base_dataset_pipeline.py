@@ -1,3 +1,4 @@
+from simpleml.persistables.meta_registry import DatasetPipelineRegistry
 from simpleml.persistables.guid import GUID
 from simpleml.pipelines.base_pipeline import BasePipeline
 from simpleml.pipelines.validation_split_mixins import NoSplitMixin
@@ -17,6 +18,7 @@ class BaseDatasetPipeline(BasePipeline):
     dataset_id: foreign key relation to the dataset used as input
     '''
     __tablename__ = 'dataset_pipelines'
+    __metaclass__ = DatasetPipelineRegistry
 
     dataset_id = Column(GUID, ForeignKey("raw_datasets.id"))
     dataset = relationship("BaseRawDataset", enable_typechecks=False)

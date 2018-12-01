@@ -1,4 +1,5 @@
 from simpleml.persistables.base_persistable import BasePersistable, GUID
+from simpleml.persistables.meta_registry import MetricRegistry
 from simpleml.utils.errors import MetricError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -24,6 +25,7 @@ class BaseMetric(BasePersistable):
         duplicate metric objects computed over different test datasets?
     '''
     __tablename__ = 'metrics'
+    __metaclass__ = MetricRegistry
 
     values = Column(JSONB, nullable=False)
 
