@@ -203,7 +203,7 @@ class RocAucMetric(BinaryClassificationMetric):
     def score(self):
         probabilities = self.probabilities
         if probabilities.shape[1] > 1:
-            # Indicates multiple class probsbbilites are returned (class_0, class_1)
+            # Indicates multiple class probabilites are returned (class_0, class_1)
             probabilities = probabilities[:, 1]
         labels = self.labels
         auc = roc_auc_score(y_true=labels, y_score=probabilities)
