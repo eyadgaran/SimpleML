@@ -1,11 +1,12 @@
 '''
 Import modules to register class names in global registry
 '''
-import base_model
-import base_keras_model
-import classifiers
-import clusterers
-import regressors
+from . import base_model
+from . import base_keras_model
+from . import classifiers
+from . import clusterers
+from . import regressors
+from . import transfer
 
 
 __author__ = 'Elisha Yadgaran'

@@ -5,7 +5,7 @@ the identity pipeline (no adjustment)
 
 Import modules to register class names in global registry
 '''
-import base_raw_dataset
+from . import base_raw_dataset
 
 
 __author__ = 'Elisha Yadgaran'

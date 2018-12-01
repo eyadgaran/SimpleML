@@ -1,7 +1,7 @@
 '''
 Import modules to register class names in global registry
 '''
-import sequential
+from . import sequential
 
 
 __author__ = 'Elisha Yadgaran'

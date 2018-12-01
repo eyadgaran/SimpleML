@@ -7,7 +7,7 @@ to transform it into the processed form.
 
 Import modules to register class names in global registry
 '''
-import base_processed_dataset
+from . import base_processed_dataset
 
 
 __author__ = 'Elisha Yadgaran'

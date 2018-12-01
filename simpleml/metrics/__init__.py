@@ -1,8 +1,8 @@
 '''
 Import modules to register class names in global registry
 '''
-import base_metric
-import classification
+from . import base_metric
+from . import classification
 
 
 __author__ = 'Elisha Yadgaran'

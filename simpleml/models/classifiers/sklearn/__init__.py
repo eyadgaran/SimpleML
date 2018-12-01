@@ -5,18 +5,18 @@ scikit-learn; linear models, trees, etc.. one file per module
 
 Import modules to register class names in global registry
 '''
-import dummy
-import ensemble
-import gaussian_process
-import linear_model
-import mixture
-import multiclass
-import multioutput
-import naive_bayes
-import neighbors
-import neural_network
-import svm
-import tree
+from . import dummy
+from . import ensemble
+from . import gaussian_process
+from . import linear_model
+from . import mixture
+from . import multiclass
+from . import multioutput
+from . import naive_bayes
+from . import neighbors
+from . import neural_network
+from . import svm
+from . import tree
 
 
 __author__ = 'Elisha Yadgaran'
