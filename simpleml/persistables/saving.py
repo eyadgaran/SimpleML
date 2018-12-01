@@ -254,7 +254,7 @@ class DiskHDF5SaveMixin(BaseExternalSaveMixin):
         Shared method to save files to disk in hickle's HDF5 format
         '''
         filepath = join(HDF5_FILESTORE_DIRECTORY, str(self.id) + '.h5')
-        hickle.dump(self._external_file, filepath)
+        hickle.dump(self._external_file, filepath, compression='gzip', compression_opts=9)
         self.filepaths = {"disk_hdf5": [str(self.id) + '.h5']}
 
     def _load_hdf5_from_disk(self):
