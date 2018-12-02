@@ -4,27 +4,25 @@ Helper module to track installed libraries
 
 __author__ = 'Elisha Yadgaran'
 
-import simpleml
-import sqlalchemy
-import sqlalchemy_mixins
-import numpy as np
-import pandas as pd
-import dill
-import psycopg2
-import sklearn
-import hickle
-import keras
+import pkg_resources
+
+def safe_lookup(package):
+    try:
+        return pkg_resources.get_distribution(package).version
+    except pkg_resources.DistributionNotFound:
+        return None
 
 
 INSTALLED_LIBRARIES = {
-    'simpleml': simpleml.__version__,
-    'sqlalchemy': sqlalchemy.__version__,
-    # 'sqlalchemy_mixins': sqlalchemy_mixins.__version__,
-    'numpy': np.__version__,
-    'pandas': pd.__version__,
-    'dill': dill.__version__,
-    'psycopg2': psycopg2.__version__,
-    'sklearn': sklearn.__version__,
-    'hickle': hickle.__version__,
-    'keras': keras.__version__
+    'simpleml': safe_lookup('simpleml'),
+    'sqlalchemy': safe_lookup('sqlalchemy'),
+    'sqlalchemy_mixins': safe_lookup('sqlalchemy_mixins'),
+    'numpy': safe_lookup('numpy'),
+    'pandas': safe_lookup('pandas'),
+    'dill': safe_lookup('dill'),
+    'psycopg2': safe_lookup('psycopg2'),
+    'sklearn': safe_lookup('sklearn'),
+    'hickle': safe_lookup('hickle'),
+    'keras': safe_lookup('keras'),
+    'tensorflow': safe_lookup('tensorflow')
 }

@@ -8,8 +8,8 @@ from simpleml.models.base_keras_model import BaseKerasModel
 from simpleml.models.classifiers.classification_mixin import ClassificationMixin
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
-from keras.models import Sequential
-
+# Import optional dependencies
+from simpleml import Sequential
 
 
 class WrappedKerasSequentialClassifier(Sequential, ClassificationExternalModelMixin):

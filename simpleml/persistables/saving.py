@@ -25,8 +25,10 @@ from abc import ABCMeta, abstractmethod
 import cStringIO
 import dill as pickle
 from os.path import join
-from keras.models import load_model
-import hickle
+
+
+# Import optional dependencies
+from simpleml import load_model, hickle
 
 
 class BaseExternalSaveMixin(object):

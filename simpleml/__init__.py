@@ -1,6 +1,11 @@
-# Import utils on load to create expected directories
-import utils
-from _version import __version__
+'''
+Startup module on initial import
+'''
+
+__author__ = 'Elisha Yadgaran'
+
+
+# 1) Configure logging
 import logging
 
 logging.basicConfig(
@@ -9,13 +14,42 @@ logging.basicConfig(
 )
 
 
-__author__ = 'Elisha Yadgaran'
+# 2) Export package version
+import pkg_resources
+
+__version__ = pkg_resources.get_distribution(__name__).version
 
 
-'''
-Import modules to register class names in global registry
-'''
-import datasets
-import metrics
-import models
-import pipelines
+# 3) Import optional dependencies or set to none/object to avoid import errors
+# - Keras
+# - Hickle
+import warnings
+warning_msg = 'Unable to import optional dependency: {dependency}, to use install with `pip install {dependency}`'
+
+try:
+    import keras
+    from keras.models import Sequential, Model, load_model
+except ImportError:
+    keras = None
+    load_model = None
+    Sequential = object
+    Model = object
+    warnings.warn(warning_msg.format(dependency='keras'), ImportWarning)
+
+try:
+    import hickle
+except ImportError:
+    hickle = None
+    warnings.warn(warning_msg.format(dependency='hickle'), ImportWarning)
+
+
+
+# 4) Create simpleml local file directories
+from . import utils
+
+
+# 5) Import modules to register class names in global registry
+from . import datasets
+from . import pipelines
+from . import models
+from . import metrics

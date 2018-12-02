@@ -5,7 +5,6 @@ Mixin classes to handle hashing
 __author__ = 'Elisha Yadgaran'
 
 
-import copy
 import pandas as pd
 import numpy as np
 from pandas.util import hash_pandas_object
