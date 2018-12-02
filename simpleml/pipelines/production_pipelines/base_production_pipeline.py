@@ -5,11 +5,12 @@ from simpleml.pipelines.validation_split_mixins import NoSplitMixin, RandomSplit
     ChronologicalSplitMixin
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
+from future.utils import with_metaclass
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseProductionPipeline(BasePipeline):
+class BaseProductionPipeline(with_metaclass(PipelineRegistry, BasePipeline)):
     '''
     Base class for all Production Pipeline objects.
 
@@ -19,7 +20,6 @@ class BaseProductionPipeline(BasePipeline):
     dataset_id: foreign key relation to the dataset used as input
     '''
     __tablename__ = 'pipelines'
-    __metaclass__ = PipelineRegistry
 
     dataset_id = Column(GUID, ForeignKey("datasets.id"))
     dataset = relationship("BaseProcessedDataset", enable_typechecks=False)

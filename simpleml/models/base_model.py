@@ -7,6 +7,7 @@ from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 import logging
+from future.utils import with_metaclass
 
 
 __author__ = 'Elisha Yadgaran'
@@ -15,7 +16,7 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class BaseModel(BasePersistable, AllSaveMixin):
+class BaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMixin)):
     '''
     Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
@@ -30,7 +31,6 @@ class BaseModel(BasePersistable, AllSaveMixin):
     feature_metadata: metadata insight into resulting features and importances
     '''
     __tablename__ = 'models'
-    __metaclass__ = ModelRegistry
 
     # Only dependency is the pipeline (to score in production)
     pipeline_id = Column(GUID, ForeignKey("pipelines.id"))

@@ -8,9 +8,10 @@ __author__ = 'Elisha Yadgaran'
 
 
 from simpleml.persistables.meta_registry import KerasRegistry
+from future.utils import with_metaclass
 
 
-class ExternalModelMixin(object):
+class ExternalModelMixin(with_metaclass(KerasRegistry, object)):
     '''
     Wrapper class for a pickleable model with expected methods
 
@@ -28,7 +29,6 @@ class ExternalModelMixin(object):
         def _create_external_model(self, **kwargs):
             return WrappedActualModelClass(**kwargs)
     '''
-    __metaclass__ = KerasRegistry
 
     def fit(self, *args, **kwargs):
         '''

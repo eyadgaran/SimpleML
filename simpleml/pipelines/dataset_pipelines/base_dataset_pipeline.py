@@ -4,11 +4,12 @@ from simpleml.pipelines.base_pipeline import BasePipeline
 from simpleml.pipelines.validation_split_mixins import NoSplitMixin
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
+from future.utils import with_metaclass
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseDatasetPipeline(BasePipeline):
+class BaseDatasetPipeline(with_metaclass(DatasetPipelineRegistry, BasePipeline)):
     '''
     Base class for all Dataset Pipeline objects.
 
@@ -18,7 +19,6 @@ class BaseDatasetPipeline(BasePipeline):
     dataset_id: foreign key relation to the dataset used as input
     '''
     __tablename__ = 'dataset_pipelines'
-    __metaclass__ = DatasetPipelineRegistry
 
     dataset_id = Column(GUID, ForeignKey("raw_datasets.id"))
     dataset = relationship("BaseRawDataset", enable_typechecks=False)

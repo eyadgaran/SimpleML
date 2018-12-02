@@ -8,12 +8,13 @@ from simpleml.utils.errors import DatasetError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 import pandas as pd
+from future.utils import with_metaclass
 
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseProcessedDataset(BaseDataset):
+class BaseProcessedDataset(with_metaclass(DatasetRegistry, BaseDataset)):
     '''
     Base class for all Processed Dataset objects.
 
@@ -24,7 +25,6 @@ class BaseProcessedDataset(BaseDataset):
     '''
 
     __tablename__ = 'datasets'
-    __metaclass__ = DatasetRegistry
 
     pipeline_id = Column(GUID, ForeignKey("dataset_pipelines.id"))
     pipeline = relationship("BaseDatasetPipeline", enable_typechecks=False)

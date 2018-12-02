@@ -8,12 +8,13 @@ from simpleml.persistables.hashing import CustomHasherMixin
 from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 import uuid
 from abc import abstractmethod
+from future.utils import with_metaclass
 
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BasePersistable(BaseSQLAlchemy, AllSaveMixin, CustomHasherMixin):
+class BasePersistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, CustomHasherMixin)):
     '''
     Base class for all SimpleML database objects. Defaults to PostgreSQL
     but can be swapped out for any supported SQLAlchemy backend.
@@ -59,7 +60,6 @@ class BasePersistable(BaseSQLAlchemy, AllSaveMixin, CustomHasherMixin):
     '''
 
     __abstract__ = True
-    __metaclass__ = MetaRegistry
     # Uses main (public) schema
     metadata = MetaData()
 

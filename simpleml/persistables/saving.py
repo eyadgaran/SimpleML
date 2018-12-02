@@ -22,17 +22,21 @@ from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.utils.system_path import PICKLED_FILESTORE_DIRECTORY, HDF5_FILESTORE_DIRECTORY
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
 from abc import ABCMeta, abstractmethod
-import cStringIO
 import dill as pickle
 from os.path import join
 
+# Python 2/3 compatibility
+try:
+    import cStringIO
+except ImportError:
+    from io import StringIO as cStringIO
+from future.utils import with_metaclass
 
 # Import optional dependencies
 from simpleml import load_model, hickle
 
 
-class BaseExternalSaveMixin(object):
-    __metaclass__ = ABCMeta
+class BaseExternalSaveMixin(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def _save_external_files(self):

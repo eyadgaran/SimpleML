@@ -4,11 +4,12 @@ from simpleml.persistables.dataset_storage import RawDatasetStorage, RAW_DATASET
 from simpleml.datasets.pandas_mixin import PandasDatasetMixin
 from simpleml.datasets.numpy_mixin import NumpyDatasetMixin
 from sqlalchemy import UniqueConstraint, Index
+from future.utils import with_metaclass
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseRawDataset(BaseDataset):
+class BaseRawDataset(with_metaclass(RawDatasetRegistry, BaseDataset)):
     '''
     Base class for all Raw Dataset objects.
 
@@ -19,7 +20,6 @@ class BaseRawDataset(BaseDataset):
     '''
 
     __tablename__ = 'raw_datasets'
-    __metaclass__ = RawDatasetRegistry
 
     __table_args__ = (
         # Unique constraint for versioning

@@ -4,11 +4,12 @@ from simpleml.utils.errors import MetricError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
+from future.utils import with_metaclass
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseMetric(BasePersistable):
+class BaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
     '''
     Base class for all Metric objects
 
@@ -25,7 +26,6 @@ class BaseMetric(BasePersistable):
         duplicate metric objects computed over different test datasets?
     '''
     __tablename__ = 'metrics'
-    __metaclass__ = MetricRegistry
 
     values = Column(JSONB, nullable=False)
 

@@ -11,14 +11,14 @@ from simpleml.models.base_model import BaseModel
 from simpleml.metrics.base_metric import BaseMetric
 from simpleml.utils.errors import TrainingError
 import logging
+from future.utils import with_metaclass
 
 LOGGER = logging.getLogger(__name__)
 
 __author__ = 'Elisha Yadgaran'
 
 
-class PersistableCreator(object):
-    __metaclass__ = ABCMeta
+class PersistableCreator(with_metaclass(ABCMeta, object)):
 
     @classmethod
     def retrieve_or_create(self, **kwargs):

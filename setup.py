@@ -21,7 +21,8 @@ setup(
         'scikit-learn',
         'pandas',
         'numpy',
-        'dill'
+        'dill',
+        'future'
     ],
     extras_require = {
         'deep-learning':  ["keras", "tensorflow"],

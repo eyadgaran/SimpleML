@@ -7,6 +7,7 @@ __author__ = 'Elisha Yadgaran'
 from simpleml.persistables.meta_registry import MetaRegistry, Registry, SIMPLEML_REGISTRY
 import unittest
 from abc import abstractmethod
+from future.utils import with_metaclass
 
 
 class RegistryTests(unittest.TestCase):
@@ -49,9 +50,8 @@ class RegistryTests(unittest.TestCase):
 
 class MetaRegistryTests(unittest.TestCase):
     def test_abstract_method_error(self):
-        class AbstractTestClass(object):
+        class AbstractTestClass(with_metaclass(MetaRegistry, object)):
             __abstract__ = True
-            __metaclass__ = MetaRegistry
 
             @abstractmethod
             def blah(self):
@@ -67,9 +67,8 @@ class MetaRegistryTests(unittest.TestCase):
 
     def test_register_on_import(self):
         def import_new_class():
-            class BLAHBLAHTESTCLASS(object):
+            class BLAHBLAHTESTCLASS(with_metaclass(MetaRegistry, object)):
                 __abstract__ = True
-                __metaclass__ = MetaRegistry
 
             return BLAHBLAHTESTCLASS
 

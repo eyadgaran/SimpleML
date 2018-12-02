@@ -5,7 +5,7 @@ Error classes
 __author__ = 'Elisha Yadgaran'
 
 
-class SimpleMLError(StandardError):
+class SimpleMLError(Exception):
     def __str__(self):
         return self.message
 

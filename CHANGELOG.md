@@ -1,5 +1,8 @@
 ## Change Log
 
+### 0.4
+- Python 3 compatibility
+
 ### 0.3
 - Save mixins for external files
 - Keras sequential model support

@@ -11,6 +11,7 @@ __author__ = 'Elisha Yadgaran'
 
 from abc import ABCMeta, abstractmethod
 from sklearn.model_selection import train_test_split
+from future.utils import with_metaclass
 
 
 TRAIN_SPLIT = 'TRAIN'
@@ -18,8 +19,7 @@ VALIDATION_SPLIT = 'VALIDATION'
 TEST_SPLIT = 'TEST'
 
 
-class SplitMixin(object):
-    __metaclass__ = ABCMeta
+class SplitMixin(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def split_dataset(self):
