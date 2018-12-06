@@ -75,6 +75,22 @@ class BinaryClassificationMetric(ClassificationMetric):
         self.thresholds = np.linspace(0, 1, 201)
 
     @property
+    def probabilities(self):
+        probabilities = self.model.predict_proba(X=None, dataset_split=self.dataset_split)
+        if probabilities.shape[1] > 1:
+            # Indicates multiple class probabilities are returned (class_0, class_1)
+            probabilities = probabilities[:, 1]
+        return probabilities
+
+    @property
+    def predictions(self):
+        predictions = self.model.predict(X=None, dataset_split=self.dataset_split)
+        if predictions.shape[1] > 1:
+            # Indicates multiple class predictions are returned (class_0, class_1)
+            predictions = predictions[:, 1]
+        return predictions
+
+    @property
     def confusion_matrix(self):
         '''
         Property method to return (or generate) dataframe of confusion
@@ -90,9 +106,6 @@ class BinaryClassificationMetric(ClassificationMetric):
         Iterate through each threshold and compute confusion matrix
         '''
         probabilities = self.probabilities
-        if probabilities.shape[1] > 1:
-            # Indicates multiple class probsbbilites are returned (class_0, class_1)
-            probabilities = probabilities[:, 1]
         labels = self.labels
 
         results = []
@@ -202,9 +215,6 @@ class RocAucMetric(BinaryClassificationMetric):
 
     def score(self):
         probabilities = self.probabilities
-        if probabilities.shape[1] > 1:
-            # Indicates multiple class probabilites are returned (class_0, class_1)
-            probabilities = probabilities[:, 1]
         labels = self.labels
         auc = roc_auc_score(y_true=labels, y_score=probabilities)
 
