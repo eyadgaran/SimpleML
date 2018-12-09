@@ -77,7 +77,7 @@ class BinaryClassificationMetric(ClassificationMetric):
     @property
     def probabilities(self):
         probabilities = self.model.predict_proba(X=None, dataset_split=self.dataset_split)
-        if probabilities.shape[1] > 1:
+        if len(probabilities.shape) > 1 and probabilities.shape[1] > 1:
             # Indicates multiple class probabilities are returned (class_0, class_1)
             probabilities = probabilities[:, 1]
         return probabilities
@@ -85,7 +85,7 @@ class BinaryClassificationMetric(ClassificationMetric):
     @property
     def predictions(self):
         predictions = self.model.predict(X=None, dataset_split=self.dataset_split)
-        if predictions.shape[1] > 1:
+        if len(predictions.shape) > 1 and predictions.shape[1] > 1:
             # Indicates multiple class predictions are returned (class_0, class_1)
             predictions = predictions[:, 1]
         return predictions
