@@ -13,6 +13,7 @@ import simpleml.models.base_model
 import simpleml.metrics.base_metric
 from simpleml.persistables.dataset_storage import DatasetStorage, RawDatasetStorage
 from simpleml.persistables.binary_blob import BinaryBlob
+from simpleml.persistables.serializing import custom_dumps, custom_loads
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -58,7 +59,9 @@ class Database(object):
 
     @property
     def engine(self):
-        return create_engine(self.engine_url)
+        return create_engine(self.engine_url,
+                             json_serializer=custom_dumps,
+                             json_deserializer=custom_loads)
 
     @staticmethod
     def create_tables(base, drop_tables=False):
