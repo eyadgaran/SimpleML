@@ -43,7 +43,7 @@ def object_hook(data, ignore_dicts=False):
     if isinstance(data, dict) and not ignore_dicts:
         return {
             object_hook(key, ignore_dicts=True): object_hook(value, ignore_dicts=True)
-            for key, value in data.iteritems()
+            for key, value in data.items()
         }
 
     # if it's anything else, return it in its original form

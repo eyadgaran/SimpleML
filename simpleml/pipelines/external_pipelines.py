@@ -29,7 +29,7 @@ class DefaultPipeline(OrderedDict):
         '''
         Iterate through each transformation step and apply fit
         '''
-        for step, transformer in self.iteritems():
+        for step, transformer in self.items():
             X = transformer.fit_transform(X, y=y, **kwargs)
 
         return self
@@ -38,7 +38,7 @@ class DefaultPipeline(OrderedDict):
         '''
         Iterate through each transformation step and apply transform
         '''
-        for step, transformer in self.iteritems():
+        for step, transformer in self.items():
             X = transformer.transform(X, y=y, **kwargs)
 
         return X
@@ -47,7 +47,7 @@ class DefaultPipeline(OrderedDict):
         '''
         Iterate through each transformation step and apply fit and transform
         '''
-        for step, transformer in self.iteritems():
+        for step, transformer in self.items():
             X = transformer.fit_transform(X, y=y, **kwargs)
 
         return X
@@ -57,7 +57,7 @@ class DefaultPipeline(OrderedDict):
         Iterate through transformers and return parameters
         '''
         params = {}
-        for step, transformer in self.iteritems():
+        for step, transformer in self.items():
             params[step] = transformer.get_params(**kwargs)
 
         return params
@@ -69,7 +69,7 @@ class DefaultPipeline(OrderedDict):
         :param params: dictionary of dictionaries. each dictionary must map to
         a transformer step
         '''
-        for step, param in params.iteritems():
+        for step, param in params.items():
             self[step].set_params(**param)
 
     def get_transformers(self):
@@ -87,7 +87,7 @@ class DefaultPipeline(OrderedDict):
         :param feature_names: list of initial feature names before transformations
         :type: list
         '''
-        for step, transformer in self.iteritems():
+        for step, transformer in self.items():
             feature_names = transformer.get_feature_names(feature_names)
 
         return feature_names
