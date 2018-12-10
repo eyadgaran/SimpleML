@@ -20,7 +20,7 @@ import pkg_resources
 __version__ = pkg_resources.get_distribution(__name__).version
 
 
-# 3) Import optional dependencies or set to none/object to avoid import errors
+# 3) Import optional dependencies or set to none/type to avoid import errors
 # - Keras
 # - Hickle
 import warnings
@@ -32,8 +32,8 @@ try:
 except ImportError:
     keras = None
     load_model = None
-    Sequential = object
-    Model = object
+    Sequential = type
+    Model = type
     warnings.warn(warning_msg.format(dependency='keras'), ImportWarning)
 
 try:
