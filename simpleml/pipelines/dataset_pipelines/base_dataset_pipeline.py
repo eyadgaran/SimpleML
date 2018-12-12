@@ -9,7 +9,14 @@ from future.utils import with_metaclass
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseDatasetPipeline(with_metaclass(DatasetPipelineRegistry, BasePipeline)):
+class AbstractBaseDatasetPipeline(with_metaclass(DatasetPipelineRegistry, BasePipeline)):
+    '''
+    Abstract Base class for all Dataset Pipeline objects.
+    '''
+    __abstract__ = True
+
+
+class BaseDatasetPipeline(AbstractBaseDatasetPipeline):
     '''
     Base class for all Dataset Pipeline objects.
 

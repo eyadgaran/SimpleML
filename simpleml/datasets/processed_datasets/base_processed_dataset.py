@@ -14,27 +14,11 @@ from future.utils import with_metaclass
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseProcessedDataset(with_metaclass(DatasetRegistry, BaseDataset)):
+class AbstractBaseProcessedDataset(with_metaclass(DatasetRegistry, BaseDataset)):
     '''
-    Base class for all Processed Dataset objects.
-
-    -------
-    Schema
-    -------
-    pipeline_id: foreign key relation to the dataset pipeline used as input
+    Abstract Base class for all Processed Dataset objects.
     '''
-
-    __tablename__ = 'datasets'
-
-    pipeline_id = Column(GUID, ForeignKey("dataset_pipelines.id"))
-    pipeline = relationship("BaseDatasetPipeline", enable_typechecks=False)
-
-    __table_args__ = (
-        # Unique constraint for versioning
-        UniqueConstraint('name', 'version', name='dataset_name_version_unique'),
-        # Index for searching through friendly names
-        Index('dataset_name_index', 'name'),
-     )
+    __abstract__ = True
 
     @property
     def _schema(self):
@@ -57,7 +41,7 @@ class BaseProcessedDataset(with_metaclass(DatasetRegistry, BaseDataset)):
         if self.pipeline is None:
             raise DatasetError('Must set dataset pipeline before saving')
 
-        super(BaseProcessedDataset, self).save(**kwargs)
+        super(AbstractBaseProcessedDataset, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.pipeline.load(load_externals=False)
@@ -66,10 +50,32 @@ class BaseProcessedDataset(with_metaclass(DatasetRegistry, BaseDataset)):
         '''
         Extend main load routine to load relationship class
         '''
-        super(BaseProcessedDataset, self).load(**kwargs)
+        super(AbstractBaseProcessedDataset, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)
+
+
+class BaseProcessedDataset(AbstractBaseProcessedDataset):
+    '''
+    Base class for all Processed Dataset objects.
+
+    -------
+    Schema
+    -------
+    pipeline_id: foreign key relation to the dataset pipeline used as input
+    '''
+    __tablename__ = 'datasets'
+
+    pipeline_id = Column(GUID, ForeignKey("dataset_pipelines.id"))
+    pipeline = relationship("BaseDatasetPipeline", enable_typechecks=False)
+
+    __table_args__ = (
+        # Unique constraint for versioning
+        UniqueConstraint('name', 'version', name='dataset_name_version_unique'),
+        # Index for searching through friendly names
+        Index('dataset_name_index', 'name'),
+     )
 
 
 # Mixin implementations for convenience

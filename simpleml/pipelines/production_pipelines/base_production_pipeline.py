@@ -10,7 +10,14 @@ from future.utils import with_metaclass
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseProductionPipeline(with_metaclass(PipelineRegistry, BasePipeline)):
+class AbstractBaseProductionPipeline(with_metaclass(PipelineRegistry, BasePipeline)):
+    '''
+    Abstract Base class for all Production Pipeline objects.
+    '''
+    __abstract__ = True
+
+
+class BaseProductionPipeline(AbstractBaseProductionPipeline):
     '''
     Base class for all Production Pipeline objects.
 

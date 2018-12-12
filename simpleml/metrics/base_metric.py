@@ -9,9 +9,9 @@ from future.utils import with_metaclass
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
+class AbstractBaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
     '''
-    Base class for all Metric objects
+    Abstract Base class for all Metric objects
 
     -------
     Schema
@@ -20,30 +20,10 @@ class BaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
     values: JSON object with key: value pairs for performance on test dataset
         (ex: FPR: TPR to create ROC Curve)
         Singular value metrics take the form - {'agg': value}
-    model_id: foreign key to the model that was used to generate predictions
-
-    TODO: Should join criteria be composite of model and dataset for multiple
-        duplicate metric objects computed over different test datasets?
     '''
-    __tablename__ = 'metrics'
+    __abstract__ = True
 
     values = Column(JSONB, nullable=False)
-
-    # Only dependency is the model (to score in production)
-    model_id = Column(GUID, ForeignKey("models.id"))
-    model = relationship('BaseModel', enable_typechecks=False)
-
-    __table_args__ = (
-        # Metrics don't have the notion of versions, values should be deterministic
-        # by class, model, and dataset - name should be the combination of class and dataset
-        # Still exists to stay consistent with the persistables style of unrestricted duplication
-        # (otherwise would be impossible to distinguish a duplicated metric -- name and model_id would be the same)
-
-        # Unique constraint for versioning
-        UniqueConstraint('name', 'model_id', 'version', name='metric_name_model_version_unique'),
-        # Index for searching through friendly names
-        Index('metric_name_index', 'name'),
-     )
 
     def add_model(self, model):
         '''
@@ -91,7 +71,7 @@ class BaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
         if self.values is None:
             raise MetricError('Must score metric before saving')
 
-        super(BaseMetric, self).save(**kwargs)
+        super(AbstractBaseMetric, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.model.load(load_externals=False)
@@ -100,7 +80,7 @@ class BaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
         '''
         Extend main load routine to load relationship class
         '''
-        super(BaseMetric, self).load(**kwargs)
+        super(AbstractBaseMetric, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         self.model.load(load_externals=False)
@@ -112,3 +92,34 @@ class BaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
         Should set self.values
         '''
         raise NotImplementedError
+
+
+class BaseMetric(AbstractBaseMetric):
+    '''
+    Base class for all Metric objects
+
+    -------
+    Schema
+    -------
+    model_id: foreign key to the model that was used to generate predictions
+
+    TODO: Should join criteria be composite of model and dataset for multiple
+        duplicate metric objects computed over different test datasets?
+    '''
+    __tablename__ = 'metrics'
+
+    # Only dependency is the model (to score in production)
+    model_id = Column(GUID, ForeignKey("models.id"))
+    model = relationship('BaseModel', enable_typechecks=False)
+
+    __table_args__ = (
+        # Metrics don't have the notion of versions, values should be deterministic
+        # by class, model, and dataset - name should be the combination of class and dataset
+        # Still exists to stay consistent with the persistables style of unrestricted duplication
+        # (otherwise would be impossible to distinguish a duplicated metric -- name and model_id would be the same)
+
+        # Unique constraint for versioning
+        UniqueConstraint('name', 'model_id', 'version', name='metric_name_model_version_unique'),
+        # Index for searching through friendly names
+        Index('metric_name_index', 'name'),
+     )

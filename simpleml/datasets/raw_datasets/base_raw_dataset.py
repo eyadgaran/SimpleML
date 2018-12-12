@@ -9,7 +9,22 @@ from future.utils import with_metaclass
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseRawDataset(with_metaclass(RawDatasetRegistry, BaseDataset)):
+class AbstractBaseRawDataset(with_metaclass(RawDatasetRegistry, BaseDataset)):
+    '''
+    Abstract Base class for all Raw Dataset objects.
+    '''
+    __abstract__ = True
+
+    @property
+    def _schema(self):
+        return RAW_DATASET_SCHEMA
+
+    @property
+    def _engine(self):
+        return RawDatasetStorage.metadata.bind
+
+
+class BaseRawDataset(AbstractBaseRawDataset):
     '''
     Base class for all Raw Dataset objects.
 
@@ -27,14 +42,6 @@ class BaseRawDataset(with_metaclass(RawDatasetRegistry, BaseDataset)):
         # Index for searching through friendly names
         Index('raw_dataset_name_index', 'name'),
      )
-
-    @property
-    def _schema(self):
-        return RAW_DATASET_SCHEMA
-
-    @property
-    def _engine(self):
-        return RawDatasetStorage.metadata.bind
 
 
 # Mixin implementations for convenience

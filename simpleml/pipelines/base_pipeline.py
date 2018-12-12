@@ -21,7 +21,6 @@ class BasePipeline(BasePersistable, AllSaveMixin):
     Schema
     -------
     params: pipeline parameter metadata for easy insight into hyperparameters across trainings
-    dataset_id: foreign key relation to the dataset used as input
     '''
     __abstract__ = True
 

@@ -16,44 +16,30 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class BaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMixin)):
+class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMixin)):
     '''
-    Base class for all Model objects. Defines the required
+    Abstract Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
     stored in the arbitrary metadata field
 
     -------
     Schema
     -------
-    pipeline_id: foreign key relation to the pipeline used to transform input to the model
-        (training is also dependent on originating dataset but scoring only needs access to the pipeline)
     params: model parameter metadata for easy insight into hyperparameters across trainings
     feature_metadata: metadata insight into resulting features and importances
     '''
-    __tablename__ = 'models'
-
-    # Only dependency is the pipeline (to score in production)
-    pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
-    pipeline = relationship("BaseProductionPipeline", enable_typechecks=False)
+    __abstract__ = True
 
     # Additional model specific metadata
     params = Column(JSONB, default={})
     feature_metadata = Column(JSONB, default={})
-
-    __table_args__ = (
-        # Unique constraint for versioning
-        UniqueConstraint('name', 'version', name='model_name_version_unique'),
-        # Index for searching through friendly names
-        Index('model_name_index', 'name'),
-     )
-
 
     def __init__(self, has_external_files=True, external_model_kwargs={}, params={}, **kwargs):
         '''
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
         '''
-        super(BaseModel, self).__init__(
+        super(AbstractBaseModel, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate model
@@ -122,7 +108,7 @@ class BaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMixin)):
         self.params = self.get_params(**kwargs)
         self.feature_metadata = self.get_feature_metadata(**kwargs)
 
-        super(BaseModel, self).save(**kwargs)
+        super(AbstractBaseModel, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.pipeline.load(load_externals=False)
@@ -131,7 +117,7 @@ class BaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMixin)):
         '''
         Extend main load routine to load relationship class
         '''
-        super(BaseModel, self).load(**kwargs)
+        super(AbstractBaseModel, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)
@@ -221,3 +207,29 @@ class BaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMixin)):
         Should return a dict of feature information (importance, coefficients...)
         '''
         return self.external_model.get_feature_metadata(features=self.pipeline.get_feature_names, **kwargs)
+
+
+class BaseModel(AbstractBaseModel):
+    '''
+    Base class for all Model objects. Defines the required
+    parameters for versioning and all other metadata can be
+    stored in the arbitrary metadata field
+
+    -------
+    Schema
+    -------
+    pipeline_id: foreign key relation to the pipeline used to transform input to the model
+        (training is also dependent on originating dataset but scoring only needs access to the pipeline)
+    '''
+    __tablename__ = 'models'
+
+    # Only dependency is the pipeline (to score in production)
+    pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
+    pipeline = relationship("BaseProductionPipeline", enable_typechecks=False)
+
+    __table_args__ = (
+        # Unique constraint for versioning
+        UniqueConstraint('name', 'version', name='model_name_version_unique'),
+        # Index for searching through friendly names
+        Index('model_name_index', 'name'),
+     )
