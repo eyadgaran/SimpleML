@@ -1,3 +1,5 @@
+sudo: false
+language: python
 services:
   - postgresql
 
@@ -8,7 +10,7 @@ addons:
     - postgresql-10
     - postgresql-client-10
 
-before_script:
+before_install:
   - sudo service postgresql stop
   - sed -e 's/^port.*/port = 5432/' /etc/postgresql/10/main/postgresql.conf > postgresql.conf
   - sudo chown postgres postgresql.conf
@@ -16,33 +18,50 @@ before_script:
   - sudo service postgresql start 10
   # wait for the postgres docker to be running
   - while ! pg_isready -h localhost -p 5432 -q -U postgres; do "Postgres is unavailable - sleeping"; sleep 1; done;
-
-sudo: false
-language: python
-
-matrix:
-  include:
-    - python: 2.7
-      env: TOXENV=py27
-    - python: 3.4
-      env: TOXENV=py34
-    - python: 3.5
-      env: TOXENV=py35
-    - python: 3.6
-      env: TOXENV=py36
-    - python: 3.7
-      env: TOXENV=py37
-      dist: xenial
-      sudo: true
-    - python: pypy
-      env: TOXENV=pypy
-    - python: pypy3
-      env: TOXENV=pypy3
-    - env: TOXENV=flake8
+  - psql -c "CREATE USER simpleml with password 'simpleml' SUPERUSER;" -U postgres
 
 install:
  - pip install psycopg2
  - pip install coveralls
  - pip install tox-travis
-script: tox
-after_success: coveralls
+
+python:
+  - 2.7
+  - 3.4
+  - 3.5
+  - 3.6
+
+script:
+  - coverage run setup.py test
+
+matrix:
+  include:
+    # - python: 2.7
+    #   env: TOXENV=py27
+    # - python: 3.4
+    #   env: TOXENV=py34
+    # - python: 3.5
+    #   env: TOXENV=py35
+    # - python: 3.6
+    #   env: TOXENV=py36
+    # - env: TOXENV=flake8
+    - install: pip install flake8
+      script: flake8 .
+
+  allow_failures:
+    - python: 3.7
+      # env: TOXENV=py37
+      dist: xenial
+      sudo: true
+      script: python setup.py test
+    - python: pypy
+      script: python setup.py test
+      # env: TOXENV=pypy
+    - python: pypy3
+      script: python setup.py test
+      # env: TOXENV=pypy3
+
+# script: tox
+after_success:
+  - coverage combine
+  - coveralls
