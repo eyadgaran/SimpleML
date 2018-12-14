@@ -2,6 +2,7 @@
 
 ### 0.4
 - Python 3 compatibility
+- Travis and tox for CI/testing
 
 ### 0.3
 - Save mixins for external files

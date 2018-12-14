@@ -102,7 +102,7 @@ class DataframeTableSaveMixin(BaseExternalSaveMixin):
 
     @staticmethod
     def df_to_sql(engine, df, table, dtype=None, schema='public',
-                    if_exists='replace', sep='|', encoding='utf8', index=False):
+                  if_exists='replace', sep='|', encoding='utf8', index=False):
         '''
         Utility to bulk insert pandas dataframe via `copy from`
 

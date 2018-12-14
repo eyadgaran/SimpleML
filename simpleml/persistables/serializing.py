@@ -14,9 +14,9 @@ import dill as pickle
 import codecs
 
 try:  # Py2/3 compatibility
-  basestring
+    basestring
 except NameError:
-  basestring = str
+    basestring = str
 
 
 class JSONSerializer(json.JSONEncoder):

@@ -13,7 +13,7 @@ setup(
     url='https://github.com/eyadgaran/SimpleML',
     download_url='https://github.com/eyadgaran/SimpleML/archive/v{}.tar.gz'.format(__version__),
     packages=find_packages(),
-    keywords = ['machine-learning', 'deep-learning', 'automated-learning'],
+    keywords=['machine-learning', 'deep-learning', 'automated-learning'],
     install_requires=[
         'sqlalchemy',
         'sqlalchemy_mixins',
@@ -24,7 +24,7 @@ setup(
         'dill',
         'future'
     ],
-    extras_require = {
+    extras_require={
         'deep-learning':  ["keras", "tensorflow"],
         'hdf5': ["hickle"],
     },

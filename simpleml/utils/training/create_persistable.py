@@ -261,7 +261,7 @@ class DatasetCreator(PersistableCreator):
 
             else:
                 # Assume combo of name, class, and pipeline will be unique
-                filters =  {
+                filters = {
                     'name': name,
                     'registered_name': registered_name,
                     'pipeline_id': dataset_pipeline.id

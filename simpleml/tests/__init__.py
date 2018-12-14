@@ -13,7 +13,7 @@ TEST_DATABASE = 'SimpleML-TEST-{}'.format(random.randint(10000, 99999))
 
 def setup_package():
     print('Setting up testing env')
-    Database(database=TEST_DATABASE).initialize(drop_tables=True, create_database=True)
+    Database(user='postgres', password='', database=TEST_DATABASE).initialize(drop_tables=True)
 
 
 def teardown_package():
