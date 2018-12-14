@@ -25,7 +25,7 @@ setup(
         'future'
     ],
     extras_require={
-        'deep-learning':  ["keras", "tensorflow"],
+        'deep-learning': ["keras", "tensorflow"],
         'hdf5': ["hickle"],
     },
     zip_safe=False,

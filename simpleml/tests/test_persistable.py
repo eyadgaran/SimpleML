@@ -14,6 +14,7 @@ class PersistableTests(unittest.TestCase):
         # Original Class
         class TestClass(BasePersistable):
             __abstract__ = True
+
             def _hash(self):
                 pass
 
@@ -35,8 +36,10 @@ class PersistableTests(unittest.TestCase):
         # Original Class
         class VersionTestClass(BasePersistable):
             __tablename__ = 'version_tests'
+
             def _hash(self):
                 return 132435465
+
         VersionTestClass.__table__.create()
 
         versions = randint(100, 200)

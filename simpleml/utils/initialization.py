@@ -88,8 +88,8 @@ class Database(object):
                         'port': self.database_params.get('port')}
         user_command = "CREATE USER {user} PASSWORD '{password}';".format(
             user=self.database_user, password=self.database_password)
-        database_command =  'CREATE DATABASE "{database}" WITH OWNER {user};'.format(
-             database=self.database_name, user=self.database_user)
+        database_command = 'CREATE DATABASE "{database}" WITH OWNER {user};'.format(
+            database=self.database_name, user=self.database_user)
 
         try:
             run_sql_command(admin_params, user_command, autocommit=True)

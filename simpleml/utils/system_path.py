@@ -28,4 +28,3 @@ if not os.path.exists(PICKLED_FILESTORE_DIRECTORY):
 
 if not os.path.exists(HDF5_FILESTORE_DIRECTORY):
     os.makedirs(HDF5_FILESTORE_DIRECTORY)
-

@@ -85,7 +85,7 @@ class RandomSplitMixin(SplitMixin):
 
         # Sklearn's train test split can only accomodate one split per iteration
         X_remaining, X_test, y_remaining, y_test = train_test_split(
-             self.dataset.X, self.dataset.y, test_size=test_size, random_state=random_state, shuffle=shuffle)
+            self.dataset.X, self.dataset.y, test_size=test_size, random_state=random_state, shuffle=shuffle)
 
         calibrated_validation_size = float(validation_size) / (validation_size + train_size)
 

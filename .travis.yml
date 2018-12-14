@@ -8,6 +8,10 @@ addons:
     - postgresql-10
     - postgresql-client-10
 
+before_script:
+  # wait for the postgres docker to be running
+  - while ! pg_isready -h localhost -p 5432 -q -U postgres; do "Postgres is unavailable - sleeping"; sleep 1; done;
+
 sudo: false
 language: python
 

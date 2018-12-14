@@ -128,7 +128,7 @@ class RawDatasetCreator(PersistableCreator):
             }
 
         else:
-            filters =  {
+            filters = {
                 'name': name,
                 'registered_name': kwargs.get('registered_name')
             }
