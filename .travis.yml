@@ -3,8 +3,6 @@ services:
 
 addons:
   postgresql: "10"
-  ports:
-    - "5432"
   apt:
     packages:
     - postgresql-10
@@ -43,6 +41,7 @@ matrix:
     - env: TOXENV=flake8
 
 install:
+ - pip install psycopg2
  - pip install coveralls
  - pip install tox-travis
 script: tox

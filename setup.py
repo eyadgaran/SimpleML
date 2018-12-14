@@ -17,7 +17,6 @@ setup(
     install_requires=[
         'sqlalchemy',
         'sqlalchemy_mixins',
-        'psycopg2',
         'scikit-learn',
         'pandas',
         'numpy',
@@ -25,8 +24,10 @@ setup(
         'future'
     ],
     extras_require={
+        'postgres': ["psycopg2"],
         'deep-learning': ["keras", "tensorflow"],
         'hdf5': ["hickle"],
+        'all': ["psycopg2", "keras", "tensorflow", "hickle"]
     },
     zip_safe=False,
     test_suite='nose.collector',

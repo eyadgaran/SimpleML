@@ -3,6 +3,9 @@ Util module to initialize SimpleML and configure
 database management
 '''
 
+__author__ = 'Elisha Yadgaran'
+
+
 # Import table models to register in DeclaritiveBase
 from simpleml.persistables.base_persistable import BasePersistable
 import simpleml.datasets.raw_datasets.base_raw_dataset
@@ -17,11 +20,6 @@ from simpleml.persistables.serializing import custom_dumps, custom_loads
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-import psycopg2
-from psycopg2 import ProgrammingError
-
-
-__author__ = 'Elisha Yadgaran'
 
 
 class Database(object):
@@ -76,37 +74,11 @@ class Database(object):
 
         base.metadata.create_all()
 
-    def create_database(self):
-        '''
-        Creates database via command line.
-        TODO: make system and sql flavor agnostic
-
-        :return: None
-        '''
-        admin_params = {'user': 'postgres', 'database': 'postgres',
-                        'host': self.database_params.get('host'),
-                        'port': self.database_params.get('port')}
-        user_command = "CREATE USER {user} PASSWORD '{password}';".format(
-            user=self.database_user, password=self.database_password)
-        database_command = 'CREATE DATABASE "{database}" WITH OWNER {user};'.format(
-            database=self.database_name, user=self.database_user)
-
-        try:
-            run_sql_command(admin_params, user_command, autocommit=True)
-        except ProgrammingError:
-            pass
-        try:
-            run_sql_command(admin_params, database_command, autocommit=True)
-        except ProgrammingError:
-            pass
-
-    def _initialize(self, base, create_database, drop_tables):
+    def _initialize(self, base, drop_tables):
         '''
         Initialization method to set up database connection and inject
         session manager
 
-        :param create_database: Bool, whether to run database and user creation
-            calls before starting up
         :param drop_tables: Bool, whether to drop existing tables in database
         :return: None
         '''
@@ -117,20 +89,15 @@ class Database(object):
         base.metadata.bind = engine
         base.query = session.query_property()
 
-        if create_database:
-            self.create_database()
-
         self.create_tables(base, drop_tables=drop_tables)
 
         base.set_session(session)
 
-    def initialize(self, base_list=None, create_database=False, drop_tables=False):
+    def initialize(self, base_list=None, drop_tables=False):
         '''
         Initialization method to set up database connection and inject
         session manager
 
-        :param create_database: Bool, whether to run database and user creation
-            calls before starting up
         :param drop_tables: Bool, whether to drop existing tables in database
         :return: None
         '''
@@ -138,27 +105,4 @@ class Database(object):
             base_list = [BasePersistable, DatasetStorage, RawDatasetStorage, BinaryBlob]
 
         for base in base_list:
-            self._initialize(base, create_database=create_database, drop_tables=drop_tables)
-            # Only create on the first go
-            create_database = False
-
-def run_sql_command(connection_params, command, autocommit=False):
-    '''
-    Execute command directly using psycopg2 cursor
-
-    :param connection_params: dict of connection details
-    :param command: raw sql to execute
-    :param autocommit: default false; determines if the connection automcommits
-    commands. Necessary for certain commands (create/drop db)
-    '''
-    connection = psycopg2.connect(**connection_params)
-    cursor = connection.cursor()
-    connection.autocommit = autocommit
-
-    cursor.execute(command)
-
-    if not autocommit:
-        connection.commit()
-
-    cursor.close()
-    connection.close()
+            self._initialize(base, drop_tables=drop_tables)

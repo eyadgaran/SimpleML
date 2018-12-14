@@ -21,10 +21,17 @@ __version__ = pkg_resources.get_distribution(__name__).version
 
 
 # 3) Import optional dependencies or set to none/type to avoid import errors
+# - Psycopg2
 # - Keras
 # - Hickle
 import warnings
 warning_msg = 'Unable to import optional dependency: {dependency}, to use install with `pip install {dependency}`'
+
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
+    warnings.warn(warning_msg.format(dependency='psycopg2'), ImportWarning)
 
 try:
     import keras
