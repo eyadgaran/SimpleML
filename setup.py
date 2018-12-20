@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-__version__ = '0.3'
+__version__ = '0.4'
 
 
 setup(
@@ -31,5 +31,20 @@ setup(
     },
     zip_safe=False,
     test_suite='nose.collector',
-    tests_require=['nose']
+    tests_require=['nose'],
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+    ]
 )
