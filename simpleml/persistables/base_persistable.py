@@ -33,6 +33,9 @@ class BasePersistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin,
     registered_name: class name of object defined when importing
         Can be used for the drag and drop GUI - also for prescribing training config
     author: creator
+    project: Project objects are associated with. Useful if multiple persistables
+        relate to the same project and want to be grouped (but have different names)
+        also good for implementing row based security across teams
     name: friendly name - primary way of tracking evolution of "same" object over time
     version: autoincrementing id of "friendly name"
     version_description: description that explains what is new or different about this version
@@ -75,6 +78,7 @@ class BasePersistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin,
     hash_ = Column('hash', BigInteger, nullable=False)
     registered_name = Column(String, nullable=False)
     author = Column(String, default='default', nullable=False)
+    project = Column(String, default='default', nullable=False)
     name = Column(String, default='default', nullable=False)
     version = Column(Integer, nullable=False)
     version_description = Column(String, default='')
@@ -87,13 +91,14 @@ class BasePersistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin,
     metadata_ = Column('metadata', JSONB, default={})
 
 
-    def __init__(self, name='default', has_external_files=False,
-                 author='default', version_description=None,
+    def __init__(self, name=None, has_external_files=False,
+                 author=None, project=None, version_description=None,
                  save_method='disk_pickled', **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
         self.author = author
+        self.project = project
         self.name = name
         self.has_external_files = has_external_files
         self.version_description = version_description
