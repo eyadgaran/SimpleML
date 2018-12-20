@@ -9,9 +9,12 @@ from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 import pandas as pd
 from future.utils import with_metaclass
+import logging
 
 
 __author__ = 'Elisha Yadgaran'
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AbstractBaseProcessedDataset(with_metaclass(DatasetRegistry, BaseDataset)):
@@ -39,12 +42,13 @@ class AbstractBaseProcessedDataset(with_metaclass(DatasetRegistry, BaseDataset))
         Extend parent function with a few additional save routines
         '''
         if self.pipeline is None:
-            raise DatasetError('Must set dataset pipeline before saving')
+            LOGGER.warning('Not using a dataset pipeline. Correct if this is unintended')
 
         super(AbstractBaseProcessedDataset, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
-        self.pipeline.load(load_externals=False)
+        if self.pipeline:
+            self.pipeline.load(load_externals=False)
 
     def load(self, **kwargs):
         '''
@@ -53,7 +57,8 @@ class AbstractBaseProcessedDataset(with_metaclass(DatasetRegistry, BaseDataset))
         super(AbstractBaseProcessedDataset, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
-        self.pipeline.load(load_externals=False)
+        if self.pipeline:
+            self.pipeline.load(load_externals=False)
 
 
 class BaseProcessedDataset(AbstractBaseProcessedDataset):
@@ -83,6 +88,7 @@ class BasePandasProcessedDataset(BaseProcessedDataset, PandasDatasetMixin):
     def build_dataframe(self):
         '''
         Transform raw dataset via dataset pipeline for production ready dataset
+        Overwrite this method to disable raw dataset requirement
         '''
         if self.pipeline is None:
             raise DatasetError('Must set pipeline before building dataframe')
@@ -95,10 +101,12 @@ class BasePandasProcessedDataset(BaseProcessedDataset, PandasDatasetMixin):
         self.config['label_columns'] = y.columns.tolist()
         self._external_file = pd.concat([X, y], axis=1)
 
+
 class BaseNumpyProcessedDataset(BaseProcessedDataset, NumpyDatasetMixin):
     def build_dataframe(self):
         '''
         Transform raw dataset via dataset pipeline for production ready dataset
+        Overwrite this method to disable raw dataset requirement
         '''
         if self.pipeline is None:
             raise DatasetError('Must set pipeline before building dataframe')

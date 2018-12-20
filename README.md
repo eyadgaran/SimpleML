@@ -35,9 +35,7 @@ Starting a project is as simple as defining the raw data and guiding the transfo
 
 ```python
 from simpleml.utils.initialization import Database
-from simpleml.datasets.raw_datasets.base_raw_dataset import BaseRawDataset
 from simpleml.datasets.processed_datasets.base_processed_dataset import BaseProcessedDataset
-from simpleml.pipelines.dataset_pipelines.base_dataset_pipeline import BaseNoSplitDatasetPipeline
 from simpleml.pipelines.production_pipelines.base_production_pipeline import BaseRandomSplitProductionPipeline
 from simpleml.transformers.fitful_transformers.vectorizers import SklearnDictVectorizer
 from simpleml.transformers.fitless_transformers.converters import DataframeToRecords
@@ -48,27 +46,15 @@ from simpleml.pipelines.validation_split_mixins import TEST_SPLIT
 
 
 # Initialize Database Connection
-db = Database(database='titanic').initialize()
+db = Database().initialize()
 
-# Define Raw Dataset and point to loading file
-class TitanicRaw(BaseRawDataset):
+# Define Dataset and point to loading file
+class TitanicDataset(BaseProcessedDataset):
     def build_dataframe(self):
         self._external_file = self.load_csv('filepath/to/train.csv')
 
-# Create Raw Dataset and save it
-raw_dataset = TitanicRaw(name='titanic', label_columns=['Survived'])
-raw_dataset.build_dataframe()
-raw_dataset.save()
-
-# Create Dataset Pipeline and save it
-dataset_pipeline = BaseNoSplitDatasetPipeline(name='titanic')
-dataset_pipeline.add_dataset(raw_dataset)
-dataset_pipeline.fit()
-dataset_pipeline.save()
-
 # Create Dataset and save it
-dataset = BaseProcessedDataset(name='titanic')
-dataset.add_pipeline(dataset_pipeline)
+dataset = TitanicDataset(name='titanic', label_columns=['Survived'])
 dataset.build_dataframe()
 dataset.save()
 
@@ -105,24 +91,19 @@ This workflow is modeled as a DAG, which means that there is room for paralleliz
 
 
 ```python
-from simpleml.utils.training.create_persistable import RawDatasetCreator,\
-    DatasetPipelineCreator, DatasetCreator, PipelineCreator, ModelCreator, MetricCreator
-
+from simpleml.utils.training.create_persistable import DatasetCreator,\
+    PipelineCreator, ModelCreator, MetricCreator
 
 # ---------------------------------------------------------------------------- #
 # Option 1: Explicit object creation (pass in dependencies)
 # ---------------------------------------------------------------------------- #
 # Object defining parameters
-raw_dataset_kwargs = {'name': 'titanic', 'registered_name': 'TitanicRaw', 'label_columns': ['Survived']}
-dataset_pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseNoSplitDatasetPipeline'}
-dataset_kwargs = {'name': 'titanic', 'registered_name': 'BaseProcessedDataset'}
+dataset_kwargs = {'name': 'titanic', 'registered_name': 'TitanicDataset', 'label_columns': ['Survived']}
 pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseRandomSplitProductionPipeline', 'transformers': transformers, 'train_size': 0.8, 'validation_size': 0.0, 'test_size': 0.2}
 model_kwargs = {'name': 'titanic', 'registered_name': 'SklearnLogisticRegression'}
 metric_kwargs = {'registered_name': 'AccuracyMetric', 'dataset_split': TEST_SPLIT}
 
-raw_dataset = RawDatasetCreator.retrieve_or_create(**raw_dataset_kwargs)
-dataset_pipeline = DatasetPipelineCreator.retrieve_or_create(raw_dataset=raw_dataset, **dataset_pipeline_kwargs)
-dataset = DatasetCreator.retrieve_or_create(dataset_pipeline=dataset_pipeline, **dataset_kwargs)
+dataset = DatasetCreator.retrieve_or_create(**dataset_kwargs)
 pipeline = PipelineCreator.retrieve_or_create(dataset=dataset, **pipeline_kwargs)
 model = ModelCreator.retrieve_or_create(pipeline=pipeline, **model_kwargs)
 metric = MetricCreator.retrieve_or_create(model=model, **metric_kwargs)     
@@ -132,20 +113,14 @@ metric = MetricCreator.retrieve_or_create(model=model, **metric_kwargs)
 # Does not require dependency existence at this time, good for compiling job definitions and executing on remote, distributed nodes
 # ---------------------------------------------------------------------------- #
 # Nested dependencies
-dataset_pipeline_kwargs['raw_dataset_kwargs'] = raw_dataset_kwargs
-dataset_kwargs['dataset_pipeline_kwargs'] = dataset_pipeline_kwargs
 pipeline_kwargs['dataset_kwargs'] = dataset_kwargs
 model_kwargs['pipeline_kwargs'] = pipeline_kwargs
 metric_kwargs['model_kwargs'] = model_kwargs
 
-raw_dataset = RawDatasetCreator.retrieve_or_create(**raw_dataset_kwargs)
-dataset_pipeline = DatasetPipelineCreator.retrieve_or_create(raw_dataset_kwargs=raw_dataset_kwargs, **dataset_pipeline_kwargs)
-dataset = DatasetCreator.retrieve_or_create(dataset_pipeline_kwargse=dataset_pipeline_kwargs, **dataset_kwargs)
+dataset = DatasetCreator.retrieve_or_create(**dataset_kwargs)
 pipeline = PipelineCreator.retrieve_or_create(dataset_kwargs=dataset_kwargs, **pipeline_kwargs)
 model = ModelCreator.retrieve_or_create(pipeline_kwargs=pipeline_kwargs, **model_kwargs)
 metric = MetricCreator.retrieve_or_create(model_kwargs=model_kwargs, **metric_kwargs)     
-
-
 ```
 
 Once objects have been created, they can be retrieved at whim by their name attribute (with the exception of metrics - which also need reference to the model). By default the latest version for a name will be returned, but this can be overridden by explicitly passing a version number.
@@ -153,12 +128,7 @@ Once objects have been created, they can be retrieved at whim by their name attr
 ```python
 from simpleml.utils.scoring.load_persistable import PersistableLoader
 
-# Initialize Database Connection
-db = Database(database='titanic').initialize()
-
 # Notice versions are not shared between objects and can increment differently depending on iterations
-raw_dataset = PersistableLoader.load_raw_dataset(name='titanic', version=1)
-dataset_pipeline = PersistableLoader.load_dataset_pipeline(name='titanic', version=3)
 dataset = PersistableLoader.load_dataset(name='titanic', version=7)
 pipeline = PersistableLoader.load_pipeline(name='titanic', version=6)
 model = PersistableLoader.load_model(name='titanic', version=8)
@@ -168,13 +138,8 @@ metric = PersistableLoader.load_metric(name='classification_accuracy', model_id=
 When it comes to production, one typically does not need all the training data so this mechanism becomes as simple as:
 
 ```python
-# Initialize Database Connection
-db = Database(database='titanic').initialize()
-
 desired_model = PersistableLoader.load_model(name='titanic', version=10)
-pipeline = desired_model.pipeline
-
-desired_model.predict_proba(pipeline.transform(new_dataframe))
+desired_model.predict_proba(new_dataframe)
 ```
 
 

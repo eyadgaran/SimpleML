@@ -264,7 +264,7 @@ class DatasetCreator(PersistableCreator):
                 filters = {
                     'name': name,
                     'registered_name': registered_name,
-                    'pipeline_id': dataset_pipeline.id
+                    'pipeline_id': dataset_pipeline.id if dataset_pipeline is not None else None
                 }
 
         return BaseProcessedDataset, filters
@@ -291,6 +291,11 @@ class DatasetCreator(PersistableCreator):
 
     @classmethod
     def retrieve_pipeline(cls, **pipeline_kwargs):
+        # Datasets do not require dataset pipelines so return None if it isn't passed
+        if not pipeline_kwargs:
+            LOGGER.warning('Dataset Pipeline parameters not passed, skipping dependencies. \
+                           Only use this if dataset is already in the right format!')
+            return None
         return cls.retrieve_dependency(DatasetPipelineCreator, **pipeline_kwargs)
 
 
