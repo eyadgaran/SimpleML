@@ -19,7 +19,11 @@ from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.persistables.serializing import custom_dumps, custom_loads
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import scoped_session, sessionmaker
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Database(object):
@@ -72,7 +76,10 @@ class Database(object):
         if drop_tables:
             base.metadata.drop_all()
 
-        base.metadata.create_all()
+        try:
+            base.metadata.create_all()
+        except ProgrammingError as e:  # Permission errors
+            LOGGER.debug(e)
 
     def _initialize(self, base, drop_tables):
         '''
