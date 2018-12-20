@@ -8,8 +8,6 @@ means unique to pandas.
 
 __author__ = 'Elisha Yadgaran'
 
-import numpy as np
-
 
 class NumpyDatasetMixin(object):
     '''
@@ -30,6 +28,13 @@ class NumpyDatasetMixin(object):
         if self.label_columns:
             return self.dataframe.get(self.label_columns[0])
         return None
+
+    def get(self, column, split):
+        '''
+        Unimplemented method to explicitly split X and y
+        Must be implemented by subclasses
+        '''
+        raise NotImplementedError
 
     def get_feature_names(self):
         '''

@@ -2,7 +2,7 @@ from simpleml.persistables.meta_registry import PipelineRegistry
 from simpleml.persistables.guid import GUID
 from simpleml.pipelines.base_pipeline import BasePipeline
 from simpleml.pipelines.validation_split_mixins import NoSplitMixin, RandomSplitMixin,\
-    ChronologicalSplitMixin
+    ChronologicalSplitMixin, ExplicitSplitMixin
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from future.utils import with_metaclass
@@ -40,12 +40,16 @@ class BaseProductionPipeline(AbstractBaseProductionPipeline):
 
 
 # Mixin implementations for convenience
-# Needs to be used as base class because of MRO initialization
-class BaseNoSplitProductionPipeline(NoSplitMixin, BaseProductionPipeline):
+class BaseNoSplitProductionPipeline(BaseProductionPipeline, NoSplitMixin):
+    pass
+
+class BaseExplicitSplitProductionPipeline(BaseProductionPipeline, ExplicitSplitMixin):
     pass
 
 class BaseRandomSplitProductionPipeline(RandomSplitMixin, BaseProductionPipeline):
+    # Needs to be used as base class because of MRO initialization
     pass
 
 class BaseChronologicalSplitProductionPipeline(ChronologicalSplitMixin, BaseProductionPipeline):
+    # Needs to be used as base class because of MRO initialization
     pass

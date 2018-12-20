@@ -1,7 +1,7 @@
 from simpleml.persistables.meta_registry import DatasetPipelineRegistry
 from simpleml.persistables.guid import GUID
 from simpleml.pipelines.base_pipeline import BasePipeline
-from simpleml.pipelines.validation_split_mixins import NoSplitMixin
+from simpleml.pipelines.validation_split_mixins import NoSplitMixin, ExplicitSplitMixin
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from future.utils import with_metaclass
@@ -39,6 +39,8 @@ class BaseDatasetPipeline(AbstractBaseDatasetPipeline):
 
 
 # Mixin implementations for convenience
-# Needs to be used as base class because of MRO initialization
-class BaseNoSplitDatasetPipeline(NoSplitMixin, BaseDatasetPipeline):
+class BaseNoSplitDatasetPipeline(BaseDatasetPipeline, NoSplitMixin):
+    pass
+
+class BaseExplicitSplitDatasetPipeline(BaseDatasetPipeline, ExplicitSplitMixin):
     pass

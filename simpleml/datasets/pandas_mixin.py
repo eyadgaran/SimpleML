@@ -26,6 +26,13 @@ class PandasDatasetMixin(object):
         '''
         return self.dataframe[self.label_columns]
 
+    def get(self, column, split):
+        '''
+        Unimplemented method to explicitly split X and y
+        Must be implemented by subclasses
+        '''
+        raise NotImplementedError
+
     def get_feature_names(self):
         '''
         Should return a list of the features in the dataset

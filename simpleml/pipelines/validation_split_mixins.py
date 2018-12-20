@@ -1,9 +1,11 @@
 '''
 Module for different split methods for cross validation
 
-    1) Percentage -- random split support for train, validation, test
-    2) Chronological -- time based split support for train, validation, test
-    3) KFold
+    1) No Split -- Just use all the data
+    2) Explicit Split -- dataset class defines the split
+    3) Percentage -- random split support for train, validation, test
+    4) Chronological -- time based split support for train, validation, test
+    5) KFold
 '''
 
 __author__ = 'Elisha Yadgaran'
@@ -20,7 +22,6 @@ TEST_SPLIT = 'TEST'
 
 
 class SplitMixin(with_metaclass(ABCMeta, object)):
-
     @abstractmethod
     def split_dataset(self):
         '''
@@ -42,6 +43,19 @@ class NoSplitMixin(SplitMixin):
             TRAIN_SPLIT: (self.dataset.X, self.dataset.y),
             VALIDATION_SPLIT: (None, None),
             TEST_SPLIT: (None, None)
+        }
+
+
+class ExplicitSplitMixin(SplitMixin):
+    def split_dataset(self):
+        '''
+        Method to split the dataframe into different sets. Assumes dataset
+        explicitly delineates between train, validation, and test
+        '''
+        self._dataset_splits = {
+            TRAIN_SPLIT: (self.dataset.get('X', TRAIN_SPLIT), self.dataset.get('y', TRAIN_SPLIT)),
+            VALIDATION_SPLIT: (self.dataset.get('X', VALIDATION_SPLIT), self.dataset.get('y', VALIDATION_SPLIT)),
+            TEST_SPLIT: (self.dataset.get('X', TEST_SPLIT), self.dataset.get('y', TEST_SPLIT))
         }
 
 
