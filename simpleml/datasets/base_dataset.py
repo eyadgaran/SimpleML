@@ -73,4 +73,7 @@ class BaseDataset(BasePersistable, AllSaveMixin):
             1) Dataframe
             2) Config
         '''
-        return hash(self.custom_hasher((self.dataframe, self.config)))
+        dataframe = self.dataframe
+        config = self.config
+
+        return self.custom_hasher((dataframe, config))

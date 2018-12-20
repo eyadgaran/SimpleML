@@ -42,7 +42,7 @@ class AbstractBaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
         metric = self.__class__.__name__
         config = self.config
 
-        return hash(self.custom_hasher((model_hash, metric, config)))
+        return self.custom_hasher((model_hash, metric, config))
 
     def _get_latest_version(self):
         '''

@@ -104,7 +104,7 @@ class BasePipeline(BasePersistable, AllSaveMixin):
         transformer_params = self.get_params()
         pipeline_config = self.config
 
-        return hash(self.custom_hasher((dataset_hash, transformers, transformer_params, pipeline_config)))
+        return self.custom_hasher((dataset_hash, transformers, transformer_params, pipeline_config))
 
     def save(self, **kwargs):
         '''

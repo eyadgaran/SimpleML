@@ -90,7 +90,7 @@ class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMi
         params = self.get_params()
         config = self.config
 
-        return hash(self.custom_hasher((pipeline_hash, model, params, config)))
+        return self.custom_hasher((pipeline_hash, model, params, config))
 
     def save(self, **kwargs):
         '''
