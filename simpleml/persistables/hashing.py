@@ -8,6 +8,7 @@ __author__ = 'Elisha Yadgaran'
 import pandas as pd
 import numpy as np
 from pandas.util import hash_pandas_object
+import inspect
 
 
 class CustomHasherMixin(object):
@@ -59,11 +60,21 @@ class CustomHasherMixin(object):
             return -12345678987654321
 
         elif isinstance(object_to_hash, dict):
-            new_object_to_hash = {}
-            for k, v in object_to_hash.items():
-                new_object_to_hash[k] = self.custom_hasher(v)
+            return hash(tuple(
+                sorted([self.custom_hasher(item) for item in object_to_hash.items()])
+            ))
 
-            return hash(tuple(frozenset(sorted(new_object_to_hash.items()))))
+        elif isinstance(object_to_hash, type(lambda:0)):
+            # Functions dont hash consistently because of the halting problem
+            # https://stackoverflow.com/questions/33998594/hash-for-lambda-function-in-python
+            # Attempt to use the source code string
+            return self.custom_hasher(inspect.getsource(object_to_hash))
+
+        elif isinstance(object_to_hash, type):
+            # Have to keep this at the end of the try list; np.ndarray,
+            # pd.DataFrame/Series, and function are also of <type 'type'>
+            return self.custom_hasher(repr(object_to_hash))
+            # return self.custom_hasher(inspect.getsource(object_to_hash))
 
         else:
             return hash(object_to_hash)
