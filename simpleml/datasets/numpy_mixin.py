@@ -9,7 +9,10 @@ means unique to pandas.
 __author__ = 'Elisha Yadgaran'
 
 
-class NumpyDatasetMixin(object):
+from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
+
+
+class NumpyDatasetMixin(AbstractDatasetMixin):
     '''
     Assumes _external_file is a dictionary of numpy ndarrays
     '''
@@ -31,10 +34,20 @@ class NumpyDatasetMixin(object):
 
     def get(self, column, split):
         '''
-        Unimplemented method to explicitly split X and y
-        Must be implemented by subclasses
+        Explicitly split validation splits
+        Assumes self.dataframe has a get method to return a dictionary of {'X': X, 'y': y}
+        Uses self.label_columns if y is named something else -- only looks at first entry in list
         '''
-        raise NotImplementedError
+        if column not in ('X', 'y'):
+            raise ValueError('Only support columns: X & y')
+
+        split_dict = self.dataframe.get(split)
+
+        if column == 'y':
+            return split_dict.get(self.label_columns[0])
+
+        else:
+            return split_dict.get('X')
 
     def get_feature_names(self):
         '''

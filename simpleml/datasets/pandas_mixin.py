@@ -8,10 +8,11 @@ means unique to pandas.
 
 __author__ = 'Elisha Yadgaran'
 
+from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 import pandas as pd
 
 
-class PandasDatasetMixin(object):
+class PandasDatasetMixin(AbstractDatasetMixin):
     @property
     def X(self):
         '''
@@ -28,10 +29,22 @@ class PandasDatasetMixin(object):
 
     def get(self, column, split):
         '''
-        Unimplemented method to explicitly split X and y
-        Must be implemented by subclasses
+        Explicitly split validation splits
+        Assumes self.dataframe has a get method to return the dataframe associated with the split
+        Uses self.label_columns to separate x and y columns inside the returned dataframe
         '''
-        raise NotImplementedError
+        if column not in ('X', 'y'):
+            raise ValueError('Only support columns: X & y')
+
+        df = self.dataframe.get(split)
+        if df is None:
+            df = pd.DataFrame()
+
+        if column == 'y':
+            return df[[col for col in self.label_columns if col in df.columns]]
+
+        else:
+            return df[df.columns.difference(self.label_columns)]
 
     def get_feature_names(self):
         '''
