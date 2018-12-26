@@ -50,8 +50,8 @@ class BaseKerasModel(BaseModel):
         Keras fit parameters (epochs, callbacks...) are stored as self.params so
         retrieve them automatically
         '''
-
-        self.external_model.fit(X, y, **self.get_params())
+        # Reduce dimensionality of y if it is only 1 column
+        self.external_model.fit(X, y.squeeze(), **self.get_params())
 
     def _predict(self, X):
         '''

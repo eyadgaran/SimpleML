@@ -1,8 +1,9 @@
+from simpleml import TRAIN_SPLIT
 from simpleml.persistables.base_persistable import BasePersistable
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
-from simpleml.pipelines.validation_split_mixins import TRAIN_SPLIT
 from simpleml.utils.errors import PipelineError
+
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
 import logging

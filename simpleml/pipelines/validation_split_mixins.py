@@ -11,14 +11,11 @@ Module for different split methods for cross validation
 __author__ = 'Elisha Yadgaran'
 
 
+from simpleml import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
+
 from abc import ABCMeta, abstractmethod
 from sklearn.model_selection import train_test_split
 from future.utils import with_metaclass
-
-
-TRAIN_SPLIT = 'TRAIN'
-VALIDATION_SPLIT = 'VALIDATION'
-TEST_SPLIT = 'TEST'
 
 
 class SplitMixin(with_metaclass(ABCMeta, object)):

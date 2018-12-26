@@ -1,8 +1,9 @@
+from simpleml import TRAIN_SPLIT
 from simpleml.persistables.base_persistable import BasePersistable, GUID
 from simpleml.persistables.meta_registry import ModelRegistry
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.utils.errors import ModelError
-from simpleml.pipelines.base_pipeline import TRAIN_SPLIT
+
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -126,7 +127,8 @@ class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMi
         '''
         Separate out actual fit call for optional overwrite in subclasses
         '''
-        self.external_model.fit(X, y)
+        # Reduce dimensionality of y if it is only 1 column
+        self.external_model.fit(X, y.squeeze())
 
     def fit(self, **kwargs):
         '''
@@ -142,8 +144,7 @@ class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMi
         # Explicitly fit only on train split
         X, y = self.pipeline.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True)
 
-        # Reduce dimensionality of y if it is only 1 column
-        self._fit(X, y.squeeze())
+        self._fit(X, y)
 
         # Mark the state so it doesnt get refit and can now be saved
         self.state['fitted'] = True
