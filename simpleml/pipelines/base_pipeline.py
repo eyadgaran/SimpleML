@@ -142,6 +142,8 @@ class BasePipeline(BasePersistable, AllSaveMixin):
     def get_dataset_split(self, split=None):
         '''
         Get specific dataset split
+        By default no constraint imposed, but convention is that return should
+        be a tuple of (X, y)
         '''
         if split is None:
             split = TRAIN_SPLIT
@@ -149,7 +151,7 @@ class BasePipeline(BasePersistable, AllSaveMixin):
         if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
             self.split_dataset()
 
-        return self._dataset_splits.get(split, (None, None))
+        return self._dataset_splits.get(split)
 
     def fit(self, **kwargs):
         '''
@@ -200,7 +202,7 @@ class BasePipeline(BasePersistable, AllSaveMixin):
             necessary for fitting a supervised model after
         '''
         self.fit(**kwargs)
-        output, y = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=return_y, **kwargs)
+        output, y = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True, **kwargs)
 
         if return_y:
             return output, y

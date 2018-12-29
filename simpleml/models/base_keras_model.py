@@ -58,6 +58,7 @@ class BaseKerasModel(BaseModel):
         Keras returns class tuples (proba equivalent) so cast to single prediction
         '''
         # Keras by default supports proba predictions, so coerce to integers
+        # Only works for binary classification (round on more classes will likely yield majority 0)
         return self.external_model.predict(X).round()
 
     def set_params(self, **kwargs):
