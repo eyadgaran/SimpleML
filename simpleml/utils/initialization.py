@@ -63,7 +63,8 @@ class Database(object):
     def engine(self):
         return create_engine(self.engine_url,
                              json_serializer=custom_dumps,
-                             json_deserializer=custom_loads)
+                             json_deserializer=custom_loads,
+                             pool_recycle=300)
 
     @staticmethod
     def create_tables(base, drop_tables=False):
