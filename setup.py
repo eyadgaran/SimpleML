@@ -33,7 +33,7 @@ setup(
     test_suite='nose.collector',
     tests_require=['nose'],
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
