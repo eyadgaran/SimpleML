@@ -151,7 +151,7 @@ class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMi
 
         return self
 
-    def _predict(self, X):
+    def _predict(self, X, **kwargs):
         '''
         Separate out actual predict call for optional overwrite in subclasses
         '''
@@ -166,7 +166,7 @@ class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMi
 
         transformed = self.pipeline.transform(X, **kwargs)
 
-        return self._predict(transformed)
+        return self._predict(transformed, **kwargs)
 
     def fit_predict(self, **kwargs):
         '''

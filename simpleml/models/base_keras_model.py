@@ -6,8 +6,10 @@ need to overwrite other methods at the root
 __author__ = 'Elisha Yadgaran'
 
 
-import logging
 from simpleml.models.base_model import BaseModel
+
+import logging
+from abc import abstractmethod
 
 
 LOGGER = logging.getLogger(__name__)
@@ -20,6 +22,7 @@ class BaseKerasModel(BaseModel):
         '''
         super(BaseKerasModel, self).__init__(save_method=save_method, **kwargs)
 
+    @abstractmethod
     def _create_external_model(self, **kwargs):
         '''
         Abstract method for each subclass to implement
@@ -33,8 +36,6 @@ class BaseKerasModel(BaseModel):
         '''
         external_model = None
         self.build_network(external_model, **kwargs)
-
-        raise NotImplementedError
 
     def build_network(self, external_model, **kwargs):
         '''
@@ -52,14 +53,6 @@ class BaseKerasModel(BaseModel):
         '''
         # Reduce dimensionality of y if it is only 1 column
         self.external_model.fit(X, y.squeeze(), **self.get_params())
-
-    def _predict(self, X):
-        '''
-        Keras returns class tuples (proba equivalent) so cast to single prediction
-        '''
-        # Keras by default supports proba predictions, so coerce to integers
-        # Only works for binary classification (round on more classes will likely yield majority 0)
-        return self.external_model.predict(X).round()
 
     def set_params(self, **kwargs):
         '''
@@ -86,3 +79,12 @@ class BaseKerasModel(BaseModel):
         Get fit params
         '''
         return self.params
+
+    @staticmethod
+    def transfer_weights(new_model, old_model):
+        new_layers = {i.name: i for i in new_model.layers}
+        old_layers = {i.name: i for i in old_model.layers}
+
+        for name, layer in new_layers.items():
+            if name in old_layers:
+                layer.set_weights(old_layers[name].get_weights())
