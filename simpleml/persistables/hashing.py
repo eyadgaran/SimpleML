@@ -64,7 +64,7 @@ class CustomHasherMixin(object):
                 sorted([self.custom_hasher(item) for item in object_to_hash.items()])
             ))
 
-        elif isinstance(object_to_hash, type(lambda:0)):
+        elif isinstance(object_to_hash, type(lambda: 0)):
             # Functions dont hash consistently because of the halting problem
             # https://stackoverflow.com/questions/33998594/hash-for-lambda-function-in-python
             # Attempt to use the source code string
