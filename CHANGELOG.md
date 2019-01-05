@@ -1,6 +1,11 @@
 ## Change Log
 
 ### 0.4
+- Keras Seq2Seq support
+- Keras model support
+- Minimized required installation dependencies
+- Abstract base classes
+- Complex object JSON serialization
 - Python 3 compatibility
 - Travis and tox for CI/testing
 
