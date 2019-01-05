@@ -25,9 +25,11 @@ class KerasSeq2SeqClassifier(KerasModelClassifier):
         rtype: self.external_model.__class__
         '''
 
-    def check_for_models(self):
+    def check_for_models(self, rebuild=False):
         if not hasattr(self, 'inference_model'):
             self.inference_model = self.build_inference_network(self.external_model.__class__)
+            self.transfer_weights(new_model=self.inference_model, old_model=self.external_model)
+        elif rebuild:
             self.transfer_weights(new_model=self.inference_model, old_model=self.external_model)
 
     def _predict(self, X):
@@ -42,9 +44,12 @@ class KerasSeq2SeqClassifier(KerasModelClassifier):
 
 
 class KerasEncoderDecoderClassifier(KerasSeq2SeqClassifier):
-    def check_for_models(self):
+    def check_for_models(self, rebuild=False):
         if not hasattr(self, 'encoder_model') or not hasattr(self, 'decoder_model'):
             self.encoder_model, self.decoder_model = self.build_inference_network(self.external_model.__class__)
+            self.transfer_weights(new_model=self.encoder_model, old_model=self.external_model)
+            self.transfer_weights(new_model=self.decoder_model, old_model=self.external_model)
+        elif rebuild:
             self.transfer_weights(new_model=self.encoder_model, old_model=self.external_model)
             self.transfer_weights(new_model=self.decoder_model, old_model=self.external_model)
 
