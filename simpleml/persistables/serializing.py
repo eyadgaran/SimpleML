@@ -12,6 +12,7 @@ __author__ = 'Elisha Yadgaran'
 import json
 import dill as pickle
 import codecs
+import sys
 
 try:  # Py2/3 compatibility
     basestring
@@ -58,4 +59,8 @@ def custom_dumps(data):
 
 def custom_loads(data):
     # Need the extra nesting because json loads only passes nested dict objects to object_hook
-    return object_hook(json.loads(data.decode('utf-8'), object_hook=object_hook), ignore_dicts=True)
+    # Python 2 strings have a decode method, python 3 doesn't
+    if sys.version_info[0] == 2:
+        return object_hook(json.loads(data.decode('utf-8'), object_hook=object_hook), ignore_dicts=True)
+    else:
+        return object_hook(json.loads(data, object_hook=object_hook), ignore_dicts=True)
