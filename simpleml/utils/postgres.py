@@ -35,6 +35,34 @@ def create_user(connection_params, user, password):
         pass
 
 
+def drop_database(connection_params, database, force=False):
+    '''
+    Drop database -- Must have sufficient privileges
+    :return: None
+    '''
+    force_command = "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{}'".format(database)
+    database_command = 'DROP DATABASE "{database}";'.format(database=database)
+
+    try:
+        if force:
+            run_sql_command(connection_params, force_command)
+        run_sql_command(connection_params, database_command, autocommit=True)
+    except psycopg2.ProgrammingError:
+        pass
+
+
+def drop_user(connection_params, user):
+    '''
+    Drop a user -- Must have sufficient privileges
+    :return: None
+    '''
+    user_command = "DROP USER {user};".format(user=user)
+    try:
+        run_sql_command(connection_params, user_command, autocommit=True)
+    except psycopg2.ProgrammingError:
+        pass
+
+
 def run_sql_command(connection_params, command, autocommit=False):
     '''
     Execute command directly using psycopg2 cursor
