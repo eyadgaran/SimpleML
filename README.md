@@ -8,7 +8,7 @@
 # SimpleML
 Machine learning that just works, for simple production applications
 
-Documentation: https://simpleml.readthedocs.io/en/latest
+Documentation: [simpleml.readthedocs.io](https://simpleml.readthedocs.io)
 
 Installation:  `pip install simpleml`
 
