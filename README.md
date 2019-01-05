@@ -1,3 +1,10 @@
+[![PyPI version](https://badge.fury.io/py/simpleml.svg)](https://badge.fury.io/py/simpleml)
+![PyPI pyversions](https://img.shields.io/pypi/pyversions/ansicolortags.svg)
+![Docs](https://readthedocs.org/projects/simpleml/badge/?version=stable)
+![Build Status](https://travis-ci.org/eyadgaran/{simpleml.png?branch=master)
+![Coverage Status](https://coveralls.io/repos/github/eyadgaran/SimpleML/badge.svg?branch=master)
+![HitCount](http://hits.dwyl.io/eyadgaran/simpleml.svg)
+
 # SimpleML
 Machine learning that just works, for simple production applications
 
