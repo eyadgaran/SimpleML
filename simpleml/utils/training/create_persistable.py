@@ -3,10 +3,8 @@ Module with helper classes to create new persistables
 '''
 from abc import ABCMeta, abstractmethod
 from simpleml.persistables.meta_registry import SIMPLEML_REGISTRY
-from simpleml.datasets.raw_datasets.base_raw_dataset import BaseRawDataset
-from simpleml.pipelines.dataset_pipelines.base_dataset_pipeline import BaseDatasetPipeline
-from simpleml.datasets.processed_datasets.base_processed_dataset import BaseProcessedDataset
-from simpleml.pipelines.production_pipelines.base_production_pipeline import BaseProductionPipeline
+from simpleml.datasets.base_dataset import BaseDataset
+from simpleml.pipelines.base_pipeline import BasePipeline
 from simpleml.models.base_model import BaseModel
 from simpleml.metrics.base_metric import BaseMetric
 from simpleml.utils.errors import TrainingError
@@ -99,125 +97,6 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
         return cls
 
 
-class RawDatasetCreator(PersistableCreator):
-    @classmethod
-    def determine_filters(cls, name='', version=None, strict=True, **kwargs):
-        '''
-        stateless method to determine which filters to apply when looking for
-        existing persistable
-
-        Returns: database class, filter dictionary
-
-        :param registered_name: Class name registered in SimpleML
-        :param strict: whether to assume same class and name == same persistable,
-        or, load the data and compare the hash
-        '''
-        if version is not None:
-            filters = {
-                'name': name,
-                'version': version
-            }
-        # Datasets are special because we cannot assert the data is the same until we load it
-        elif strict:
-            registered_name = kwargs.get('registered_name')
-            new_dataset = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
-            filters = {
-                'name': name,
-                'registered_name': registered_name,
-                'hash_': new_dataset._hash()
-            }
-
-        else:
-            filters = {
-                'name': name,
-                'registered_name': kwargs.get('registered_name')
-            }
-
-        return BaseRawDataset, filters
-
-    @classmethod
-    def create(cls, registered_name, **kwargs):
-        '''
-        Stateless method to create a new persistable with the desired parameters
-        kwargs are passed directly to persistable
-
-        :param registered_name: Class name registered in SimpleML
-        '''
-        new_dataset = cls.retrieve_from_registry(registered_name)(**kwargs)
-        new_dataset.build_dataframe()
-        new_dataset.save()
-
-        return new_dataset
-
-
-class DatasetPipelineCreator(PersistableCreator):
-    @classmethod
-    def determine_filters(cls, name='', version=None, strict=False, **kwargs):
-        '''
-        stateless method to determine which filters to apply when looking for
-        existing persistable
-
-        Returns: database class, filter dictionary
-
-        :param registered_name: Class name registered in SimpleML
-        :param strict: whether to fit objects first before assuming they are identical
-        In theory if all inputs and classes are the same, the outputs should deterministically
-        be the same as well (up to random iter). So, you dont need to fit objects
-        to be sure they are the same
-        '''
-        if version is not None:
-            filters = {
-                'name': name,
-                'version': version
-            }
-
-        else:
-            # Check if dependency object was passed
-            dataset = kwargs.pop('raw_dataset', None)
-            if dataset is None:
-                # Use dependency reference to retrieve object
-                dataset = cls.retrieve_dataset(**kwargs.pop('raw_dataset_kwargs', {}))
-
-            # Build dummy object to retrieve hash to look for
-            registered_name = kwargs.pop('registered_name')
-            new_pipeline = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
-            new_pipeline.add_dataset(dataset)
-            if strict:
-                new_pipeline.fit()
-
-            filters = {
-                'name': name,
-                'registered_name': registered_name,
-                'hash_': new_pipeline._hash()
-            }
-
-        return BaseDatasetPipeline, filters
-
-    @classmethod
-    def create(cls, registered_name, raw_dataset=None, **kwargs):
-        '''
-        Stateless method to create a new persistable with the desired parameters
-        kwargs are passed directly to persistable
-
-        :param registered_name: Class name registered in SimpleML
-        :param raw_dataset: raw dataset object
-        '''
-        if raw_dataset is None:
-            # Use dependency reference to retrieve object
-            raw_dataset = cls.retrieve_dataset(**kwargs.pop('raw_dataset_kwargs', {}))
-
-        new_pipeline = cls.retrieve_from_registry(registered_name)(**kwargs)
-        new_pipeline.add_dataset(raw_dataset)
-        new_pipeline.fit()
-        new_pipeline.save()
-
-        return new_pipeline
-
-    @classmethod
-    def retrieve_dataset(cls, **dataset_kwargs):
-        return cls.retrieve_dependency(RawDatasetCreator, **dataset_kwargs)
-
-
 class DatasetCreator(PersistableCreator):
     @classmethod
     def determine_filters(cls, name='', version=None, strict=True, **kwargs):
@@ -241,16 +120,16 @@ class DatasetCreator(PersistableCreator):
         else:
             registered_name = kwargs.pop('registered_name')
             # Check if dependency object was passed
-            dataset_pipeline = kwargs.pop('dataset_pipeline', None)
+            pipeline = kwargs.pop('pipeline', None)
 
-            if dataset_pipeline is None:
+            if pipeline is None:
                 # Use dependency reference to retrieve object
-                dataset_pipeline = cls.retrieve_pipeline(**kwargs.pop('dataset_pipeline_kwargs', {}))
+                pipeline = cls.retrieve_pipeline(**kwargs.pop('pipeline_kwargs', {}))
 
             if strict:
                 # Build dummy object to retrieve hash to look for
                 new_dataset = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
-                new_dataset.add_pipeline(dataset_pipeline)
+                new_dataset.add_pipeline(pipeline)
                 new_dataset.build_dataframe()
 
                 filters = {
@@ -264,13 +143,13 @@ class DatasetCreator(PersistableCreator):
                 filters = {
                     'name': name,
                     'registered_name': registered_name,
-                    'pipeline_id': dataset_pipeline.id if dataset_pipeline is not None else None
+                    'pipeline_id': pipeline.id if pipeline is not None else None
                 }
 
-        return BaseProcessedDataset, filters
+        return BaseDataset, filters
 
     @classmethod
-    def create(cls, registered_name, dataset_pipeline=None, **kwargs):
+    def create(cls, registered_name, pipeline=None, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -278,12 +157,12 @@ class DatasetCreator(PersistableCreator):
         :param registered_name: Class name registered in SimpleML
         :param dataset_pipeline: dataset pipeline object
         '''
-        if dataset_pipeline is None:
+        if pipeline is None:
             # Use dependency reference to retrieve object
-            dataset_pipeline = cls.retrieve_pipeline(**kwargs.pop('dataset_pipeline_kwargs', {}))
+            pipeline = cls.retrieve_pipeline(**kwargs.pop('pipeline_kwargs', {}))
 
         new_dataset = cls.retrieve_from_registry(registered_name)(**kwargs)
-        new_dataset.add_pipeline(dataset_pipeline)
+        new_dataset.add_pipeline(pipeline)
         new_dataset.build_dataframe()
         new_dataset.save()
 
@@ -296,7 +175,7 @@ class DatasetCreator(PersistableCreator):
             LOGGER.warning('Dataset Pipeline parameters not passed, skipping dependencies. \
                            Only use this if dataset is already in the right format!')
             return None
-        return cls.retrieve_dependency(DatasetPipelineCreator, **pipeline_kwargs)
+        return cls.retrieve_dependency(PipelineCreator, **pipeline_kwargs)
 
 
 class PipelineCreator(PersistableCreator):
@@ -340,7 +219,7 @@ class PipelineCreator(PersistableCreator):
                 'hash_': new_pipeline._hash()
             }
 
-        return BaseProductionPipeline, filters
+        return BasePipeline, filters
 
     @classmethod
     def create(cls, registered_name, dataset=None, **kwargs):
