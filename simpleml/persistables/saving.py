@@ -27,9 +27,9 @@ from os.path import join
 
 # Python 2/3 compatibility
 try:
-    import cStringIO
+    from cStringIO import StringIO
 except ImportError:
-    from io import StringIO as cStringIO
+    from io import StringIO
 from future.utils import with_metaclass
 
 # Import optional dependencies
@@ -122,7 +122,7 @@ class DataframeTableSaveMixin(BaseExternalSaveMixin):
                           index=index, schema=schema, dtype=dtype)
 
         # Prepare data
-        output = cStringIO.StringIO()
+        output = StringIO()
         df.to_csv(output, sep=sep, header=False, encoding=encoding, index=index)
         output.seek(0)
 
