@@ -259,8 +259,8 @@ class BasePipeline(AbstractBasePipeline):
     '''
     __tablename__ = 'pipelines'
 
-    dataset_id = Column(GUID, ForeignKey("datasets.id"))
-    dataset = relationship("BaseDataset", enable_typechecks=False)
+    dataset_id = Column(GUID, ForeignKey("datasets.id", name="pipelines_dataset_id_fkey"))
+    dataset = relationship("BaseDataset", enable_typechecks=False, foreign_keys=[dataset_id])
 
     __table_args__ = (
         # Unique constraint for versioning

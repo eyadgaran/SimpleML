@@ -226,7 +226,7 @@ class BaseModel(AbstractBaseModel):
 
     # Only dependency is the pipeline (to score in production)
     pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
-    pipeline = relationship("BaseProductionPipeline", enable_typechecks=False)
+    pipeline = relationship("BasePipeline", enable_typechecks=False)
 
     __table_args__ = (
         # Unique constraint for versioning

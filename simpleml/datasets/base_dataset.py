@@ -169,7 +169,7 @@ class BaseDataset(AbstractBaseDataset):
     __tablename__ = 'datasets'
 
     pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
-    pipeline = relationship("BasePipeline", enable_typechecks=False)
+    pipeline = relationship("BasePipeline", enable_typechecks=False, foreign_keys=[pipeline_id])
 
     __table_args__ = (
         # Unique constraint for versioning
