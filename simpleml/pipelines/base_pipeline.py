@@ -1,22 +1,35 @@
+'''
+Base Module for Pipelines
+'''
+
+__author__ = 'Elisha Yadgaran'
+
+
 from simpleml import TRAIN_SPLIT
 from simpleml.persistables.base_persistable import BasePersistable
 from simpleml.persistables.saving import AllSaveMixin
+from simpleml.persistables.meta_registry import PipelineRegistry
+from simpleml.persistables.guid import GUID
+
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
 from simpleml.utils.errors import PipelineError
 
-from sqlalchemy import Column
+from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
+from future.utils import with_metaclass
 import logging
-
-__author__ = 'Elisha Yadgaran'
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-class BasePipeline(BasePersistable, AllSaveMixin):
+class AbstractBasePipeline(with_metaclass(PipelineRegistry, BasePersistable, AllSaveMixin)):
     '''
-    Base class for all Pipelines objects.
+    Abstract Base class for all Pipelines objects.
+
+    Relies on mixin classes to define the split_dataset method. Will throw
+    an error on use otherwise
 
     -------
     Schema
@@ -29,10 +42,9 @@ class BasePipeline(BasePersistable, AllSaveMixin):
     params = Column(JSONB, default={})
 
     def __init__(self, has_external_files=True, transformers=[],
+                 external_pipeline_class='default',
                  **kwargs):
-        external_pipeline_class = kwargs.pop('external_pipeline_class', 'default')
-
-        super(BasePipeline, self).__init__(
+        super(AbstractBasePipeline, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate pipeline
@@ -125,7 +137,7 @@ class BasePipeline(BasePersistable, AllSaveMixin):
         self.metadata_['transformers'] = self.get_transformers()
         self.metadata_['feature_names'] = self.get_feature_names()
 
-        super(BasePipeline, self).save(**kwargs)
+        super(AbstractBasePipeline, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.dataset.load(load_externals=False)
@@ -134,7 +146,7 @@ class BasePipeline(BasePersistable, AllSaveMixin):
         '''
         Extend main load routine to load relationship class
         '''
-        super(BasePipeline, self).load(**kwargs)
+        super(AbstractBasePipeline, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         self.dataset.load(load_externals=False)
@@ -234,3 +246,25 @@ class BasePipeline(BasePersistable, AllSaveMixin):
         '''
         initial_features = self.dataset.get_feature_names()
         return self.external_pipeline.get_feature_names(feature_names=initial_features)
+
+
+class BasePipeline(AbstractBasePipeline):
+    '''
+    Base class for all Pipeline objects.
+
+    -------
+    Schema
+    -------
+    dataset_id: foreign key relation to the dataset used as input
+    '''
+    __tablename__ = 'pipelines'
+
+    dataset_id = Column(GUID, ForeignKey("datasets.id"))
+    dataset = relationship("BaseDataset", enable_typechecks=False)
+
+    __table_args__ = (
+        # Unique constraint for versioning
+        UniqueConstraint('name', 'version', name='pipeline_name_version_unique'),
+        # Index for searching through friendly names
+        Index('pipeline_name_index', 'name'),
+     )

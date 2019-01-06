@@ -8,13 +8,11 @@ __author__ = 'Elisha Yadgaran'
 
 # Import table models to register in DeclaritiveBase
 from simpleml.persistables.base_persistable import BasePersistable
-import simpleml.datasets.raw_datasets.base_raw_dataset
-import simpleml.pipelines.dataset_pipelines.base_dataset_pipeline
-import simpleml.datasets.processed_datasets.base_processed_dataset
-import simpleml.pipelines.production_pipelines.base_production_pipeline
+import simpleml.datasets.base_dataset
+import simpleml.pipelines.base_pipeline
 import simpleml.models.base_model
 import simpleml.metrics.base_metric
-from simpleml.persistables.dataset_storage import DatasetStorage, RawDatasetStorage
+from simpleml.persistables.dataset_storage import DatasetStorage
 from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.persistables.serializing import custom_dumps, custom_loads
 
@@ -110,7 +108,7 @@ class Database(object):
         :return: None
         '''
         if base_list is None:
-            base_list = [BasePersistable, DatasetStorage, RawDatasetStorage, BinaryBlob]
+            base_list = [BasePersistable, DatasetStorage, BinaryBlob]
 
         for base in base_list:
             self._initialize(base, drop_tables=drop_tables)

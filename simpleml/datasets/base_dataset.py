@@ -1,19 +1,49 @@
-from simpleml.persistables.base_persistable import BasePersistable
-from simpleml.persistables.saving import AllSaveMixin
+'''
+Base Module for Datasets
 
+Two use cases:
+    1) Processed, or traditional datasets. In situations of clean,
+representative data, this can be used directly for modeling purposes.
+
+    2) Otherwise, a `raw dataset` needs to be created first with a `dataset pipeline`
+to transform it into the processed form.
+'''
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseDataset(BasePersistable, AllSaveMixin):
+from simpleml.persistables.base_persistable import BasePersistable
+from simpleml.persistables.saving import AllSaveMixin
+from simpleml.persistables.dataset_storage import DatasetStorage, DATASET_SCHEMA
+from simpleml.persistables.meta_registry import DatasetRegistry
+from simpleml.persistables.guid import GUID
+
+from future.utils import with_metaclass
+from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
+from sqlalchemy.orm import relationship
+import logging
+
+
+LOGGER = logging.getLogger(__name__)
+
+
+class AbstractBaseDataset(with_metaclass(DatasetRegistry, BasePersistable, AllSaveMixin)):
     '''
-    Base class for all Dataset objects.
+    Abstract Base class for all Dataset objects.
 
-    Every dataset has one dataframe associated with it and can be subdivided
-    by inheriting classes (y column for supervised, train/test/validation splits, etc)
+    Every dataset has a "dataframe" object associated with it that is responsible
+    for housing the data. The term dataframe is a bit of a misnomer since it
+    does not need to be a pandas.DataFrame obejct.
 
-    Dataset storage is the final resulting dataframe so technically a dataset
-    is uniquely determined by Dataset class + Dataset Pipeline
+    Each dataframe can be subdivided by inheriting classes and mixins to support
+    numerous representations:
+    ex: y column for supervised
+        train/test/validation splits
+        ...
+
+    Datasets can be constructed from scratch or as derivatives of existing datasets.
+    In the event of derivation, a pipeline must be specified to transform the
+    original data
 
     -------
     Schema
@@ -23,19 +53,25 @@ class BaseDataset(BasePersistable, AllSaveMixin):
 
     __abstract__ = True
 
-    def __init__(self, has_external_files=True, **kwargs):
-        # By default assume unsupervised so no targets
-        label_columns = kwargs.pop('label_columns', [])
-
-        super(BaseDataset, self).__init__(
+    def __init__(self, has_external_files=True, label_columns=[], **kwargs):
+        super(AbstractBaseDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
+        # By default assume unsupervised so no targets
         self.config['label_columns'] = label_columns
         self.object_type = 'DATASET'
 
         # Instantiate dataframe variable - doesn't get populated until
         # build_dataframe() is called
         self._external_file = None
+
+    @property
+    def _schema(self):
+        return DATASET_SCHEMA
+
+    @property
+    def _engine(self):
+        return DatasetStorage.metadata.bind
 
     @property
     def dataframe(self):
@@ -62,6 +98,12 @@ class BaseDataset(BasePersistable, AllSaveMixin):
         '''
         raise NotImplementedError
 
+    def add_pipeline(self, pipeline):
+        '''
+        Setter method for dataset pipeline used
+        '''
+        self.pipeline = pipeline
+
     def _hash(self):
         '''
         Datasets rely on external data so instead of hashing only the config,
@@ -69,11 +111,69 @@ class BaseDataset(BasePersistable, AllSaveMixin):
         This requires loading the data before determining duplication
         so overwrite for differing behavior
 
+        Technically there is little reason to hash anything besides the dataframe,
+        but a design choice was made to separate the representation of the data
+        from the use cases. For example: two dataset objects with different configured
+        labels will yield different downstream results, even if the data is identical.
+        Similarly with the pipeline, maintaining the back reference to the originating
+        source is preferred, even if the final data can be made through different
+        transformations.
+
         Hash is the combination of the:
             1) Dataframe
             2) Config
+            3) Pipeline
         '''
         dataframe = self.dataframe
         config = self.config
+        if self.pipeline is not None:
+            pipeline_hash = self.pipeline.hash_ or self.pipeline._hash()
+        else:
+            pipeline_hash = None
 
-        return self.custom_hasher((dataframe, config))
+        return self.custom_hasher((dataframe, config, pipeline_hash))
+
+    def save(self, **kwargs):
+        '''
+        Extend parent function with a few additional save routines
+        '''
+        if self.pipeline is None:
+            LOGGER.warning('Not using a dataset pipeline. Correct if this is unintended')
+
+        super(AbstractBaseDataset, self).save(**kwargs)
+
+        # Sqlalchemy updates relationship references after save so reload class
+        if self.pipeline:
+            self.pipeline.load(load_externals=False)
+
+    def load(self, **kwargs):
+        '''
+        Extend main load routine to load relationship class
+        '''
+        super(AbstractBaseDataset, self).load(**kwargs)
+
+        # By default dont load data unless it actually gets used
+        if self.pipeline:
+            self.pipeline.load(load_externals=False)
+
+
+class BaseDataset(AbstractBaseDataset):
+    '''
+    Base class for all  Dataset objects.
+
+    -------
+    Schema
+    -------
+    pipeline_id: foreign key relation to the dataset pipeline used as input
+    '''
+    __tablename__ = 'datasets'
+
+    pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
+    pipeline = relationship("BasePipeline", enable_typechecks=False)
+
+    __table_args__ = (
+        # Unique constraint for versioning
+        UniqueConstraint('name', 'version', name='dataset_name_version_unique'),
+        # Index for searching through friendly names
+        Index('dataset_name_index', 'name'),
+     )
