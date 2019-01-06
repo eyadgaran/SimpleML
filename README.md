@@ -20,8 +20,8 @@ Architecturally, SimpleML should flow modularly and mimic a true data science wo
 
 Data Management
 - Raw Datasets: The basic data block of (potentially) unformatted datasets. These datasets can be sourced from anywhere
-- Dataset Pipelines: The required transformation to turn unformatted data into what is expected to be seen in production
-- Dataset: The "production formatted" dataset
+- Dataset Pipelines: The required transformation to turn unformatted data into what is expected to be seen in production -- These pipelines are completely optional and only used in derived datasets
+- Datasets: The "production formatted" datasets
 
 Transformation
 - Pipelines: Transformation sequences to extract and process the dataset
@@ -42,21 +42,21 @@ Starting a project is as simple as defining the raw data and guiding the transfo
 
 ```python
 from simpleml.utils.initialization import Database
-from simpleml.datasets.processed_datasets.base_processed_dataset import BaseProcessedDataset
-from simpleml.pipelines.production_pipelines.base_production_pipeline import BaseRandomSplitProductionPipeline
+from simpleml.datasets import BasePandasDataset
+from simpleml.pipelines import BaseRandomSplitPipeline
 from simpleml.transformers.fitful_transformers.vectorizers import SklearnDictVectorizer
 from simpleml.transformers.fitless_transformers.converters import DataframeToRecords
 from simpleml.transformers.fitful_transformers.fill import FillWithValue
-from simpleml.models.classifiers.sklearn.linear_model import SklearnLogisticRegression
-from simpleml.metrics.classification import AccuracyMetric
-from simpleml.pipelines.validation_split_mixins import TEST_SPLIT
+from simpleml.models import SklearnLogisticRegression
+from simpleml.metrics AccuracyMetric
+from simpleml import TEST_SPLIT
 
 
 # Initialize Database Connection
 db = Database().initialize()
 
 # Define Dataset and point to loading file
-class TitanicDataset(BaseProcessedDataset):
+class TitanicDataset(BasePandasDataset):
     def build_dataframe(self):
         self._external_file = self.load_csv('filepath/to/train.csv')
 
@@ -73,8 +73,8 @@ transformers = [
 ]
 
 # Create Pipeline and save it - Use basic 80-20 test split
-pipeline = BaseRandomSplitProductionPipeline(name='titanic', transformers=transformers,
-                                             train_size=0.8, validation_size=0.0, test_size=0.2)
+pipeline = BaseRandomSplitPipeline(name='titanic', transformers=transformers,
+                                   train_size=0.8, validation_size=0.0, test_size=0.2)
 pipeline.add_dataset(dataset)
 pipeline.fit()
 pipeline.save()
@@ -106,7 +106,7 @@ from simpleml.utils.training.create_persistable import DatasetCreator,\
 # ---------------------------------------------------------------------------- #
 # Object defining parameters
 dataset_kwargs = {'name': 'titanic', 'registered_name': 'TitanicDataset', 'label_columns': ['Survived']}
-pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseRandomSplitProductionPipeline', 'transformers': transformers, 'train_size': 0.8, 'validation_size': 0.0, 'test_size': 0.2}
+pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseRandomSplitPipeline', 'transformers': transformers, 'train_size': 0.8, 'validation_size': 0.0, 'test_size': 0.2}
 model_kwargs = {'name': 'titanic', 'registered_name': 'SklearnLogisticRegression'}
 metric_kwargs = {'registered_name': 'AccuracyMetric', 'dataset_split': TEST_SPLIT}
 
