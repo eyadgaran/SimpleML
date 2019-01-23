@@ -19,6 +19,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
 from future.utils import with_metaclass
 import logging
+import numpy as np
+import pandas as pd
 
 
 LOGGER = logging.getLogger(__name__)
@@ -42,7 +44,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
     params = Column(JSONB, default={})
 
     def __init__(self, has_external_files=True, transformers=[],
-                 external_pipeline_class='default',
+                 external_pipeline_class='default', fitted=False,
                  **kwargs):
         super(AbstractPipeline, self).__init__(
             has_external_files=has_external_files, **kwargs)
@@ -52,8 +54,8 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         self.object_type = 'PIPELINE'
         self._external_file = self._create_external_pipeline(
             external_pipeline_class, transformers, **kwargs)
-        # Initialize as unfitted
-        self.state['fitted'] = False
+        # Initialize fit state -- pass as true to skip fitting transformers
+        self.state['fitted'] = fitted
 
     @property
     def external_pipeline(self):
@@ -268,3 +270,104 @@ class Pipeline(AbstractPipeline):
         # Index for searching through friendly names
         Index('pipeline_name_index', 'name'),
      )
+
+
+class GeneratorPipeline(Pipeline):
+    '''
+    Generator form of pipeline. Overwrites standard methods with ones that
+    return generator objects
+    '''
+    def get_dataset_split(self, split=None, infinite_loop=False, batch_size=32, shuffle=True, **kwargs):
+        '''
+        Get specific dataset split
+        '''
+        if split is None:
+            split = TRAIN_SPLIT
+
+        if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
+            self.split_dataset()
+
+        # Data generators are formatted for keras models
+        X, y = self._dataset_splits.get(split)
+
+        dataset_size = X.shape[0]
+        if isinstance(X, pd.DataFrame):
+            indices = X.index.tolist()
+        elif isinstance(X, np.ndarray):
+            indices = np.arange(X.shape[0])
+        else:
+            raise NotImplementedError
+
+        if dataset_size == 0:  # Return None
+            return
+
+        first_run = True
+        current_index = 0
+        while True:
+            if current_index == 0 and shuffle and not first_run:
+                np.random.shuffle(indices)
+
+            batch = indices[current_index:min(current_index + batch_size, dataset_size)]
+
+            if y is not None and (isinstance(y, (pd.DataFrame, pd.Series)) and not y.empty):
+                if isinstance(X, (pd.DataFrame, pd.Series)):
+                    yield X.loc[batch], np.stack(y.loc[batch].squeeze().values)
+                else:
+                    yield X[batch], y[batch]
+            else:
+                if isinstance(X, (pd.DataFrame, pd.Series)):
+                    yield X.loc[batch], None
+                else:
+                    yield X[batch], None
+
+            current_index += batch_size
+
+            # Loop so that infinite batches can be generated
+            if current_index >= dataset_size:
+                if infinite_loop:
+                    current_index = 0
+                    first_run = False
+                else:
+                    break
+
+    def fit(self, **kwargs):
+        '''
+        Pass through method to external pipeline
+        Assumes underlying pipeline can make use of a generator to fit
+        '''
+        if self.dataset is None:
+            raise PipelineError('Must set dataset before fitting')
+
+        if self.state['fitted']:
+            LOGGER.warning('Cannot refit pipeline, skipping operation')
+            return self
+
+        # Only use train fold to fit
+        generator = self.get_dataset_split(TRAIN_SPLIT)
+        self.external_pipeline.fit(generator, **kwargs)
+        self.state['fitted'] = True
+
+        return self
+
+    def transform(self, X, dataset_split=None, return_y=False, **kwargs):
+        '''
+        Pass through method to external pipeline
+
+        :param X: dataframe/matrix to transform, if None, use internal dataset
+        :param return_y: whether to return y with output - only used if X is None
+            necessary for fitting a supervised model after
+        '''
+        if not self.state['fitted']:
+            raise PipelineError('Must fit pipeline before transforming')
+
+        if X is None:
+            generator = self.get_dataset_split(dataset_split, **kwargs)
+            for X_batch, y_batch in generator:
+                output = self.external_pipeline.transform(X_batch, **kwargs)
+
+                if return_y:
+                    yield output, y_batch
+                else:
+                    yield output
+        else:
+            yield self.external_pipeline.transform(X, **kwargs)
