@@ -1,4 +1,4 @@
-from sqlalchemy import MetaData, Column, func, String, Boolean, Integer, BigInteger
+from sqlalchemy import MetaData, Column, func, String, Boolean, Integer
 from sqlalchemy.dialects.postgresql import JSONB
 from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
 from simpleml.persistables.guid import GUID
@@ -75,7 +75,7 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
     # Use registered name for internal object pointer - internal code can
     # still get updated between trainings (hence hash)
     # TODO: figure out how to hash objects in a way that signifies code content
-    hash_ = Column('hash', BigInteger, nullable=False)
+    hash_ = Column('hash', String, nullable=False)
     registered_name = Column(String, nullable=False)
     author = Column(String, default='default', nullable=False)
     project = Column(String, default='default', nullable=False)
