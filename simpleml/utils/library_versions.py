@@ -5,6 +5,7 @@ Helper module to track installed libraries
 __author__ = 'Elisha Yadgaran'
 
 import pkg_resources
+import sys
 
 def safe_lookup(package):
     try:
@@ -14,6 +15,7 @@ def safe_lookup(package):
 
 
 INSTALLED_LIBRARIES = {
+    'python': '{}.{}.{}'.format(*sys.version_info[:3]),
     'simpleml': safe_lookup('simpleml'),
     'sqlalchemy': safe_lookup('sqlalchemy'),
     'sqlalchemy_mixins': safe_lookup('sqlalchemy_mixins'),
