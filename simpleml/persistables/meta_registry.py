@@ -60,24 +60,10 @@ class MetaRegistry(MetaBase, ABCMeta):
     '''
 
 # Instantiate specific persistable registries for easy lookup of object types
-RAW_DATASET_REGISTRY = Registry()
-DATASET_PIPELINE_REGISTRY = Registry()
 DATASET_REGISTRY = Registry()
 PIPELINE_REGISTRY = Registry()
 MODEL_REGISTRY = Registry()
 METRIC_REGISTRY = Registry()
-
-class RawDatasetRegistry(MetaRegistry):
-    def __new__(cls, clsname, bases, attrs):
-        newclass = super(RawDatasetRegistry, cls).__new__(cls, clsname, bases, attrs)
-        RAW_DATASET_REGISTRY.register(newclass)
-        return newclass
-
-class DatasetPipelineRegistry(MetaRegistry):
-    def __new__(cls, clsname, bases, attrs):
-        newclass = super(DatasetPipelineRegistry, cls).__new__(cls, clsname, bases, attrs)
-        DATASET_PIPELINE_REGISTRY.register(newclass)
-        return newclass
 
 class DatasetRegistry(MetaRegistry):
     def __new__(cls, clsname, bases, attrs):
