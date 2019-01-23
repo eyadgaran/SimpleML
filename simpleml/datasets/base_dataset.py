@@ -12,7 +12,7 @@ to transform it into the processed form.
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.persistables.base_persistable import BasePersistable
+from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.dataset_storage import DatasetStorage, DATASET_SCHEMA
 from simpleml.persistables.meta_registry import DatasetRegistry
@@ -27,7 +27,7 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-class AbstractBaseDataset(with_metaclass(DatasetRegistry, BasePersistable, AllSaveMixin)):
+class AbstractDataset(with_metaclass(DatasetRegistry, Persistable, AllSaveMixin)):
     '''
     Abstract Base class for all Dataset objects.
 
@@ -54,16 +54,11 @@ class AbstractBaseDataset(with_metaclass(DatasetRegistry, BasePersistable, AllSa
     __abstract__ = True
 
     def __init__(self, has_external_files=True, label_columns=[], **kwargs):
-        super(AbstractBaseDataset, self).__init__(
+        super(AbstractDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # By default assume unsupervised so no targets
         self.config['label_columns'] = label_columns
-        self.object_type = 'DATASET'
-
-        # Instantiate dataframe variable - doesn't get populated until
-        # build_dataframe() is called
-        self._external_file = None
 
     @property
     def _schema(self):
@@ -79,7 +74,7 @@ class AbstractBaseDataset(with_metaclass(DatasetRegistry, BasePersistable, AllSa
         if self.unloaded_externals:
             self._load_external_files()
 
-        if self._external_file is None:
+        if not hasattr(self, '_external_file') or self._external_file is None:
             self.build_dataframe()
 
         return self._external_file
@@ -140,7 +135,7 @@ class AbstractBaseDataset(with_metaclass(DatasetRegistry, BasePersistable, AllSa
         if self.pipeline is None:
             LOGGER.warning('Not using a dataset pipeline. Correct if this is unintended')
 
-        super(AbstractBaseDataset, self).save(**kwargs)
+        super(AbstractDataset, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         if self.pipeline:
@@ -150,14 +145,14 @@ class AbstractBaseDataset(with_metaclass(DatasetRegistry, BasePersistable, AllSa
         '''
         Extend main load routine to load relationship class
         '''
-        super(AbstractBaseDataset, self).load(**kwargs)
+        super(AbstractDataset, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         if self.pipeline:
             self.pipeline.load(load_externals=False)
 
 
-class BaseDataset(AbstractBaseDataset):
+class Dataset(AbstractDataset):
     '''
     Base class for all  Dataset objects.
 
@@ -169,7 +164,7 @@ class BaseDataset(AbstractBaseDataset):
     __tablename__ = 'datasets'
 
     pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
-    pipeline = relationship("BasePipeline", enable_typechecks=False, foreign_keys=[pipeline_id])
+    pipeline = relationship("Pipeline", enable_typechecks=False, foreign_keys=[pipeline_id])
 
     __table_args__ = (
         # Unique constraint for versioning

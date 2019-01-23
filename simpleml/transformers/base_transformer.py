@@ -1,10 +1,10 @@
-from sklearn.base import TransformerMixin
+from sklearn.base import TransformerMixin as SklearnTransformerMixin
 
 
 __author__ = 'Elisha Yadgaran'
 
 
-class BaseTransformerMixin(TransformerMixin):
+class TransformerMixin(SklearnTransformerMixin):
     '''
     Base Transformer class that implements all the necessary methods
 
@@ -30,10 +30,10 @@ class BaseTransformerMixin(TransformerMixin):
         return input_feature_names
 
 
-class BaseTransformer(BaseTransformerMixin):
+class Transformer(TransformerMixin):
     '''
     Base Transformer class with param management - Can interfere with mro
-    if used as a mixin - Use `BaseTransformerMixin` in that case
+    if used as a mixin - Use `TransformerMixin` in that case
     '''
     def __init__(self, **kwargs):
         '''

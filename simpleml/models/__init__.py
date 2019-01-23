@@ -8,8 +8,8 @@ __author__ = 'Elisha Yadgaran'
 
 
 # Base Classes
-from .base_model import BaseModel
-from .base_keras_model import BaseKerasModel
+from .base_model import Model
+from .base_keras_model import KerasModel
 
 # Classifiers
 from .classifiers.sklearn.dummy import SklearnDummyClassifier
@@ -29,7 +29,7 @@ from .classifiers.sklearn.neural_network import SklearnMLPClassifier
 from .classifiers.sklearn.svm import SklearnLinearSVC, SklearnNuSVC, SklearnSVC
 from .classifiers.sklearn.tree import SklearnDecisionTreeClassifier, SklearnExtraTreeClassifier
 
-from .classifiers.keras.base_keras_classifier import BaseKerasClassifier
+from .classifiers.keras.base_keras_classifier import KerasClassifier
 from .classifiers.keras.model import KerasModelClassifier
 from .classifiers.keras.seq2seq import KerasSeq2SeqClassifier, KerasEncoderDecoderClassifier
 from .classifiers.keras.sequential import KerasSequentialClassifier

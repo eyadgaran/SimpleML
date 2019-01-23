@@ -7,7 +7,7 @@ Define convenience classes composed of different mixins
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_dataset import BaseDataset
+from .base_dataset import Dataset
 from .pandas_mixin import PandasDatasetMixin
 from .numpy_mixin import NumpyDatasetMixin
 
@@ -17,7 +17,7 @@ import pandas as pd
 
 
 # Mixin implementations for convenience
-class BasePandasDataset(BaseDataset, PandasDatasetMixin):
+class PandasDataset(Dataset, PandasDatasetMixin):
     def build_dataframe(self):
         '''
         Transform raw dataset via dataset pipeline for production ready dataset
@@ -35,7 +35,7 @@ class BasePandasDataset(BaseDataset, PandasDatasetMixin):
         self._external_file = pd.concat([X, y], axis=1)
 
 
-class BaseNumpyDataset(BaseDataset, NumpyDatasetMixin):
+class NumpyDataset(Dataset, NumpyDatasetMixin):
     def build_dataframe(self):
         '''
         Transform raw dataset via dataset pipeline for production ready dataset

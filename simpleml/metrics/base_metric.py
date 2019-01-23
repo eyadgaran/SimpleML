@@ -1,4 +1,4 @@
-from simpleml.persistables.base_persistable import BasePersistable, GUID
+from simpleml.persistables.base_persistable import Persistable, GUID
 from simpleml.persistables.meta_registry import MetricRegistry
 from simpleml.utils.errors import MetricError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
@@ -9,7 +9,7 @@ from future.utils import with_metaclass
 __author__ = 'Elisha Yadgaran'
 
 
-class AbstractBaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
+class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
     '''
     Abstract Base class for all Metric objects
 
@@ -71,7 +71,7 @@ class AbstractBaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
         if self.values is None:
             raise MetricError('Must score metric before saving')
 
-        super(AbstractBaseMetric, self).save(**kwargs)
+        super(AbstractMetric, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.model.load(load_externals=False)
@@ -80,7 +80,7 @@ class AbstractBaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
         '''
         Extend main load routine to load relationship class
         '''
-        super(AbstractBaseMetric, self).load(**kwargs)
+        super(AbstractMetric, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         self.model.load(load_externals=False)
@@ -94,7 +94,7 @@ class AbstractBaseMetric(with_metaclass(MetricRegistry, BasePersistable)):
         raise NotImplementedError
 
 
-class BaseMetric(AbstractBaseMetric):
+class Metric(AbstractMetric):
     '''
     Base class for all Metric objects
 
@@ -110,7 +110,7 @@ class BaseMetric(AbstractBaseMetric):
 
     # Only dependency is the model (to score in production)
     model_id = Column(GUID, ForeignKey("models.id"))
-    model = relationship('BaseModel', enable_typechecks=False)
+    model = relationship('Model', enable_typechecks=False)
 
     __table_args__ = (
         # Metrics don't have the notion of versions, values should be deterministic

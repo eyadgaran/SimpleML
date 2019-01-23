@@ -24,7 +24,7 @@ class ClassificationExternalModelMixin(ExternalModelMixin):
     class WrappedActualModelClass(ActualModelClass, ClassificationExternalModelMixin):
         pass
 
-    class some_model_libraryActualModelClass(BaseModel, [optional mixins]):
+    class some_model_libraryActualModelClass(Model, [optional mixins]):
         def _create_external_model(self, **kwargs):
             return WrappedActualModelClass(**kwargs)
     '''

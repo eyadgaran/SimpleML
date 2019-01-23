@@ -6,7 +6,7 @@ need to overwrite other methods at the root
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.models.base_model import BaseModel
+from simpleml.models.base_model import Model
 
 import logging
 from abc import abstractmethod
@@ -15,12 +15,12 @@ from abc import abstractmethod
 LOGGER = logging.getLogger(__name__)
 
 
-class BaseKerasModel(BaseModel):
+class KerasModel(Model):
     def __init__(self, save_method='disk_keras_hdf5', **kwargs):
         '''
         Pass default save method as Keras's persistence pattern
         '''
-        super(BaseKerasModel, self).__init__(save_method=save_method, **kwargs)
+        super(KerasModel, self).__init__(save_method=save_method, **kwargs)
 
     @abstractmethod
     def _create_external_model(self, **kwargs):

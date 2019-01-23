@@ -2,7 +2,7 @@
 Wrapper module around `sklearn.multioutput`
 '''
 
-from simpleml.models.base_model import BaseModel
+from simpleml.models.base_model import Model
 from simpleml.models.classifiers.classification_mixin import ClassificationMixin
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
@@ -20,7 +20,7 @@ class WrappedSklearnClassifierChain(ClassifierChain, ClassificationExternalModel
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnClassifierChain(BaseModel, ClassificationMixin):
+class SklearnClassifierChain(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnClassifierChain(**kwargs)
 
@@ -33,6 +33,6 @@ class WrappedSklearnMultiOutputClassifier(MultiOutputClassifier, ClassificationE
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnMultiOutputClassifier(BaseModel, ClassificationMixin):
+class SklearnMultiOutputClassifier(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnMultiOutputClassifier(**kwargs)

@@ -2,7 +2,7 @@
 Wrapper module around `sklearn.naive_bayes`
 '''
 
-from simpleml.models.base_model import BaseModel
+from simpleml.models.base_model import Model
 from simpleml.models.classifiers.classification_mixin import ClassificationMixin
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
@@ -20,7 +20,7 @@ class WrappedSklearnBernoulliNB(BernoulliNB, ClassificationExternalModelMixin):
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnBernoulliNB(BaseModel, ClassificationMixin):
+class SklearnBernoulliNB(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnBernoulliNB(**kwargs)
 
@@ -33,7 +33,7 @@ class WrappedSklearnGaussianNB(GaussianNB, ClassificationExternalModelMixin):
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnGaussianNB(BaseModel, ClassificationMixin):
+class SklearnGaussianNB(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnGaussianNB(**kwargs)
 
@@ -46,6 +46,6 @@ class WrappedSklearnMultinomialNB(MultinomialNB, ClassificationExternalModelMixi
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnMultinomialNB(BaseModel, ClassificationMixin):
+class SklearnMultinomialNB(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnMultinomialNB(**kwargs)

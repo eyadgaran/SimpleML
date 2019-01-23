@@ -14,7 +14,7 @@ from future.utils import with_metaclass
 __author__ = 'Elisha Yadgaran'
 
 
-class BasePersistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, CustomHasherMixin)):
+class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, CustomHasherMixin)):
     '''
     Base class for all SimpleML database objects. Defaults to PostgreSQL
     but can be swapped out for any supported SQLAlchemy backend.
@@ -153,7 +153,7 @@ class BasePersistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin,
         database and any other required filestore
 
         sqlalchemy_mixins supports active record style TableModel.save()
-        so can still call super(BasePersistable, self).save()
+        so can still call super(Persistable, self).save()
         '''
         if self.has_external_files:
             self._save_external_files()
@@ -167,7 +167,7 @@ class BasePersistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin,
         # Store library versions in case of future loads into unsupported environments
         self.metadata_['library_versions'] = INSTALLED_LIBRARIES
 
-        super(BasePersistable, self).save()
+        super(Persistable, self).save()
 
     def load(self, load_externals=True):
         '''

@@ -25,7 +25,7 @@ class ExternalModelMixin(with_metaclass(KerasRegistry, object)):
     class WrappedActualModelClass(ActualModelClass, ExternalModelMixin):
         pass
 
-    class some_model_libraryActualModelClass(BaseModel, [optional mixins]):
+    class some_model_libraryActualModelClass(Model, [optional mixins]):
         def _create_external_model(self, **kwargs):
             return WrappedActualModelClass(**kwargs)
     '''

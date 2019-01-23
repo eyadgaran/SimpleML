@@ -3,10 +3,10 @@ Module with helper classes to create new persistables
 '''
 from abc import ABCMeta, abstractmethod
 from simpleml.persistables.meta_registry import SIMPLEML_REGISTRY
-from simpleml.datasets.base_dataset import BaseDataset
-from simpleml.pipelines.base_pipeline import BasePipeline
-from simpleml.models.base_model import BaseModel
-from simpleml.metrics.base_metric import BaseMetric
+from simpleml.datasets.base_dataset import Dataset
+from simpleml.pipelines.base_pipeline import Pipeline
+from simpleml.models.base_model import Model
+from simpleml.metrics.base_metric import Metric
 from simpleml.utils.errors import TrainingError
 import logging
 from future.utils import with_metaclass
@@ -146,7 +146,7 @@ class DatasetCreator(PersistableCreator):
                     'pipeline_id': pipeline.id if pipeline is not None else None
                 }
 
-        return BaseDataset, filters
+        return Dataset, filters
 
     @classmethod
     def create(cls, registered_name, pipeline=None, **kwargs):
@@ -219,7 +219,7 @@ class PipelineCreator(PersistableCreator):
                 'hash_': new_pipeline._hash()
             }
 
-        return BasePipeline, filters
+        return Pipeline, filters
 
     @classmethod
     def create(cls, registered_name, dataset=None, **kwargs):
@@ -287,7 +287,7 @@ class ModelCreator(PersistableCreator):
                 'hash_': new_model._hash()
             }
 
-        return BaseModel, filters
+        return Model, filters
 
     @classmethod
     def create(cls, registered_name, pipeline=None, **kwargs):
@@ -356,7 +356,7 @@ class MetricCreator(PersistableCreator):
                 'hash_': new_metric._hash()
             }
 
-        return BaseMetric, filters
+        return Metric, filters
 
     @classmethod
     def create(cls, registered_name, model=None, **kwargs):

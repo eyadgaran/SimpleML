@@ -8,4 +8,4 @@ Use Base class for other ones
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_transformer import BaseTransformer, BaseTransformerMixin
+from .base_transformer import Transformer, TransformerMixin

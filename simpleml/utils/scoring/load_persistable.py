@@ -3,10 +3,10 @@ Module to query registry and retrieve persistables from wherever they are
 stored.
 '''
 
-from simpleml.datasets.base_dataset import BaseDataset
-from simpleml.pipelines.base_pipeline import BasePipeline
-from simpleml.models.base_model import BaseModel
-from simpleml.metrics.base_metric import BaseMetric
+from simpleml.datasets.base_dataset import Dataset
+from simpleml.pipelines.base_pipeline import Pipeline
+from simpleml.models.base_model import Model
+from simpleml.metrics.base_metric import Metric
 from simpleml.utils.errors import SimpleMLError
 
 
@@ -32,20 +32,20 @@ class PersistableLoader(object):
     @classmethod
     def load_dataset(cls, name='default', **filters):
         filters['name'] = name
-        return cls.load_persistable(BaseDataset, filters)
+        return cls.load_persistable(Dataset, filters)
 
     @classmethod
     def load_pipeline(cls, name='default', **filters):
         filters['name'] = name
-        return cls.load_persistable(BasePipeline, filters)
+        return cls.load_persistable(Pipeline, filters)
 
     @classmethod
     def load_model(cls, name='default', **filters):
         filters['name'] = name
-        return cls.load_persistable(BaseModel, filters)
+        return cls.load_persistable(Model, filters)
 
     @classmethod
     def load_metric(cls, name, model_id, **filters):
         filters['name'] = name
         filters['model_id'] = model_id
-        return cls.load_persistable(BaseMetric, filters)
+        return cls.load_persistable(Metric, filters)

@@ -36,7 +36,7 @@ from future.utils import with_metaclass
 from simpleml import load_model, hickle
 
 
-class BaseExternalSaveMixin(with_metaclass(ABCMeta, object)):
+class ExternalSaveMixin(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def _save_external_files(self):
@@ -53,7 +53,7 @@ class BaseExternalSaveMixin(with_metaclass(ABCMeta, object)):
         '''
 
 
-class DataframeTableSaveMixin(BaseExternalSaveMixin):
+class DataframeTableSaveMixin(ExternalSaveMixin):
     '''
     Mixin class to save dataframes to a database table
 
@@ -135,7 +135,7 @@ class DataframeTableSaveMixin(BaseExternalSaveMixin):
         connection.close()
 
 
-class DatabasePickleSaveMixin(BaseExternalSaveMixin):
+class DatabasePickleSaveMixin(ExternalSaveMixin):
     '''
     Mixin class to save binary objects to a database table
 
@@ -187,7 +187,7 @@ class DatabasePickleSaveMixin(BaseExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class DiskPickleSaveMixin(BaseExternalSaveMixin):
+class DiskPickleSaveMixin(ExternalSaveMixin):
     '''
     Mixin class to save objects to disk in pickled format
 
@@ -231,7 +231,7 @@ class DiskPickleSaveMixin(BaseExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class DiskHDF5SaveMixin(BaseExternalSaveMixin):
+class DiskHDF5SaveMixin(ExternalSaveMixin):
     '''
     Mixin class to save objects to disk in HDF5 format with hickle
 
@@ -274,7 +274,7 @@ class DiskHDF5SaveMixin(BaseExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class KerasDiskHDF5SaveMixin(BaseExternalSaveMixin):
+class KerasDiskHDF5SaveMixin(ExternalSaveMixin):
     '''
     Mixin class to save objects to disk in Keras's HDF5 format
     Keras's internal persistence mechanism utilizes HDF5 and implements a custom pattern

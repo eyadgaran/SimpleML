@@ -19,8 +19,8 @@ This module is organized by metric and prediction dependencies:
         3b) confusion matrix metrics: threshold or other metrics
 '''
 
-from simpleml.metrics.base_metric import BaseMetric
-from simpleml.pipelines.validation_split_mixins import TRAIN_SPLIT, VALIDATION_SPLIT
+from simpleml.metrics.base_metric import Metric
+from simpleml import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_score
 import numpy as np
 import pandas as pd
@@ -31,10 +31,29 @@ __author__ = 'Elisha Yadgaran'
 
 ############################### BASE ###############################
 
-class ClassificationMetric(BaseMetric):
+class ClassificationMetric(Metric):
     '''
     TODO: Figure out multiclass generalizations
     '''
+    def __init__(self, dataset_split=TRAIN_SPLIT, **kwargs):
+        '''
+        :param dataset_split: string denoting which dataset split to use
+            can be one of: `TRAIN`, `VALIDATION`, Other. Other gets no prefix
+            Default is train split to stay consistent with no split mapping to Train
+            in Pipeline
+
+        '''
+        name = kwargs.pop('name', '')
+        self.dataset_split = dataset_split
+
+        # Explicitly call out in sample or validation metrics
+        if dataset_split == TRAIN_SPLIT:
+            name = 'in_sample_' + name
+        elif dataset_split == VALIDATION_SPLIT:
+            name = 'validation_' + name
+
+        super(ClassificationMetric, self).__init__(name=name, **kwargs)
+
     @property
     def labels(self):
         return self.model.get_labels(dataset_split=self.dataset_split)
@@ -49,24 +68,8 @@ class ClassificationMetric(BaseMetric):
 
 
 class BinaryClassificationMetric(ClassificationMetric):
-    def __init__(self, dataset_split=TRAIN_SPLIT, **kwargs):
-        '''
-        :param dataset_split: string denoting which dataset split to use
-            can be one of: `TRAIN`, `VALIDATION`, Other. Other gets no prefix
-            Default is train split to stay consistent with no split mapping to Train
-            in BasePipeline
-
-        '''
-        name = kwargs.pop('name', '')
-        self.dataset_split = dataset_split
-
-        # Explicitly call out in sample or validation metrics
-        if dataset_split == TRAIN_SPLIT:
-            name = 'in_sample_' + name
-        elif dataset_split == VALIDATION_SPLIT:
-            name = 'validation_' + name
-
-        super(BinaryClassificationMetric, self).__init__(name=name, **kwargs)
+    def __init__(self, **kwargs):
+        super(BinaryClassificationMetric, self).__init__(**kwargs)
 
         # Initialize confusion matrix
         self._confusion_matrix = None

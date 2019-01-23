@@ -6,7 +6,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 from simpleml import TRAIN_SPLIT
-from simpleml.persistables.base_persistable import BasePersistable
+from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.meta_registry import PipelineRegistry
 from simpleml.persistables.guid import GUID
@@ -24,7 +24,7 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-class AbstractBasePipeline(with_metaclass(PipelineRegistry, BasePersistable, AllSaveMixin)):
+class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixin)):
     '''
     Abstract Base class for all Pipelines objects.
 
@@ -44,7 +44,7 @@ class AbstractBasePipeline(with_metaclass(PipelineRegistry, BasePersistable, All
     def __init__(self, has_external_files=True, transformers=[],
                  external_pipeline_class='default',
                  **kwargs):
-        super(AbstractBasePipeline, self).__init__(
+        super(AbstractPipeline, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate pipeline
@@ -137,7 +137,7 @@ class AbstractBasePipeline(with_metaclass(PipelineRegistry, BasePersistable, All
         self.metadata_['transformers'] = self.get_transformers()
         self.metadata_['feature_names'] = self.get_feature_names()
 
-        super(AbstractBasePipeline, self).save(**kwargs)
+        super(AbstractPipeline, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.dataset.load(load_externals=False)
@@ -146,7 +146,7 @@ class AbstractBasePipeline(with_metaclass(PipelineRegistry, BasePersistable, All
         '''
         Extend main load routine to load relationship class
         '''
-        super(AbstractBasePipeline, self).load(**kwargs)
+        super(AbstractPipeline, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         self.dataset.load(load_externals=False)
@@ -248,7 +248,7 @@ class AbstractBasePipeline(with_metaclass(PipelineRegistry, BasePersistable, All
         return self.external_pipeline.get_feature_names(feature_names=initial_features)
 
 
-class BasePipeline(AbstractBasePipeline):
+class Pipeline(AbstractPipeline):
     '''
     Base class for all Pipeline objects.
 
@@ -260,7 +260,7 @@ class BasePipeline(AbstractBasePipeline):
     __tablename__ = 'pipelines'
 
     dataset_id = Column(GUID, ForeignKey("datasets.id", name="pipelines_dataset_id_fkey"))
-    dataset = relationship("BaseDataset", enable_typechecks=False, foreign_keys=[dataset_id])
+    dataset = relationship("Dataset", enable_typechecks=False, foreign_keys=[dataset_id])
 
     __table_args__ = (
         # Unique constraint for versioning

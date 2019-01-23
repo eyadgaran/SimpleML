@@ -1,5 +1,5 @@
 from simpleml import TRAIN_SPLIT
-from simpleml.persistables.base_persistable import BasePersistable, GUID
+from simpleml.persistables.base_persistable import Persistable, GUID
 from simpleml.persistables.meta_registry import ModelRegistry
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.utils.errors import ModelError
@@ -17,7 +17,7 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMixin)):
+class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
     '''
     Abstract Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
@@ -40,7 +40,7 @@ class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMi
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
         '''
-        super(AbstractBaseModel, self).__init__(
+        super(AbstractModel, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate model
@@ -109,7 +109,7 @@ class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMi
         self.params = self.get_params(**kwargs)
         self.feature_metadata = self.get_feature_metadata(**kwargs)
 
-        super(AbstractBaseModel, self).save(**kwargs)
+        super(AbstractModel, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
         self.pipeline.load(load_externals=False)
@@ -118,7 +118,7 @@ class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMi
         '''
         Extend main load routine to load relationship class
         '''
-        super(AbstractBaseModel, self).load(**kwargs)
+        super(AbstractModel, self).load(**kwargs)
 
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)
@@ -210,7 +210,7 @@ class AbstractBaseModel(with_metaclass(ModelRegistry, BasePersistable, AllSaveMi
         return self.external_model.get_feature_metadata(features=self.pipeline.get_feature_names, **kwargs)
 
 
-class BaseModel(AbstractBaseModel):
+class Model(AbstractModel):
     '''
     Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
@@ -226,7 +226,7 @@ class BaseModel(AbstractBaseModel):
 
     # Only dependency is the pipeline (to score in production)
     pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
-    pipeline = relationship("BasePipeline", enable_typechecks=False)
+    pipeline = relationship("Pipeline", enable_typechecks=False)
 
     __table_args__ = (
         # Unique constraint for versioning

@@ -2,7 +2,7 @@
 Wrapper module around `sklearn.multiclass`
 '''
 
-from simpleml.models.base_model import BaseModel
+from simpleml.models.base_model import Model
 from simpleml.models.classifiers.classification_mixin import ClassificationMixin
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
@@ -20,7 +20,7 @@ class WrappedSklearnOneVsRestClassifier(OneVsRestClassifier, ClassificationExter
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnOneVsRestClassifier(BaseModel, ClassificationMixin):
+class SklearnOneVsRestClassifier(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnOneVsRestClassifier(**kwargs)
 
@@ -33,7 +33,7 @@ class WrappedSklearnOneVsOneClassifier(OneVsOneClassifier, ClassificationExterna
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnOneVsOneClassifier(BaseModel, ClassificationMixin):
+class SklearnOneVsOneClassifier(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnOneVsOneClassifier(**kwargs)
 
@@ -46,6 +46,6 @@ class WrappedSklearnOutputCodeClassifier(OutputCodeClassifier, ClassificationExt
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnOutputCodeClassifier(BaseModel, ClassificationMixin):
+class SklearnOutputCodeClassifier(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnOutputCodeClassifier(**kwargs)

@@ -7,7 +7,7 @@ Expose classes in one import module
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_metric import BaseMetric
+from .base_metric import Metric
 from .classification import ClassificationMetric, BinaryClassificationMetric,\
     AccuracyMetric,\
     TprMetric,\

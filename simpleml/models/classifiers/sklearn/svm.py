@@ -2,7 +2,7 @@
 Wrapper module around `sklearn.svm`
 '''
 
-from simpleml.models.base_model import BaseModel
+from simpleml.models.base_model import Model
 from simpleml.models.classifiers.classification_mixin import ClassificationMixin
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
@@ -20,7 +20,7 @@ class WrappedSklearnLinearSVC(LinearSVC, ClassificationExternalModelMixin):
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnLinearSVC(BaseModel, ClassificationMixin):
+class SklearnLinearSVC(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnLinearSVC(**kwargs)
 
@@ -29,7 +29,7 @@ class WrappedSklearnNuSVC(NuSVC, ClassificationExternalModelMixin):
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnNuSVC(BaseModel, ClassificationMixin):
+class SklearnNuSVC(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnNuSVC(**kwargs)
 
@@ -38,6 +38,6 @@ class WrappedSklearnSVC(SVC, ClassificationExternalModelMixin):
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnSVC(BaseModel, ClassificationMixin):
+class SklearnSVC(Model, ClassificationMixin):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnSVC(**kwargs)
