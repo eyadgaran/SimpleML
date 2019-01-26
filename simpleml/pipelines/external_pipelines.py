@@ -34,12 +34,12 @@ class DefaultPipeline(OrderedDict):
 
         return self
 
-    def transform(self, X, y=None, **kwargs):
+    def transform(self, X, **kwargs):
         '''
         Iterate through each transformation step and apply transform
         '''
         for step, transformer in self.items():
-            X = transformer.transform(X, y=y, **kwargs)
+            X = transformer.transform(X, **kwargs)
 
         return X
 

@@ -8,6 +8,7 @@ means unique to pandas.
 
 __author__ = 'Elisha Yadgaran'
 
+from simpleml import TRAIN_SPLIT
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 import pandas as pd
 
@@ -50,7 +51,10 @@ class PandasDatasetMixin(AbstractDatasetMixin):
         '''
         Should return a list of the features in the dataset
         '''
-        return self.X.columns.tolist()
+        try:
+            return self.X.columns.tolist()
+        except AttributeError:
+            return self.get('X', TRAIN_SPLIT).columns.tolist()
 
     @staticmethod
     def load_csv(filename, **kwargs):

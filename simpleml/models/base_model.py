@@ -207,7 +207,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
 
         Should return a dict of feature information (importance, coefficients...)
         '''
-        return self.external_model.get_feature_metadata(features=self.pipeline.get_feature_names, **kwargs)
+        return self.external_model.get_feature_metadata(features=self.pipeline.get_feature_names(), **kwargs)
 
 
 class Model(AbstractModel):
