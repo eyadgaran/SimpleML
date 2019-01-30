@@ -12,6 +12,8 @@ from simpleml import TRAIN_SPLIT
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 import pandas as pd
 
+DATAFRAME_SPLIT_COLUMN = 'DATASET_SPLIT'
+
 
 class PandasDatasetMixin(AbstractDatasetMixin):
     @property
@@ -37,7 +39,10 @@ class PandasDatasetMixin(AbstractDatasetMixin):
         if column not in ('X', 'y'):
             raise ValueError('Only support columns: X & y')
 
-        df = self.dataframe.get(split)
+        if isinstance(self.dataframe, pd.DataFrame):
+            df = self.dataframe.query('{}=={}'.format(DATAFRAME_SPLIT_COLUMN, split))
+        else:
+            df = self.dataframe.get(split)
         if df is None:
             df = pd.DataFrame()
 
@@ -46,6 +51,16 @@ class PandasDatasetMixin(AbstractDatasetMixin):
 
         else:
             return df[df.columns.difference(self.label_columns)]
+
+    def concatenate_dataframes(self, dataframes, splits):
+        '''
+        Helper method to merge dataframes into a single one with the split
+        specified under `DATAFRAME_SPLIT_COLUMN`
+        '''
+        for df, split in zip(dataframes, splits):
+            df[DATAFRAME_SPLIT_COLUMN] = split
+
+        return pd.concat(dataframes)
 
     def get_feature_names(self):
         '''

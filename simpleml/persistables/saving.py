@@ -116,6 +116,7 @@ class DataframeTableSaveMixin(ExternalSaveMixin):
         :param encoding: character encoding to use
         :param index: whether to output index with data
         '''
+        NULL_STRING = 'SIMPLEML_NULL'
 
         # Create Table
         df.head(0).to_sql(table, con=engine, if_exists=if_exists,
@@ -123,14 +124,23 @@ class DataframeTableSaveMixin(ExternalSaveMixin):
 
         # Prepare data
         output = StringIO()
-        df.to_csv(output, sep=sep, header=False, encoding=encoding, index=index)
+        df.to_csv(output, sep=sep, header=False, encoding=encoding, index=index, na_rep=NULL_STRING)
         output.seek(0)
 
         # Insert data
         connection = engine.raw_connection()
         cursor = connection.cursor()
-        cursor.copy_from(output, '"' + '"."'.join([schema, table]) + '"', sep=sep, null='',
-                         columns=['"{}"'.format(i) for i in df.columns])
+        # Use copy expert for CSV formatting (handles character escapes, copy_from does not)
+        cursor.copy_expert(
+            """COPY "{schema}"."{table}" ({columns}) FROM STDIN WITH (FORMAT CSV, NULL '{null}', DELIMITER '{sep}')""".format(
+                schema=schema,
+                table=table,
+                columns=', '.join(['"{}"'.format(i) for i in df.columns]),
+                null=NULL_STRING,
+                sep=sep
+            ),
+            output
+        )
         connection.commit()
         connection.close()
 
