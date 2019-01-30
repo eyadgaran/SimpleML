@@ -125,7 +125,7 @@ class BinaryClassificationMetric(ClassificationMetric):
         keys = [round(i, round_places) for i in keys]
         values = [round(i, round_places) for i in values]
 
-        df = pd.DataFrame(zip(keys, values), columns=['keys', 'values'])
+        df = pd.DataFrame(list(zip(keys, values)), columns=['keys', 'values'])
 
         agg = 'max' if maximize else 'min'
         return df.groupby('keys').agg({'values': agg}).to_dict()['values']
