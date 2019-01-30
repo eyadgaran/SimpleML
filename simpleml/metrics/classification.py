@@ -68,15 +68,6 @@ class ClassificationMetric(Metric):
 
 
 class BinaryClassificationMetric(ClassificationMetric):
-    def __init__(self, **kwargs):
-        super(BinaryClassificationMetric, self).__init__(**kwargs)
-
-        # Initialize confusion matrix
-        self._confusion_matrix = None
-
-        # Thresholds to compute confusion matrix at (default every 0.005 increment)
-        self.thresholds = np.linspace(0, 1, 201)
-
     @property
     def probabilities(self):
         probabilities = self.model.predict_proba(X=None, dataset_split=self.dataset_split)
@@ -99,7 +90,7 @@ class BinaryClassificationMetric(ClassificationMetric):
         Property method to return (or generate) dataframe of confusion
         matrix at each threshold
         '''
-        if self._confusion_matrix is None:
+        if not hasattr(self, '_confusion_matrix') or self._confusion_matrix is None:
             self.create_confusion_matrix()
 
         return self._confusion_matrix
@@ -108,11 +99,13 @@ class BinaryClassificationMetric(ClassificationMetric):
         '''
         Iterate through each threshold and compute confusion matrix
         '''
+        # Thresholds to compute confusion matrix at (default every 0.005 increment)
+        thresholds = np.linspace(0, 1, 201)
         probabilities = self.probabilities
         labels = self.labels
 
         results = []
-        for threshold in self.thresholds:
+        for threshold in thresholds:
             predictions = np.where(probabilities >= threshold, 1, 0)
             tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
             results.append((threshold, tn, fp, fn, tp))
