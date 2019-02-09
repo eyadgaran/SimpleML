@@ -2,8 +2,7 @@
 Wrapper module around `sklearn.neural_network`
 '''
 
-from simpleml.models.base_model import Model
-from simpleml.models.classifiers.classification_mixin import ClassificationMixin
+from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.neural_network import MLPClassifier
@@ -20,6 +19,6 @@ class WrappedSklearnMLPClassifier(MLPClassifier, ClassificationExternalModelMixi
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnMLPClassifier(Model, ClassificationMixin):
+class SklearnMLPClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnMLPClassifier(**kwargs)

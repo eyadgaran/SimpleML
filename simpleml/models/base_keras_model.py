@@ -6,7 +6,7 @@ need to overwrite other methods at the root
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.models.base_model import Model
+from .base_model import Model
 
 import logging
 from abc import abstractmethod

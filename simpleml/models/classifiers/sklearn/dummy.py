@@ -2,8 +2,7 @@
 Wrapper module around `sklearn.dummy`
 '''
 
-from simpleml.models.base_model import Model
-from simpleml.models.classifiers.classification_mixin import ClassificationMixin
+from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.dummy import DummyClassifier
@@ -20,6 +19,6 @@ class WrappedSklearnDummyClassifier(DummyClassifier, ClassificationExternalModel
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnDummyClassifier(Model, ClassificationMixin):
+class SklearnDummyClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnDummyClassifier(**kwargs)

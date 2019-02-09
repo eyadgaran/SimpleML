@@ -2,8 +2,7 @@
 Wrapper module around `sklearn.tree`
 '''
 
-from simpleml.models.base_model import Model
-from simpleml.models.classifiers.classification_mixin import ClassificationMixin
+from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
@@ -20,7 +19,7 @@ class WrappedSklearnDecisionTreeClassifier(DecisionTreeClassifier, Classificatio
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnDecisionTreeClassifier(Model, ClassificationMixin):
+class SklearnDecisionTreeClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnDecisionTreeClassifier(**kwargs)
 
@@ -29,6 +28,6 @@ class WrappedSklearnExtraTreeClassifier(ExtraTreeClassifier, ClassificationExter
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnExtraTreeClassifier(Model, ClassificationMixin):
+class SklearnExtraTreeClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnExtraTreeClassifier(**kwargs)

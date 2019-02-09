@@ -2,8 +2,7 @@
 Wrapper module around `sklearn.mixture`
 '''
 
-from simpleml.models.base_model import Model
-from simpleml.models.classifiers.classification_mixin import ClassificationMixin
+from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
@@ -20,7 +19,7 @@ class WrappedSklearnBayesianGaussianMixture(BayesianGaussianMixture, Classificat
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnBayesianGaussianMixture(Model, ClassificationMixin):
+class SklearnBayesianGaussianMixture(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnBayesianGaussianMixture(**kwargs)
 
@@ -29,6 +28,6 @@ class WrappedSklearnGaussianMixture(GaussianMixture, ClassificationExternalModel
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnGaussianMixture(Model, ClassificationMixin):
+class SklearnGaussianMixture(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnGaussianMixture(**kwargs)

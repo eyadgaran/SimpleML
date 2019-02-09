@@ -2,8 +2,7 @@
 Wrapper module around `sklearn.ensemble`
 '''
 
-from simpleml.models.base_model import Model
-from simpleml.models.classifiers.classification_mixin import ClassificationMixin
+from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier,\
@@ -21,7 +20,7 @@ class WrappedSklearnAdaBoostClassifier(AdaBoostClassifier, ClassificationExterna
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnAdaBoostClassifier(Model, ClassificationMixin):
+class SklearnAdaBoostClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnAdaBoostClassifier(**kwargs)
 
@@ -34,7 +33,7 @@ class WrappedSklearnBaggingClassifier(BaggingClassifier, ClassificationExternalM
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnBaggingClassifier(Model, ClassificationMixin):
+class SklearnBaggingClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnBaggingClassifier(**kwargs)
 
@@ -47,7 +46,7 @@ class WrappedSklearnExtraTreesClassifier(ExtraTreesClassifier, ClassificationExt
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnExtraTreesClassifier(Model, ClassificationMixin):
+class SklearnExtraTreesClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnExtraTreesClassifier(**kwargs)
 
@@ -60,7 +59,7 @@ class WrappedSklearnGradientBoostingClassifier(GradientBoostingClassifier, Class
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnGradientBoostingClassifier(Model, ClassificationMixin):
+class SklearnGradientBoostingClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnGradientBoostingClassifier(**kwargs)
 
@@ -73,7 +72,7 @@ class WrappedSklearnRandomForestClassifier(RandomForestClassifier, Classificatio
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnRandomForestClassifier(Model, ClassificationMixin):
+class SklearnRandomForestClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnRandomForestClassifier(**kwargs)
 
@@ -86,6 +85,6 @@ class WrappedSklearnVotingClassifier(VotingClassifier, ClassificationExternalMod
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnVotingClassifier(Model, ClassificationMixin):
+class SklearnVotingClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnVotingClassifier(**kwargs)

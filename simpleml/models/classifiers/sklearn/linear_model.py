@@ -2,8 +2,7 @@
 Wrapper module around `sklearn.linear_model`
 '''
 
-from simpleml.models.base_model import Model
-from simpleml.models.classifiers.classification_mixin import ClassificationMixin
+from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.linear_model import LogisticRegression, LogisticRegressionCV, Perceptron,\
@@ -21,7 +20,7 @@ class WrappedSklearnLogisticRegression(LogisticRegression, ClassificationExterna
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnLogisticRegression(Model, ClassificationMixin):
+class SklearnLogisticRegression(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnLogisticRegression(**kwargs)
 
@@ -29,7 +28,7 @@ class WrappedSklearnLogisticRegressionCV(LogisticRegressionCV, ClassificationExt
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnLogisticRegressionCV(Model, ClassificationMixin):
+class SklearnLogisticRegressionCV(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnLogisticRegressionCV(**kwargs)
 
@@ -42,7 +41,7 @@ class WrappedSklearnPerceptron(Perceptron, ClassificationExternalModelMixin):
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnPerceptron(Model, ClassificationMixin):
+class SklearnPerceptron(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnPerceptron(**kwargs)
 
@@ -55,7 +54,7 @@ class WrappedSklearnRidgeClassifier(RidgeClassifier, ClassificationExternalModel
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnRidgeClassifier(Model, ClassificationMixin):
+class SklearnRidgeClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnRidgeClassifier(**kwargs)
 
@@ -63,7 +62,7 @@ class WrappedSklearnRidgeClassifierCV(RidgeClassifierCV, ClassificationExternalM
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnRidgeClassifierCV(Model, ClassificationMixin):
+class SklearnRidgeClassifierCV(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnRidgeClassifierCV(**kwargs)
 
@@ -76,6 +75,6 @@ class WrappedSklearnSGDClassifier(SGDClassifier, ClassificationExternalModelMixi
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnSGDClassifier(Model, ClassificationMixin):
+class SklearnSGDClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnSGDClassifier(**kwargs)

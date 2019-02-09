@@ -5,6 +5,7 @@ scikit-learn; linear models, trees, etc.. one file per module
 
 Import modules to register class names in global registry
 '''
+from . import base_sklearn_classifier
 from . import dummy
 from . import ensemble
 from . import gaussian_process

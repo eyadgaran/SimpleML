@@ -2,8 +2,7 @@
 Wrapper module around `sklearn.gaussian_process`
 '''
 
-from simpleml.models.base_model import Model
-from simpleml.models.classifiers.classification_mixin import ClassificationMixin
+from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.gaussian_process import GaussianProcessClassifier
@@ -20,6 +19,6 @@ class WrappedSklearnGaussianProcessClassifier(GaussianProcessClassifier, Classif
     def get_feature_metadata(self, features, **kwargs):
         pass
 
-class SklearnGaussianProcessClassifier(Model, ClassificationMixin):
+class SklearnGaussianProcessClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnGaussianProcessClassifier(**kwargs)

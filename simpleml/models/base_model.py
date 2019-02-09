@@ -123,12 +123,15 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)
 
-    def _fit(self, X, y):
+    def _fit(self, X, y=None):
         '''
         Separate out actual fit call for optional overwrite in subclasses
         '''
-        # Reduce dimensionality of y if it is only 1 column
-        self.external_model.fit(X, y.squeeze())
+        if y is None:
+            self.external_model.fit(X)
+        else:
+            # Reduce dimensionality of y if it is only 1 column
+            self.external_model.fit(X, y.squeeze())
 
     def fit(self, **kwargs):
         '''
@@ -142,7 +145,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
             return self
 
         # Explicitly fit only on train split
-        X, y = self.pipeline.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True)
+        X, y = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True)
 
         self._fit(X, y)
 
@@ -150,6 +153,12 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         self.state['fitted'] = True
 
         return self
+
+    def transform(self, *args, **kwargs):
+        '''
+        Run input through pipeline
+        '''
+        return self.pipeline.transform(*args, **kwargs)
 
     def _predict(self, X, **kwargs):
         '''
@@ -164,7 +173,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         if not self.state['fitted']:
             raise ModelError('Must fit model before predicting')
 
-        transformed = self.pipeline.transform(X, **kwargs)
+        transformed = self.transform(X, **kwargs)
 
         return self._predict(transformed, **kwargs)
 
