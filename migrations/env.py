@@ -6,6 +6,7 @@ from alembic import context
 import os
 
 from simpleml.utils.initialization import Database
+from simpleml.utils.errors import SimpleMLError
 from simpleml.persistables.base_persistable import Persistable
 
 # this is the Alembic Config object, which provides
@@ -20,15 +21,22 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-connection_params = {
-    'user': os.getenv('SIMPLEML_DATABASE_USER', 'simpleml'),
-    'password': os.getenv('SIMPLEML_DATABASE_PASSWORD', 'simpleml'),
-    'database': os.getenv('SIMPLEML_DATABASE_NAME', 'SimpleML'),
-    'jdbc': os.getenv('SIMPLEML_DATABASE_JDBC', 'postgresql'),
-    'host': os.getenv('SIMPLEML_DATABASE_HOST', 'localhost'),
-    'port': os.getenv('SIMPLEML_DATABASE_PORT', 5432),
-}
-Database(**connection_params).initialize(base_list=[Persistable])
+if not Persistable.metadata.is_bound():
+    # Initialize a new session if one isn't already configured
+    connection_params = {
+        'username': os.getenv('SIMPLEML_DATABASE_USERNAME'),
+        'password': os.getenv('SIMPLEML_DATABASE_PASSWORD'),
+        'database': os.getenv('SIMPLEML_DATABASE_NAME'),
+        'drivername': os.getenv('SIMPLEML_DATABASE_DRIVERNAME'),
+        'host': os.getenv('SIMPLEML_DATABASE_HOST'),
+        'port': os.getenv('SIMPLEML_DATABASE_PORT'),
+    }
+    missing_params = ['SIMPLEML_DATABASE_' + (k.upper() if k != 'database' else 'NAME')
+                      for k, v in connection_params.items() if v is None]
+    if missing_params:
+        raise SimpleMLError('Missing Connection Parameters (env variables): {}'.format(', '.join(missing_params)))
+    Database(**connection_params).initialize(base_list=[Persistable])
+
 target_metadata = Persistable.metadata
 
 # other values from the config, defined by the needs of env.py,

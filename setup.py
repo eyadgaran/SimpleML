@@ -17,6 +17,7 @@ setup(
     install_requires=[
         'sqlalchemy',
         'sqlalchemy_mixins',
+        'alembic',
         'scikit-learn',
         'pandas',
         'numpy',

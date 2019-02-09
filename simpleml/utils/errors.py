@@ -7,7 +7,9 @@ __author__ = 'Elisha Yadgaran'
 
 class SimpleMLError(Exception):
     def __str__(self):
-        return self.message
+        if hasattr(self, 'message'):
+            return self.message
+        return self.args[0]
 
 class DatasetError(SimpleMLError):
     def __init__(self, *args, **kwargs):
