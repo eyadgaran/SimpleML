@@ -43,6 +43,8 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
     # Additional pipeline specific metadata
     params = Column(JSONB, default={})
 
+    object_type = 'PIPELINE'
+
     def __init__(self, has_external_files=True, transformers=[],
                  external_pipeline_class='default', fitted=False,
                  **kwargs):
@@ -51,7 +53,6 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
 
         # Instantiate pipeline
         self.config['external_pipeline_class'] = external_pipeline_class
-        self.object_type = 'PIPELINE'
         self._external_file = self._create_external_pipeline(
             external_pipeline_class, transformers, **kwargs)
         # Initialize fit state -- pass as true to skip fitting transformers

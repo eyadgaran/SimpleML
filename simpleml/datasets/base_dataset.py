@@ -53,6 +53,8 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable, AllSaveMixin)
 
     __abstract__ = True
 
+    object_type = 'DATASET'
+
     def __init__(self, has_external_files=True, label_columns=[], **kwargs):
         super(AbstractDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)

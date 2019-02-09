@@ -25,6 +25,8 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
 
     values = Column(JSONB, nullable=False)
 
+    object_type = 'METRIC'
+
     def add_model(self, model):
         '''
         Setter method for model used

@@ -36,6 +36,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
     feature_metadata = Column(JSONB, default={})
 
     def __init__(self, has_external_files=True, external_model_kwargs={}, params={}, **kwargs):
+    object_type = 'MODEL'
         '''
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
@@ -44,7 +45,6 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate model
-        self.object_type = 'MODEL'
         self._external_file = self._create_external_model(**external_model_kwargs)
         self.set_params(**params)
 
