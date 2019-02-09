@@ -67,7 +67,7 @@ class KerasModel(Model):
 
         For now going with option 2 - cannot refit models
         '''
-        if self.state.get('fitted'):
+        if self.fitted:
             LOGGER.warning('Cannot change fit params and retrain model, skipping operation')
             LOGGER.warning('Initialize a new model for new fit params')
             return None

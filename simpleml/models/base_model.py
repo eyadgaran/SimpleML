@@ -49,7 +49,15 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         self.set_params(**params)
 
         # Initialize as unfitted
-        self.state['fitted'] = False
+        self.fitted = False
+
+    @property
+    def fitted(self):
+        return self.state.get('fitted')
+
+    @fitted.setter
+    def fitted(self, value):
+        self.state['fitted'] = value
 
     @property
     def external_model(self):
@@ -78,6 +86,20 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         '''
         self.pipeline = pipeline
 
+    def assert_pipeline(self, msg=''):
+        '''
+        Helper method to raise an error if pipeline isn't present and configured
+        '''
+        if self.pipeline is None or not self.pipeline.fitted:
+            raise ModelError(msg)
+
+    def assert_fitted(self, msg=''):
+        '''
+        Helper method to raise an error if model isn't fit
+        '''
+        if not self.fitted:
+            raise ModelError(msg)
+
     def _hash(self):
         '''
         Hash is the combination of the:
@@ -100,11 +122,8 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         1) save params
         2) save feature metadata
         '''
-        if self.pipeline is None:
-            raise ModelError('Must set pipeline before saving')
-
-        if not self.state['fitted']:
-            raise ModelError('Must fit model before saving')
+        self.assert_pipeline('Must set pipeline before saving')
+        self.assert_fitted('Must fit model before saving')
 
         self.params = self.get_params(**kwargs)
         self.feature_metadata = self.get_feature_metadata(**kwargs)
@@ -137,10 +156,9 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         '''
         Pass through method to external model after running through pipeline
         '''
-        if self.pipeline is None:
-            raise ModelError('Must set pipeline before fitting')
+        self.assert_pipeline('Must set pipeline before fitting')
 
-        if self.state['fitted']:
+        if self.fitted:
             LOGGER.warning('Cannot refit model, skipping operation')
             return self
 
@@ -150,7 +168,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         self._fit(X, y)
 
         # Mark the state so it doesnt get refit and can now be saved
-        self.state['fitted'] = True
+        self.fitted = True
 
         return self
 
@@ -170,8 +188,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         '''
         Pass through method to external model after running through pipeline
         '''
-        if not self.state['fitted']:
-            raise ModelError('Must fit model before predicting')
+        self.assert_fitted('Must fit model before predicting')
 
         transformed = self.transform(X, **kwargs)
 

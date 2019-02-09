@@ -56,7 +56,15 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         self._external_file = self._create_external_pipeline(
             external_pipeline_class, transformers, **kwargs)
         # Initialize fit state -- pass as true to skip fitting transformers
-        self.state['fitted'] = fitted
+        self.fitted = fitted
+
+    @property
+    def fitted(self):
+        return self.state.get('fitted')
+
+    @fitted.setter
+    def fitted(self, value):
+        self.state['fitted'] = value
 
     @property
     def external_pipeline(self):
@@ -91,13 +99,27 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         '''
         self.dataset = dataset
 
+    def assert_dataset(self, msg=''):
+        '''
+        Helper method to raise an error if dataset isn't present
+        '''
+        if self.dataset is None:
+            raise PipelineError(msg)
+
+    def assert_fitted(self, msg=''):
+        '''
+        Helper method to raise an error if pipeline isn't fit
+        '''
+        if not self.fitted:
+            raise PipelineError(msg)
+
     def add_transformer(self, name, transformer):
         '''
         Setter method for new transformer step
         '''
         self.external_pipeline.add_transformer(name, transformer)
         # Need to refit now
-        self.state['fitted'] = False
+        self.fitted = False
 
     def remove_transformer(self, name):
         '''
@@ -105,7 +127,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         '''
         self.external_pipeline.remove_transformer(name)
         # Need to refit now
-        self.state['fitted'] = False
+        self.fitted = False
 
     def _hash(self):
         '''
@@ -130,11 +152,8 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         2) save transformer metadata
         3) features
         '''
-        if self.dataset is None:
-            raise PipelineError('Must set dataset before saving')
-
-        if not self.state['fitted']:
-            raise PipelineError('Must fit pipeline before saving')
+        self.assert_dataset('Must set dataset before saving')
+        self.assert_fitted('Must fit pipeline before saving')
 
         self.params = self.get_params(**kwargs)
         self.metadata_['transformers'] = self.get_transformers()
@@ -172,17 +191,16 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         '''
         Pass through method to external pipeline
         '''
-        if self.dataset is None:
-            raise PipelineError('Must set dataset before fitting')
+        self.assert_dataset('Must set dataset before fitting')
 
-        if self.state['fitted']:
+        if self.fitted:
             LOGGER.warning('Cannot refit pipeline, skipping operation')
             return self
 
         # Only use train fold to fit
         X, y = self.get_dataset_split(TRAIN_SPLIT)
         self.external_pipeline.fit(X, y, **kwargs)
-        self.state['fitted'] = True
+        self.fitted = True
 
         return self
 
@@ -194,8 +212,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         :param return_y: whether to return y with output - only used if X is None
             necessary for fitting a supervised model after
         '''
-        if not self.state['fitted']:
-            raise PipelineError('Must fit pipeline before transforming')
+        self.assert_fitted('Must fit pipeline before transforming')
 
         if X is None:
             X, y = self.get_dataset_split(dataset_split)
