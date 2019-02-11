@@ -40,7 +40,7 @@ class PandasDatasetMixin(AbstractDatasetMixin):
             raise ValueError('Only support columns: X & y')
 
         if isinstance(self.dataframe, pd.DataFrame):
-            df = self.dataframe.query('{}=={}'.format(DATAFRAME_SPLIT_COLUMN, split))
+            df = self.dataframe.query("{}=='{}'".format(DATAFRAME_SPLIT_COLUMN, split))
             df.drop(DATAFRAME_SPLIT_COLUMN, inplace=True, axis=1)
         else:
             df = self.dataframe.get(split)
