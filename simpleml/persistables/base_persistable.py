@@ -187,8 +187,11 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         if self.has_external_files and load_externals:
             self._load_external_files()
 
-        if not load_externals:
+        if self.has_external_files and not load_externals:
             self.unloaded_externals = True
+
+        else:
+            self.unloaded_externals = False
 
     def _load_class(self):
         '''

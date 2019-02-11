@@ -159,6 +159,10 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         self.metadata_['transformers'] = self.get_transformers()
         self.metadata_['feature_names'] = self.get_feature_names()
 
+        # Skip file-based persistence if there are no transformers
+        if not self.get_transformers():
+            self.has_external_files = False
+
         super(AbstractPipeline, self).save(**kwargs)
 
         # Sqlalchemy updates relationship references after save so reload class
@@ -169,6 +173,11 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         Extend main load routine to load relationship class
         '''
         super(AbstractPipeline, self).load(**kwargs)
+
+        # Create dummy pipeline if one wasnt saved
+        if not self.has_external_files:
+            self._external_file = self._create_external_pipeline(
+                self.config['external_pipeline_class'], [], **self.params)
 
         # By default dont load data unless it actually gets used
         self.dataset.load(load_externals=False)
