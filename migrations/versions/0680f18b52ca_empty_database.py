@@ -1,13 +1,10 @@
-"""base schema
+"""Empty Database
 
 Revision ID: 0680f18b52ca
-Revises: 
+Revises:
 Create Date: 2019-01-22 20:10:03.581025
 
 """
-from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision = '0680f18b52ca'

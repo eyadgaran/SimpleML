@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'deefa69553d8'
-down_revision = '0680f18b52ca'
+down_revision = '9df691c76c63'
 branch_labels = None
 depends_on = None
 
@@ -42,17 +42,21 @@ def downgrade():
     op.alter_column('pipelines', 'hash',
                existing_type=sa.String(),
                type_=sa.BIGINT(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='hash::bigint')
     op.alter_column('models', 'hash',
                existing_type=sa.String(),
                type_=sa.BIGINT(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='hash::bigint')
     op.alter_column('metrics', 'hash',
                existing_type=sa.String(),
                type_=sa.BIGINT(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='hash::bigint')
     op.alter_column('datasets', 'hash',
                existing_type=sa.String(),
                type_=sa.BIGINT(),
-               existing_nullable=False)
+               existing_nullable=False,
+               postgresql_using='hash::bigint')
     # ### end Alembic commands ###
