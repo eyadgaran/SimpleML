@@ -1,5 +1,18 @@
 ## Change Log
 
+### 0.5
+- Default identity pipeline
+- Alembic integration for database migration
+- Standardized model inheritance pattern
+- Condensed pandas split dataframes into single df
+- Remaining classification metrics
+- Updated schema with hash datatype
+- Updated hash to use joblib code, consistent across initializations
+- Generator pipeline and fitted kwarg
+- Dropped base prefixes
+- Moved composed subclasses to inits
+- Unified datasets and pipelines
+
 ### 0.4
 - Keras Seq2Seq support
 - Keras model support
