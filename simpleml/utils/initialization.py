@@ -15,13 +15,16 @@ import simpleml.metrics.base_metric
 from simpleml.persistables.dataset_storage import DatasetStorage
 from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.persistables.serializing import custom_dumps, custom_loads
+from simpleml.utils.errors import SimpleMLError
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.engine.url import URL
-from alembic.config import Config
 from alembic import command
+from alembic.config import Config
+from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from os.path import realpath, dirname, join
 import logging
 
@@ -99,6 +102,27 @@ class Database(URL):
         '''
         command.downgrade(self.alembic_config, revision)
 
+    def validate_schema_version(self):
+        '''
+        Check that the newly initialized database is up-to-date
+        Raises an error otherwise (ahead of any table model mismatches later)
+        '''
+        # Establish a context to access db values
+        context = MigrationContext.configure(self.engine.connect())
+        current_revision = context.get_current_revision()
+
+        # Read local config file to find the current "head" revision
+        config = Config()
+        config.set_main_option("script_location",
+                               join(dirname(dirname(dirname(realpath(__file__)))), "migrations"))
+        script = ScriptDirectory.from_config(config)
+        head_revision = script.get_current_head()
+
+        if current_revision != head_revision:
+            raise SimpleMLError('''Attempting to connect to an outdated schema.
+                                Set the parameter `upgrade=True` in the initialize method
+                                or manually execute `alembic upgrade head` in a shell''')
+
     def _initialize(self, base, create_tables=False, **kwargs):
         '''
         Initialization method to set up database connection and inject
@@ -120,12 +144,15 @@ class Database(URL):
 
         base.set_session(session)
 
-    def initialize(self, base_list=None, **kwargs):
+    def initialize(self, base_list=None, upgrade=False, **kwargs):
         '''
         Initialization method to set up database connection and inject
         session manager
 
+        Raises a SimpleML error if database schema is not up to date
+
         :param drop_tables: Bool, whether to drop existing tables in database
+        :param upgrade: Bool, whether to run an upgrade migration after establishing a connection
         :return: None
         '''
         if base_list is None:  # Use defaults in project
@@ -133,3 +160,9 @@ class Database(URL):
 
         for base in base_list:
             self._initialize(base, **kwargs)
+
+        if upgrade:
+            self.upgrade()
+
+        # Assert current db schema is up-to-date
+        self.validate_schema_version()
