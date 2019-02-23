@@ -14,8 +14,8 @@ import random
 
 TEST_DATABASE = 'SimpleML-TEST-{}'.format(random.randint(10000, 99999))
 ADMIN_CONNECTION_PARAMS = {
-    'user': 'simpleml', 'password': 'simpleml', 'host': 'localhost',
-    'port': 5432, 'database': 'postgres'
+    'username': 'simpleml', 'password': 'simpleml', 'host': 'localhost',
+    'port': 5432, 'database': 'postgres', 'drivername': 'postgresql'
 }
 
 
@@ -25,7 +25,8 @@ def setup_package():
 
     test_params = ADMIN_CONNECTION_PARAMS.copy()
     test_params.pop('database')
-    Database(database=TEST_DATABASE, **test_params).initialize(drop_tables=True)
+    Database(database=TEST_DATABASE, **test_params).initialize(
+        create_tables=True, drop_tables=True)
 
 
 def teardown_package():
