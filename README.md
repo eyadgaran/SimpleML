@@ -1,5 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/simpleml.svg)](https://badge.fury.io/py/simpleml)
-![PyPI pyversions](https://img.shields.io/pypi/pyversions/ansicolortags.svg)
+![PyPI pyversions](https://img.shields.io/pypi/pyversions/simpleml.svg)
 ![Docs](https://readthedocs.org/projects/simpleml/badge/?version=stable)
 ![Build Status](https://travis-ci.org/eyadgaran/SimpleML.svg?branch=master)
 ![Coverage Status](https://coveralls.io/repos/github/eyadgaran/SimpleML/badge.svg?branch=master)
