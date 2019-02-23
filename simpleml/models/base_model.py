@@ -34,7 +34,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
     # Additional model specific metadata
     params = Column(JSONB, default={})
     feature_metadata = Column(JSONB, default={})
-    
+
     object_type = 'MODEL'
 
     def __init__(self, has_external_files=True, external_model_kwargs={}, params={}, **kwargs):

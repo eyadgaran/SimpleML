@@ -41,7 +41,9 @@ class Database(URL):
                  host='localhost', port=5432, **kwargs):
         if configuration_section is not None:
             # Default to credentials in config file
-            super(Database, self).__init__(**CONFIG[configuration_section], **kwargs)
+            credentials = dict(CONFIG[configuration_section])
+            credentials.update(kwargs)
+            super(Database, self).__init__(**credentials)
         else:
             super(Database, self).__init__(
                 drivername=drivername,
