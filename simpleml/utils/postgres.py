@@ -8,7 +8,7 @@ __author__ = 'Elisha Yadgaran'
 from simpleml import psycopg2
 
 
-def create_database(connection_params, database, owner=None):
+def create_database(connection_params, database, owner=None, raise_error=True):
     '''
     Creates a new database
     :return: None
@@ -18,11 +18,12 @@ def create_database(connection_params, database, owner=None):
         database=database, owner=owner_syntax)
     try:
         run_sql_command(connection_params, database_command, autocommit=True)
-    except psycopg2.ProgrammingError:
-        pass
+    except psycopg2.ProgrammingError as e:
+        if raise_error:
+            raise(e)
 
 
-def create_user(connection_params, user, password):
+def create_user(connection_params, user, password, raise_error=True):
     '''
     Creates a new user
     :return: None
@@ -31,11 +32,12 @@ def create_user(connection_params, user, password):
         user=user, password=password)
     try:
         run_sql_command(connection_params, user_command, autocommit=True)
-    except psycopg2.ProgrammingError:
-        pass
+    except psycopg2.ProgrammingError as e:
+        if raise_error:
+            raise(e)
 
 
-def drop_database(connection_params, database, force=False):
+def drop_database(connection_params, database, force=False, raise_error=True):
     '''
     Drop database -- Must have sufficient privileges
     :return: None
@@ -47,11 +49,12 @@ def drop_database(connection_params, database, force=False):
         if force:
             run_sql_command(connection_params, force_command)
         run_sql_command(connection_params, database_command, autocommit=True)
-    except psycopg2.ProgrammingError:
-        pass
+    except psycopg2.ProgrammingError as e:
+        if raise_error:
+            raise(e)
 
 
-def drop_user(connection_params, user):
+def drop_user(connection_params, user, raise_error=True):
     '''
     Drop a user -- Must have sufficient privileges
     :return: None
@@ -59,8 +62,9 @@ def drop_user(connection_params, user):
     user_command = "DROP USER {user};".format(user=user)
     try:
         run_sql_command(connection_params, user_command, autocommit=True)
-    except psycopg2.ProgrammingError:
-        pass
+    except psycopg2.ProgrammingError as e:
+        if raise_error:
+            raise(e)
 
 
 def run_sql_command(connection_params, command, autocommit=False):
