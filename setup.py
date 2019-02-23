@@ -22,13 +22,15 @@ setup(
         'pandas',
         'numpy',
         'dill',
-        'future'
+        'future',
+        'configparser'
     ],
     extras_require={
         'postgres': ["psycopg2"],
         'deep-learning': ["keras", "tensorflow"],
         'hdf5': ["hickle"],
-        'all': ["psycopg2", "keras", "tensorflow", "hickle"]
+        'cloud': ["onedrivesdk", "apache-libcloud"],
+        'all': ["psycopg2", "keras", "tensorflow", "hickle", "onedrivesdk", "apache-libcloud"]
     },
     zip_safe=False,
     test_suite='nose.collector',

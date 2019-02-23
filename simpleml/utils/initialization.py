@@ -16,6 +16,7 @@ from simpleml.persistables.dataset_storage import DatasetStorage
 from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.persistables.serializing import custom_dumps, custom_loads
 from simpleml.utils.errors import SimpleMLError
+from simpleml.utils.system_path import CONFIG
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError
@@ -35,18 +36,22 @@ class Database(URL):
     '''
     Basic configuration to interact with database
     '''
-    def __init__(self, database='SimpleML', username='simpleml',
-                 password='simpleml', drivername='postgresql',
+    def __init__(self, configuration_section=None, database='SimpleML',
+                 username='simpleml', password='simpleml', drivername='postgresql',
                  host='localhost', port=5432, **kwargs):
-        super(Database, self).__init__(
-            drivername=drivername,
-            username=username,
-            password=password,
-            host=host,
-            port=port,
-            database=database,
-            **kwargs
-        )
+        if configuration_section is not None:
+            # Default to credentials in config file
+            super(Database, self).__init__(**CONFIG[configuration_section], **kwargs)
+        else:
+            super(Database, self).__init__(
+                drivername=drivername,
+                username=username,
+                password=password,
+                host=host,
+                port=port,
+                database=database,
+                **kwargs
+            )
 
     @property
     def engine(self):

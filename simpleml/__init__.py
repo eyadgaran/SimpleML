@@ -30,6 +30,7 @@ __version__ = pkg_resources.get_distribution(__name__).version
 # - Psycopg2
 # - Keras
 # - Hickle
+# - Onedrivesdk
 import warnings
 warning_msg = 'Unable to import optional dependency: {dependency}, to use install with `pip install {dependency}`'
 
@@ -55,6 +56,11 @@ except ImportError:
     hickle = None
     warnings.warn(warning_msg.format(dependency='hickle'), ImportWarning)
 
+try:
+    import onedrivesdk
+except ImportError:
+    onedrivesdk = None
+    warnings.warn(warning_msg.format(dependency='onedrivesdk'), ImportWarning)
 
 
 # 5) Create simpleml local file directories
