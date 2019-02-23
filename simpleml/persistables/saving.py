@@ -34,7 +34,7 @@ from simpleml.utils.system_path import PICKLED_FILESTORE_DIRECTORY,\
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
 from abc import ABCMeta, abstractmethod
 import dill as pickle
-from os.path import join
+from os.path import join, isfile
 
 # Python 2/3 compatibility
 try:
@@ -571,6 +571,9 @@ class OnedriveBase(ExternalSaveMixin):
             bucket_id = self.onedrive_hdf5_id
             filepath = join(HDF5_FILESTORE_DIRECTORY, filename)
 
+        # Check if file was already downloaded
+        if isfile(filepath):
+            return
         self.client.item(id=bucket_id).children[filename].download(filepath)
 
 
