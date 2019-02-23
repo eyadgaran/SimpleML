@@ -16,7 +16,7 @@ from simpleml.persistables.dataset_storage import DatasetStorage
 from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.persistables.serializing import custom_dumps, custom_loads
 from simpleml.utils.errors import SimpleMLError
-from simpleml.utils.system_path import CONFIG
+from simpleml.utils.configuration import CONFIG
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError

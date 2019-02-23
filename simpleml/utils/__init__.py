@@ -1,5 +1,5 @@
 # Create project directory on load
-from . import system_path
+from . import configuration
 
 
 __author__ = 'Elisha Yadgaran'

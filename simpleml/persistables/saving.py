@@ -29,7 +29,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 from simpleml.persistables.binary_blob import BinaryBlob
-from simpleml.utils.system_path import PICKLED_FILESTORE_DIRECTORY,\
+from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, CONFIG, CLOUD_SECTION
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
 from abc import ABCMeta, abstractmethod
