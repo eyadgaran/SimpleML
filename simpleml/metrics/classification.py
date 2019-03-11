@@ -21,6 +21,7 @@ This module is organized by metric and prediction dependencies:
 
 from simpleml.metrics.base_metric import Metric
 from simpleml import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
+from simpleml.utils.errors import MetricError
 from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_score
 import numpy as np
 import pandas as pd
@@ -60,17 +61,35 @@ class ClassificationMetric(Metric):
 
     @property
     def probabilities(self):
-        return self.model.predict_proba(X=None, dataset_split=self.dataset_split)
+        probabilities = self.model.predict_proba(X=None, dataset_split=self.dataset_split)
+        self.validate_predictions(probabilities)
+        return probabilities
 
     @property
     def predictions(self):
-        return self.model.predict(X=None, dataset_split=self.dataset_split)
+        preds = self.model.predict(X=None, dataset_split=self.dataset_split)
+        self.validate_predictions(preds)
+        return preds
+
+    @staticmethod
+    def validate_predictions(predictions):
+        invalid = None
+        if predictions is None:
+            invalid = True
+        elif isinstance(predictions, (pd.DataFrame, pd.Series)) and predictions.empty:
+            invalid = True
+        elif isinstance(predictions, np.ndarray) and predictions.size == 0:
+            invalid = True
+
+        if invalid:
+            raise MetricError('Attempting to score an empty dataset')
 
 
 class BinaryClassificationMetric(ClassificationMetric):
     @property
     def probabilities(self):
         probabilities = self.model.predict_proba(X=None, dataset_split=self.dataset_split)
+        self.validate_predictions(probabilities)
         if len(probabilities.shape) > 1 and probabilities.shape[1] > 1:
             # Indicates multiple class probabilities are returned (class_0, class_1)
             probabilities = probabilities[:, 1]
@@ -79,6 +98,7 @@ class BinaryClassificationMetric(ClassificationMetric):
     @property
     def predictions(self):
         predictions = self.model.predict(X=None, dataset_split=self.dataset_split)
+        self.validate_predictions(predictions)
         if len(predictions.shape) > 1 and predictions.shape[1] > 1:
             # Indicates multiple class predictions are returned (class_0, class_1)
             predictions = predictions[:, 1]
@@ -126,6 +146,7 @@ class BinaryClassificationMetric(ClassificationMetric):
         values = [round(i, round_places) for i in values]
 
         df = pd.DataFrame(list(zip(keys, values)), columns=['keys', 'values'])
+        df.dropna(axis=0, inplace=True)
 
         agg = 'max' if maximize else 'min'
         return df.groupby('keys').agg({'values': agg}).to_dict()['values']

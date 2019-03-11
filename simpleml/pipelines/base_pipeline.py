@@ -223,9 +223,12 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         '''
         self.assert_fitted('Must fit pipeline before transforming')
 
-        if X is None:
+        if X is None:  # Retrieve dataset split
             X, y = self.get_dataset_split(dataset_split)
-            output = self.external_pipeline.transform(X, **kwargs)
+            if X is None or (isinstance(X, pd.DataFrame) and X.empty):
+                output = None  # Skip transformations on empty dataset
+            else:
+                output = self.external_pipeline.transform(X, **kwargs)
 
             if return_y:
                 return output, y
@@ -308,16 +311,13 @@ class GeneratorPipeline(Pipeline):
         '''
         Get specific dataset split
         '''
-        if split is None:
-            split = TRAIN_SPLIT
-
-        if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
-            self.split_dataset()
-
-        # Data generators are formatted for keras models
-        X, y = self._dataset_splits.get(split)
+        X, y = super(GeneratorPipeline, self).get_dataset_split(split)
 
         dataset_size = X.shape[0]
+        if dataset_size == 0:  # Return None
+            return
+
+        # Extract indices to subsample from
         if isinstance(X, pd.DataFrame):
             indices = X.index.tolist()
         elif isinstance(X, np.ndarray):
@@ -325,9 +325,7 @@ class GeneratorPipeline(Pipeline):
         else:
             raise NotImplementedError
 
-        if dataset_size == 0:  # Return None
-            return
-
+        # Loop through and sample indefinitely
         first_run = True
         current_index = 0
         while True:
@@ -336,16 +334,16 @@ class GeneratorPipeline(Pipeline):
 
             batch = indices[current_index:min(current_index + batch_size, dataset_size)]
 
-            if y is not None and (isinstance(y, (pd.DataFrame, pd.Series)) and not y.empty):
+            if y is not None and (isinstance(y, (pd.DataFrame, pd.Series)) and not y.empty):  # Supervised
                 if isinstance(X, (pd.DataFrame, pd.Series)):
                     yield X.loc[batch], np.stack(y.loc[batch].squeeze().values)
                 else:
                     yield X[batch], y[batch]
-            else:
+            else:  # Unsupervised
                 if isinstance(X, (pd.DataFrame, pd.Series)):
-                    yield X.loc[batch], None
+                    yield X.loc[batch]
                 else:
-                    yield X[batch], None
+                    yield X[batch]
 
             current_index += batch_size
 
@@ -356,25 +354,6 @@ class GeneratorPipeline(Pipeline):
                     first_run = False
                 else:
                     break
-
-    def fit(self, **kwargs):
-        '''
-        Pass through method to external pipeline
-        Assumes underlying pipeline can make use of a generator to fit
-        '''
-        if self.dataset is None:
-            raise PipelineError('Must set dataset before fitting')
-
-        if self.state['fitted']:
-            LOGGER.warning('Cannot refit pipeline, skipping operation')
-            return self
-
-        # Only use train fold to fit
-        generator = self.get_dataset_split(TRAIN_SPLIT)
-        self.external_pipeline.fit(generator, **kwargs)
-        self.state['fitted'] = True
-
-        return self
 
     def transform(self, X, dataset_split=None, return_y=False, **kwargs):
         '''
