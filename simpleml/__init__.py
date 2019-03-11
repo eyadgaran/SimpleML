@@ -63,8 +63,8 @@ except ImportError:
     warnings.warn(warning_msg.format(dependency='onedrivesdk'), ImportWarning)
 
 
-# 5) Create simpleml local file directories
-from . import utils
+# 5) Load configs
+from .utils import configuration
 
 
 # 6) Import modules to register class names in global registry

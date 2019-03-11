@@ -119,10 +119,10 @@ class Database(URL):
         current_revision = context.get_current_revision()
 
         # Read local config file to find the current "head" revision
-        config = Config()
-        config.set_main_option("script_location",
-                               join(dirname(dirname(dirname(realpath(__file__)))), "migrations"))
-        script = ScriptDirectory.from_config(config)
+        # config = Config()
+        # config.set_main_option("script_location",
+        #                        join(dirname(dirname(dirname(realpath(__file__)))), "migrations"))
+        script = ScriptDirectory.from_config(self.alembic_config)
         head_revision = script.get_current_head()
 
         if current_revision != head_revision:
