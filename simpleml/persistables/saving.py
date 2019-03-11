@@ -20,6 +20,10 @@ Nomenclature -> Save Location : Save Format
     - Google Cloud Platform
     - Microsoft Azure
     - Microsoft Onedrive
+    - Aurora
+    - Backblaze B2
+    - DigitalOcean Spaces
+    - OpenStack Swift
   Backend is determined by `cloud_section` in the configuration file
 - Remote filestore saving
     - SCP to remote server
@@ -49,6 +53,7 @@ from simpleml import load_model, hickle, onedrivesdk
 # Shared Connections
 ONEDRIVE_SECTION = 'onedrive'
 ONEDRIVE_CONNECTION = {}
+CLOUD_DRIVER = None
 
 
 class ExternalSaveMixin(with_metaclass(ABCMeta, object)):
@@ -724,9 +729,275 @@ class OnedriveKerasHDF5SaveMixin(OnedriveBase):
         self.unloaded_externals = False
 
 
+class CloudBase(ExternalSaveMixin):
+    '''
+    Base class to save/load objects via Apache Libcloud
+
+    Generic api for all cloud providers so naming convention is extremely important
+    to follow in the config. Please reference libcloud documentation for supported
+    input parameters
+
+    ```
+    [cloud]
+    section = `name of the config section to use, ex: s3`
+
+    [s3]
+    param = value --> normal key:value syntax. match these to however they are referenced later, examples:
+    key = abc123
+    secret = superSecure
+    region = us-east-1
+    something_specific_to_s3 = s3_parameter
+    --- Below are internally referenced SimpleML params ---
+    driver = S3 --> this must be the Apache Libcloud provider (https://github.com/apache/libcloud/blob/trunk/libcloud/storage/types.py)
+    connection_params = key,secret,region,something_specific_to_s3 --> this determines the key: value params passed to the constructor (it can be different for each provider)
+    path = simpleml/specific/root --> similar to disk based home directory, cloud home directory will start relative to here
+    container = simpleml --> the cloud bucket or container name
+    ```
+
+    How this gets used:
+    ```
+    from libcloud.storage.types import Provider
+    from libcloud.storage.providers import get_driver
+
+    cloud_section = CONFIG.get('cloud', 'cloud_section')
+    connection_params = CONFIG.getlist(cloud_section, 'connection_params')
+    root_path = CONFIG.get(cloud_section, 'path')
+
+    driver_cls = get_driver(getattr(Provider, CONFIG.get(cloud_section, 'driver')))
+    driver = driver_cls(**{param: CONFIG.get(cloud_section, param) for param in connection_params})
+    container = driver.get_container(container_name=CONFIG.get(cloud_section, 'container'))
+    extra = {'content_type': 'application/octet-stream'}
+
+    obj = driver.upload_object(LOCAL_FILE_PATH,
+                               container=container,
+                               object_name=root_path + simpleml_folder_path + filename,
+                               extra=extra)
+
+    obj = driver.download_object(CLOUD_OBJECT,
+                                 destination_path=LOCAL_FILE_PATH,
+                                 overwrite_existing=True,
+                                 delete_on_failure=True)
+    ```
+    '''
+    @property
+    def driver(self):
+        if CLOUD_DRIVER is None:
+            from libcloud.storage.types import Provider
+            from libcloud.storage.providers import get_driver
+
+            cloud_section = CONFIG.get('cloud', 'cloud_section')
+            connection_params = CONFIG.getlist(cloud_section, 'connection_params')
+
+            driver_cls = get_driver(getattr(Provider, CONFIG.get(cloud_section, 'driver')))
+            driver = driver_cls(**{param: CONFIG.get(cloud_section, param) for param in connection_params})
+
+            global CLOUD_DRIVER
+            CLOUD_DRIVER = driver
+        return CLOUD_DRIVER
+
+    def upload_to_cloud(self, folder, filename):
+        '''
+        Upload any file from disk to cloud
+        '''
+        cloud_section = CONFIG.get('cloud', 'cloud_section')
+        root_path = CONFIG.get(cloud_section, 'path')
+        container = self.driver.get_container(container_name=CONFIG.get(cloud_section, 'container'))
+        extra = {'content_type': 'application/octet-stream'}
+
+        if folder == 'pickle':
+            filepath = join(PICKLED_FILESTORE_DIRECTORY, filename)
+            object_name = root_path + PICKLED_FILESTORE_DIRECTORY + filename
+        else:
+            filepath = join(HDF5_FILESTORE_DIRECTORY, filename)
+            object_name = root_path + HDF5_FILESTORE_DIRECTORY + filename
+
+        self.driver.upload_object(filepath,
+                               container=container,
+                               object_name=object_name,
+                               extra=extra)
+
+    def download_from_cloud(self, folder, filename):
+        '''
+        Download any file from cloud to disk
+        '''
+        cloud_section = CONFIG.get('cloud', 'cloud_section')
+        root_path = CONFIG.get(cloud_section, 'path')
+        container = CONFIG.get(cloud_section, 'container')
+
+        if folder == 'pickle':
+            filepath = join(PICKLED_FILESTORE_DIRECTORY, filename)
+            # Check if file was already downloaded before initiating cloud connection
+            if isfile(filepath):
+                return
+            obj = self.driver.get_object(
+                container_name=container,
+                object_name=root_path + PICKLED_FILESTORE_DIRECTORY + filename)
+        else:
+            filepath = join(HDF5_FILESTORE_DIRECTORY, filename)
+            # Check if file was already downloaded before initiating cloud connection
+            if isfile(filepath):
+                return
+            obj = self.driver.get_object(
+                container_name=container,
+                object_name=root_path + HDF5_FILESTORE_DIRECTORY + filename)
+
+        self.driver.download_object(obj,
+                                    destination_path=filepath,
+                                    overwrite_existing=True,
+                                    delete_on_failure=True)
+
+
+class CloudPickleSaveMixin(CloudBase):
+    '''
+    Mixin class to save objects to Cloud in pickled format
+
+    Expects the following available attributes:
+        - self._external_file
+        - self.id
+
+    Sets the following attributes:
+        - self.filepaths
+        - self.unloaded_externals
+    '''
+    def _save_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._save_pickle_to_cloud()
+
+    def _load_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._load_pickle_from_cloud()
+
+    def _save_pickle_to_cloud(self):
+        '''
+        Shared method to save files to disk in pickled format
+        Then upload pickled file from disk to cloud
+        '''
+        filename = str(self.id) + '.pkl'
+        folder = 'pickle'
+        self.pickle_object(self._external_file, filename)
+        self.upload_to_cloud(folder, filename)
+        self.filepaths = {"cloud_pickled": [filename]}
+
+    def _load_pickle_from_cloud(self):
+        '''
+        Download pickled file from cloud to disk
+        Then load files from disk in pickled format
+        '''
+        filename = self.filepaths['cloud_pickled'][0]
+        folder = 'pickle'
+        self.download_from_cloud(folder, filename)
+        self._external_file = self.load_pickled_object(filename)
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False
+
+
+class CloudHDF5SaveMixin(CloudBase):
+    '''
+    Mixin class to save objects to Cloud in HDF5 format
+
+    Expects the following available attributes:
+        - self._external_file
+        - self.id
+
+    Sets the following attributes:
+        - self.filepaths
+        - self.unloaded_externals
+    '''
+    def _save_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._save_hdf5_to_cloud()
+
+    def _load_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._load_hdf5_from_cloud()
+
+    def _save_hdf5_to_cloud(self):
+        '''
+        Shared method to save files to disk in HDF5 format
+        Then upload HDF5 file from disk to cloud
+        '''
+        filename = str(self.id) + '.h5'
+        folder = 'hdf5'
+        self.hickle_object(self._external_file, filename)
+        self.upload_to_cloud(folder, filename)
+        self.filepaths = {"cloud_hdf5": [filename]}
+
+    def _load_hdf5_from_cloud(self):
+        '''
+        Download HDF5 file from cloud to disk
+        Then load files from disk in HDF5 format
+        '''
+        filename = self.filepaths['cloud_hdf5'][0]
+        folder = 'hdf5'
+        self.download_from_cloud(folder, filename)
+        self._external_file = self.load_hickled_object(filename)
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False
+
+
+class CloudKerasHDF5SaveMixin(CloudBase):
+    '''
+    Mixin class to save objects to Cloud in Keras HDF5 format
+
+    Expects the following available attributes:
+        - self._external_file
+        - self.id
+
+    Sets the following attributes:
+        - self.filepaths
+        - self.unloaded_externals
+    '''
+    def _save_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._save_keras_hdf5_to_cloud()
+
+    def _load_external_files(self):
+        '''
+        Unless overwritten only use this mixin's paradigm
+        '''
+        self._load_keras_hdf5_from_cloud()
+
+    def _save_keras_hdf5_to_cloud(self):
+        '''
+        Shared method to save files to disk in Keras HDF5 format
+        Then upload HDF5 file from disk to cloud
+        '''
+        filename = str(self.id) + '.h5'
+        folder = 'hdf5'
+        self.save_keras_object(self._external_file, filename)
+        self.upload_to_cloud(folder, filename)
+        self.filepaths = {"cloud_keras_hdf5": [filename]}
+
+    def _load_hdf5_from_cloud(self):
+        '''
+        Download HDF5 file from cloud to disk
+        Then load files from disk in HDF5 format
+        '''
+        filename = self.filepaths['cloud_keras_hdf5'][0]
+        folder = 'hdf5'
+        self.download_from_cloud(folder, filename)
+        self._external_file = self.load_keras_object(filename)
+
+        # Indicate externals were loaded
+        self.unloaded_externals = False
+
+
 class AllSaveMixin(DatabaseTableSaveMixin, DatabasePickleSaveMixin,
                    DiskPickleSaveMixin, DiskHDF5SaveMixin, KerasDiskHDF5SaveMixin,
-                   OnedrivePickleSaveMixin, OnedriveHDF5SaveMixin, OnedriveKerasHDF5SaveMixin):
+                   OnedrivePickleSaveMixin, OnedriveHDF5SaveMixin, OnedriveKerasHDF5SaveMixin,
+                   CloudPickleSaveMixin, CloudHDF5SaveMixin, CloudKerasHDF5SaveMixin):
     def _save_external_files(self):
         '''
         Wrapper method around save mixins for different persistence patterns
@@ -745,17 +1016,22 @@ class AllSaveMixin(DatabaseTableSaveMixin, DatabasePickleSaveMixin,
             self._save_keras_hdf5_to_disk()
         elif save_method == 'cloud_pickled':
             cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == 'onedrive':
+            if cloud_section == ONEDRIVE_SECTION:
                 self._save_pickle_to_onedrive()
+            else:
+                self._save_pickle_to_cloud()
         elif save_method == 'cloud_hdf5':
             cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == 'onedrive':
+            if cloud_section == ONEDRIVE_SECTION:
                 self._save_hdf5_to_onedrive()
+            else:
+                self._save_hdf5_to_cloud()
         elif save_method == 'cloud_keras_hdf5':
             cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == 'onedrive':
+            if cloud_section == ONEDRIVE_SECTION:
                 self._save_keras_hdf5_to_onedrive()
-
+            else:
+                self._save_keras_hdf5_to_cloud()
         else:
             raise ValueError('Unsupported Save Method: {}'.format(save_method))
 
@@ -777,15 +1053,21 @@ class AllSaveMixin(DatabaseTableSaveMixin, DatabasePickleSaveMixin,
             self._load_keras_hdf5_from_disk()
         elif save_method == 'cloud_pickled':
             cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == 'onedrive':
+            if cloud_section == ONEDRIVE_SECTION:
                 self._load_pickle_from_onedrive()
+            else:
+                self._load_pickle_from_cloud()
         elif save_method == 'cloud_hdf5':
             cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == 'onedrive':
+            if cloud_section == ONEDRIVE_SECTION:
                 self._load_hdf5_from_onedrive()
+            else:
+                self._load_hdf5_from_cloud()
         elif save_method == 'cloud_keras_hdf5':
             cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == 'onedrive':
+            if cloud_section == ONEDRIVE_SECTION:
                 self._load_keras_hdf5_from_onedrive()
+            else:
+                self._load_keras_hdf5_from_cloud()
         else:
             raise ValueError('Unsupported Load Method: {}'.format(save_method))

@@ -13,6 +13,8 @@ import json
 import dill as pickle
 import codecs
 import sys
+from decimal import Decimal
+from datetime import datetime, timedelta
 
 try:  # Py2/3 compatibility
     basestring
@@ -22,6 +24,12 @@ except NameError:
 
 class JSONSerializer(json.JSONEncoder):
     def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        if isinstance(obj, datetime):
+            return obj.__str__()
+        if isinstance(obj, timedelta):
+            return int(obj)
         # Otherwise try defaults or fallback to pickle
         try:
             return super(JSONSerializer, self).default(obj)
