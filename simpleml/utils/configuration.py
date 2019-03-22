@@ -43,9 +43,11 @@ else:
     LOGGER.warning('home_directory = ~/.simpleml')
     SIMPLEML_DIRECTORY = os.path.expanduser("~/.simpleml")
 
+PICKLE_DIRECTORY = 'pickle/'
+HDF5_DIRECTORY = 'HDF5/'
 FILESTORE_DIRECTORY = os.path.join(SIMPLEML_DIRECTORY, 'filestore/')
-PICKLED_FILESTORE_DIRECTORY = os.path.join(FILESTORE_DIRECTORY, 'pickle/')
-HDF5_FILESTORE_DIRECTORY = os.path.join(FILESTORE_DIRECTORY, 'HDF5/')
+PICKLED_FILESTORE_DIRECTORY = os.path.join(FILESTORE_DIRECTORY, PICKLE_DIRECTORY)
+HDF5_FILESTORE_DIRECTORY = os.path.join(FILESTORE_DIRECTORY, HDF5_DIRECTORY)
 
 
 # Create Paths if they don't exist

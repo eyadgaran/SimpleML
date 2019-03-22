@@ -34,7 +34,7 @@ __author__ = 'Elisha Yadgaran'
 
 from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
-    HDF5_FILESTORE_DIRECTORY, CONFIG, CLOUD_SECTION
+    HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
 from abc import ABCMeta, abstractmethod
 import dill as pickle
@@ -533,8 +533,8 @@ class OnedriveBase(ExternalSaveMixin):
         for root_folder in root_folders:
             root_id = create_onedrive_folder(self.client.item(id=root_id), root_folder)
         filestore_folder_id = create_onedrive_folder(self.client.item(id=root_id), 'filestore')
-        pickle_folder_id = create_onedrive_folder(self.client.item(id=filestore_folder_id), 'pickle')
-        hdf5_folder_id = create_onedrive_folder(self.client.item(id=filestore_folder_id), 'HDF5')
+        pickle_folder_id = create_onedrive_folder(self.client.item(id=filestore_folder_id), PICKLE_DIRECTORY)
+        hdf5_folder_id = create_onedrive_folder(self.client.item(id=filestore_folder_id), HDF5_DIRECTORY)
 
         # Save IDs for quick reference later
         self.onedrive_root_id = root_id
@@ -759,7 +759,7 @@ class CloudBase(ExternalSaveMixin):
     from libcloud.storage.types import Provider
     from libcloud.storage.providers import get_driver
 
-    cloud_section = CONFIG.get('cloud', 'cloud_section')
+    cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
     connection_params = CONFIG.getlist(cloud_section, 'connection_params')
     root_path = CONFIG.get(cloud_section, 'path')
 
@@ -781,17 +781,17 @@ class CloudBase(ExternalSaveMixin):
     '''
     @property
     def driver(self):
+        global CLOUD_DRIVER
         if CLOUD_DRIVER is None:
             from libcloud.storage.types import Provider
             from libcloud.storage.providers import get_driver
 
-            cloud_section = CONFIG.get('cloud', 'cloud_section')
+            cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
             connection_params = CONFIG.getlist(cloud_section, 'connection_params')
 
             driver_cls = get_driver(getattr(Provider, CONFIG.get(cloud_section, 'driver')))
             driver = driver_cls(**{param: CONFIG.get(cloud_section, param) for param in connection_params})
 
-            global CLOUD_DRIVER
             CLOUD_DRIVER = driver
         return CLOUD_DRIVER
 
@@ -799,17 +799,17 @@ class CloudBase(ExternalSaveMixin):
         '''
         Upload any file from disk to cloud
         '''
-        cloud_section = CONFIG.get('cloud', 'cloud_section')
+        cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
         root_path = CONFIG.get(cloud_section, 'path')
         container = self.driver.get_container(container_name=CONFIG.get(cloud_section, 'container'))
         extra = {'content_type': 'application/octet-stream'}
 
         if folder == 'pickle':
             filepath = join(PICKLED_FILESTORE_DIRECTORY, filename)
-            object_name = root_path + PICKLED_FILESTORE_DIRECTORY + filename
+            object_name = join(root_path, PICKLE_DIRECTORY, filename)
         else:
             filepath = join(HDF5_FILESTORE_DIRECTORY, filename)
-            object_name = root_path + HDF5_FILESTORE_DIRECTORY + filename
+            object_name = join(root_path, HDF5_DIRECTORY, filename)
 
         self.driver.upload_object(filepath,
                                container=container,
@@ -820,7 +820,7 @@ class CloudBase(ExternalSaveMixin):
         '''
         Download any file from cloud to disk
         '''
-        cloud_section = CONFIG.get('cloud', 'cloud_section')
+        cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
         root_path = CONFIG.get(cloud_section, 'path')
         container = CONFIG.get(cloud_section, 'container')
 
@@ -831,7 +831,7 @@ class CloudBase(ExternalSaveMixin):
                 return
             obj = self.driver.get_object(
                 container_name=container,
-                object_name=root_path + PICKLED_FILESTORE_DIRECTORY + filename)
+                object_name=join(root_path, PICKLE_DIRECTORY, filename))
         else:
             filepath = join(HDF5_FILESTORE_DIRECTORY, filename)
             # Check if file was already downloaded before initiating cloud connection
@@ -839,7 +839,7 @@ class CloudBase(ExternalSaveMixin):
                 return
             obj = self.driver.get_object(
                 container_name=container,
-                object_name=root_path + HDF5_FILESTORE_DIRECTORY + filename)
+                object_name=join(root_path, HDF5_DIRECTORY, filename))
 
         self.driver.download_object(obj,
                                     destination_path=filepath,
