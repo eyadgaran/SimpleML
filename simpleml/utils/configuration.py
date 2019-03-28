@@ -50,15 +50,22 @@ PICKLED_FILESTORE_DIRECTORY = os.path.join(FILESTORE_DIRECTORY, PICKLE_DIRECTORY
 HDF5_FILESTORE_DIRECTORY = os.path.join(FILESTORE_DIRECTORY, HDF5_DIRECTORY)
 
 
-# Create Paths if they don't exist
+# Create Paths if they don't exist - use try/excepts to catch race conditions
+def safe_makedirs(dir):
+    try:
+        os.makedirs(dir)
+    except OSError as e:
+        if e.errno != os.errno.EEXIST:
+            raise
+            
 if not os.path.exists(SIMPLEML_DIRECTORY):
-    os.makedirs(SIMPLEML_DIRECTORY)
+    safe_makedirs(SIMPLEML_DIRECTORY)
 
 if not os.path.exists(FILESTORE_DIRECTORY):
-    os.makedirs(FILESTORE_DIRECTORY)
+    safe_makedirs(FILESTORE_DIRECTORY)
 
 if not os.path.exists(PICKLED_FILESTORE_DIRECTORY):
-    os.makedirs(PICKLED_FILESTORE_DIRECTORY)
+    safe_makedirs(PICKLED_FILESTORE_DIRECTORY)
 
 if not os.path.exists(HDF5_FILESTORE_DIRECTORY):
-    os.makedirs(HDF5_FILESTORE_DIRECTORY)
+    safe_makedirs(HDF5_FILESTORE_DIRECTORY)
