@@ -64,7 +64,7 @@ except ImportError:
 
 
 # 5) Load configs
-from .utils import configuration
+from . import utils
 
 
 # 6) Import modules to register class names in global registry
