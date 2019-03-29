@@ -9,6 +9,7 @@ __author__ = 'Elisha Yadgaran'
 import os
 from configparser import ConfigParser
 import logging
+import errno  # os.errno deprecated in python 3.7+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,9 +56,9 @@ def safe_makedirs(dir):
     try:
         os.makedirs(dir)
     except OSError as e:
-        if e.errno != os.errno.EEXIST:
+        if e.errno != errno.EEXIST:
             raise
-            
+
 if not os.path.exists(SIMPLEML_DIRECTORY):
     safe_makedirs(SIMPLEML_DIRECTORY)
 
