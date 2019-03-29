@@ -70,7 +70,7 @@ class Database(URL):
             self._alembic_config = Config(join(root_path, 'alembic.ini'))
             # For some reason, alembic doesnt use a relative path from the ini
             # and cannot find the migration folder without the full path
-            self._alembic_config.set_main_option('script_location', join(root_path, 'migrations'))
+            self._alembic_config.set_main_option('script_location', join(root_path, 'simpleml/migrations'))
         return self._alembic_config
 
     def create_tables(self, base, drop_tables=False, ignore_errors=False):
