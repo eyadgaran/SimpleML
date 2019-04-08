@@ -715,7 +715,7 @@ class OnedriveKerasHDF5SaveMixin(OnedriveBase):
         self.upload_to_onedrive(bucket, filename)
         self.filepaths = {"cloud_keras_hdf5": [filename]}
 
-    def _load_hdf5_from_onedrive(self):
+    def _load_keras_hdf5_from_onedrive(self):
         '''
         Download HDF5 file from onedrive to disk
         Then load files from disk in HDF5 format
@@ -812,9 +812,9 @@ class CloudBase(ExternalSaveMixin):
             object_name = join(root_path, HDF5_DIRECTORY, filename)
 
         self.driver.upload_object(filepath,
-                               container=container,
-                               object_name=object_name,
-                               extra=extra)
+                                  container=container,
+                                  object_name=object_name,
+                                  extra=extra)
 
     def download_from_cloud(self, folder, filename):
         '''
