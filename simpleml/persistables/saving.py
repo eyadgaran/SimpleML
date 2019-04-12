@@ -980,7 +980,7 @@ class CloudKerasHDF5SaveMixin(CloudBase):
         self.upload_to_cloud(folder, filename)
         self.filepaths = {"cloud_keras_hdf5": [filename]}
 
-    def _load_hdf5_from_cloud(self):
+    def _load_keras_hdf5_from_cloud(self):
         '''
         Download HDF5 file from cloud to disk
         Then load files from disk in HDF5 format
