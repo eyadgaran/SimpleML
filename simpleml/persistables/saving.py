@@ -761,7 +761,7 @@ class CloudBase(ExternalSaveMixin):
 
     cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
     connection_params = CONFIG.getlist(cloud_section, 'connection_params')
-    root_path = CONFIG.get(cloud_section, 'path')
+    root_path = CONFIG.get(cloud_section, 'path', fallback='')
 
     driver_cls = get_driver(getattr(Provider, CONFIG.get(cloud_section, 'driver')))
     driver = driver_cls(**{param: CONFIG.get(cloud_section, param) for param in connection_params})
@@ -800,7 +800,7 @@ class CloudBase(ExternalSaveMixin):
         Upload any file from disk to cloud
         '''
         cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-        root_path = CONFIG.get(cloud_section, 'path')
+        root_path = CONFIG.get(cloud_section, 'path', fallback='')
         container = self.driver.get_container(container_name=CONFIG.get(cloud_section, 'container'))
         extra = {'content_type': 'application/octet-stream'}
 
@@ -821,7 +821,7 @@ class CloudBase(ExternalSaveMixin):
         Download any file from cloud to disk
         '''
         cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-        root_path = CONFIG.get(cloud_section, 'path')
+        root_path = CONFIG.get(cloud_section, 'path', fallback='')
         container = CONFIG.get(cloud_section, 'container')
 
         if folder == 'pickle':

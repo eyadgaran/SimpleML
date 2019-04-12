@@ -29,7 +29,7 @@ setup(
         'postgres': ["psycopg2"],
         'deep-learning': ["keras", "tensorflow"],
         'hdf5': ["hickle"],
-        'cloud': ["onedrivesdk", "apache-libcloud"],
+        'cloud': ["onedrivesdk", "apache-libcloud", "pycrypto"],
         'all': ["psycopg2", "keras", "tensorflow", "hickle", "onedrivesdk", "apache-libcloud"]
     },
     zip_safe=False,
