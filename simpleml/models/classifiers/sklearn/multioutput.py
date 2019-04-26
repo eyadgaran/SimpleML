@@ -2,13 +2,13 @@
 Wrapper module around `sklearn.multioutput`
 '''
 
+__author__ = 'Elisha Yadgaran'
+
+
 from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
-
-
-__author__ = 'Elisha Yadgaran'
 
 
 '''
@@ -16,8 +16,7 @@ Classifier Chain
 '''
 
 class WrappedSklearnClassifierChain(ClassifierChain, ClassificationExternalModelMixin):
-    def get_feature_metadata(self, features, **kwargs):
-        pass
+    pass
 
 class SklearnClassifierChain(SklearnClassifier):
     def _create_external_model(self, **kwargs):
@@ -29,8 +28,7 @@ Multi Output Classifier
 '''
 
 class WrappedSklearnMultiOutputClassifier(MultiOutputClassifier, ClassificationExternalModelMixin):
-    def get_feature_metadata(self, features, **kwargs):
-        pass
+    pass
 
 class SklearnMultiOutputClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):

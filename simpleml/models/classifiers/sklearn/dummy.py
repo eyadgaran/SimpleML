@@ -2,13 +2,13 @@
 Wrapper module around `sklearn.dummy`
 '''
 
+__author__ = 'Elisha Yadgaran'
+
+
 from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.dummy import DummyClassifier
-
-
-__author__ = 'Elisha Yadgaran'
 
 
 '''
@@ -16,8 +16,8 @@ Dummy classifier
 '''
 
 class WrappedSklearnDummyClassifier(DummyClassifier, ClassificationExternalModelMixin):
-    def get_feature_metadata(self, features, **kwargs):
-        pass
+    # Dummy model doesnt have any feature metadata
+    pass
 
 class SklearnDummyClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
