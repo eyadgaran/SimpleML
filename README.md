@@ -6,7 +6,7 @@
 ![HitCount](http://hits.dwyl.io/eyadgaran/simpleml.svg)
 
 # SimpleML
-Machine learning that just works, for simple production applications
+Machine learning that just works, for effortless production applications
 
 Documentation: [simpleml.readthedocs.io](https://simpleml.readthedocs.io)
 
@@ -41,12 +41,10 @@ At the core SimpleML defines few constraints allowing for developer flexibility 
 Starting a project is as simple as defining the raw data and guiding the transformations. An example using the kaggle Titanic dataset is demonstrated below:
 
 ```python
-from simpleml.utils.initialization import Database
-from simpleml.datasets import BasePandasDataset
-from simpleml.pipelines import BaseRandomSplitPipeline
-from simpleml.transformers.fitful_transformers.vectorizers import SklearnDictVectorizer
-from simpleml.transformers.fitless_transformers.converters import DataframeToRecords
-from simpleml.transformers.fitful_transformers.fill import FillWithValue
+from simpleml.utils import Database
+from simpleml.datasets import PandasDataset
+from simpleml.pipelines import RandomSplitPipeline
+from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
 from simpleml.models import SklearnLogisticRegression
 from simpleml.metrics AccuracyMetric
 from simpleml import TEST_SPLIT
@@ -56,7 +54,7 @@ from simpleml import TEST_SPLIT
 db = Database().initialize()
 
 # Define Dataset and point to loading file
-class TitanicDataset(BasePandasDataset):
+class TitanicDataset(PandasDataset):
     def build_dataframe(self):
         self._external_file = self.load_csv('filepath/to/train.csv')
 
@@ -73,8 +71,8 @@ transformers = [
 ]
 
 # Create Pipeline and save it - Use basic 80-20 test split
-pipeline = BaseRandomSplitPipeline(name='titanic', transformers=transformers,
-                                   train_size=0.8, validation_size=0.0, test_size=0.2)
+pipeline = RandomSplitPipeline(name='titanic', transformers=transformers,
+                               train_size=0.8, validation_size=0.0, test_size=0.2)
 pipeline.add_dataset(dataset)
 pipeline.fit()
 pipeline.save()
@@ -98,15 +96,14 @@ This workflow is modeled as a DAG, which means that there is room for paralleliz
 
 
 ```python
-from simpleml.utils.training.create_persistable import DatasetCreator,\
-    PipelineCreator, ModelCreator, MetricCreator
+from simpleml.utils import DatasetCreator, PipelineCreator, ModelCreator, MetricCreator
 
 # ---------------------------------------------------------------------------- #
 # Option 1: Explicit object creation (pass in dependencies)
 # ---------------------------------------------------------------------------- #
 # Object defining parameters
 dataset_kwargs = {'name': 'titanic', 'registered_name': 'TitanicDataset', 'label_columns': ['Survived']}
-pipeline_kwargs = {'name': 'titanic', 'registered_name': 'BaseRandomSplitPipeline', 'transformers': transformers, 'train_size': 0.8, 'validation_size': 0.0, 'test_size': 0.2}
+pipeline_kwargs = {'name': 'titanic', 'registered_name': 'RandomSplitPipeline', 'transformers': transformers, 'train_size': 0.8, 'validation_size': 0.0, 'test_size': 0.2}
 model_kwargs = {'name': 'titanic', 'registered_name': 'SklearnLogisticRegression'}
 metric_kwargs = {'registered_name': 'AccuracyMetric', 'dataset_split': TEST_SPLIT}
 
@@ -133,7 +130,7 @@ metric = MetricCreator.retrieve_or_create(model_kwargs=model_kwargs, **metric_kw
 Once objects have been created, they can be retrieved at whim by their name attribute (with the exception of metrics - which also need reference to the model). By default the latest version for a name will be returned, but this can be overridden by explicitly passing a version number.
 
 ```python
-from simpleml.utils.scoring.load_persistable import PersistableLoader
+from simpleml.utils import PersistableLoader
 
 # Notice versions are not shared between objects and can increment differently depending on iterations
 dataset = PersistableLoader.load_dataset(name='titanic', version=7)
