@@ -36,7 +36,7 @@ class Database(URL):
     '''
     Basic configuration to interact with database
     '''
-    def __init__(self, configuration_section=None, database='SimpleML',
+    def __init__(self, configuration_section=None, uri=None, database='SimpleML',
                  username='simpleml', password='simpleml', drivername='postgresql',
                  host='localhost', port=5432, **kwargs):
         if configuration_section is not None:
@@ -45,6 +45,12 @@ class Database(URL):
             credentials.update(kwargs)
             super(Database, self).__init__(**credentials)
         else:
+            if uri is not None:
+                # Overwrite all the other parameters and inject URI directly into the engine
+                LOGGER.info('Skipping parameters and using passed URI')
+                self.uri = uri
+                LOGGER.info('Inputting dummy parameters to force initialization - still using URI in engine!')
+
             super(Database, self).__init__(
                 drivername=drivername,
                 username=username,
@@ -57,7 +63,11 @@ class Database(URL):
 
     @property
     def engine(self):
-        return create_engine(self,
+        if hasattr(self, 'uri') and self.uri is not None:
+            uri = self.uri
+        else:
+            uri = self
+        return create_engine(uri,
                              json_serializer=custom_dumps,
                              json_deserializer=custom_loads,
                              pool_recycle=300)
