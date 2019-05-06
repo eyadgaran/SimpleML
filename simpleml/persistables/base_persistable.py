@@ -123,6 +123,10 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
     def state(self):
         return self.metadata_['state']
 
+    @property
+    def library_versions(self):
+        return self.metadata_.get('library_versions', {})
+
     @abstractmethod
     def _hash(self):
         '''
