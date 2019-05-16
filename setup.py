@@ -1,6 +1,22 @@
 from setuptools import setup, find_packages
+import sys
 
 __version__ = '0.6'
+
+
+python_major = sys.version_info.major
+python_minor = sys.version_info.minor
+
+
+# Dependencies have different max versions based on python version
+if python_major < 4 and python_minor < 5:  # Python < 3.5
+    version_based_dependencies = [
+        'scikit-learn < 0.21.0'
+    ]
+else:
+    version_based_dependencies = [
+        'scikit-learn'
+    ]
 
 
 setup(
@@ -18,13 +34,12 @@ setup(
         'sqlalchemy',
         'sqlalchemy_mixins',
         'alembic',
-        'scikit-learn',
         'pandas',
         'numpy',
         'dill',
         'future',
         'configparser'
-    ],
+    ] + version_based_dependencies,
     extras_require={
         'postgres': ["psycopg2"],
         'deep-learning': ["keras", "tensorflow"],
