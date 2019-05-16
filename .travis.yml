@@ -41,14 +41,16 @@ after_success:
 
 matrix:
   include:
+    - python: 3.3
+      script: python setup.py test
+      after_success: True
     - python: 3.4
       script: python setup.py test
       after_success: True
     - python: 3.7
       dist: xenial
       sudo: true
-      script: python setup.py test
-      after_success: True
+      before_script: pip uninstall typing
     - python: pypy
       script: python setup.py test
       after_success: True
@@ -56,10 +58,21 @@ matrix:
       script: python setup.py test
       after_success: True
   allow_failures:
+    - python: 3.3
     - python: 3.4
-    - python: 3.7
     - python: pypy
     - python: pypy3
+
+
+deploy:
+  provider: pypi
+  user: $PYPI_USERNAME
+  password:
+    secure: $PYPI_PASSWORD
+  on:
+    tags: true
+    branch: master
+  skip_existing: true
 
 # Flake8 Ignored Syntax
 # Codes: http://flake8.pycqa.org/en/latest/user/error-codes.html
