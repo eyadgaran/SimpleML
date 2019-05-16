@@ -11,7 +11,7 @@ python_minor = sys.version_info.minor
 # Dependencies have different max versions based on python version
 if python_major < 4 and python_minor < 5:  # Python < 3.5
     version_based_dependencies = [
-        'scikit-learn < 0.21.0'
+        'scikit-learn<=0.20.3'
     ]
 else:
     version_based_dependencies = [
