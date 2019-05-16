@@ -12,6 +12,7 @@ python_minor = sys.version_info.minor
 if sys.version_info < (3, 5):  # Python < 3.5
     version_based_dependencies = [
         'scikit-learn<0.21.0',
+        'scipy<1.3.0',  # Scikit-learn dependency
     ]
 else:
     version_based_dependencies = [
