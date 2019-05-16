@@ -50,7 +50,7 @@ matrix:
     - python: 3.7
       dist: xenial
       sudo: true
-      before_script: pip uninstall typing
+      before_script: pip install sqlalchemy-mixins --no-dependencies  # Sqlalchemy-mixins installs typing which is deprecated after 3.6
     - python: pypy
       script: python setup.py test
       after_success: True
