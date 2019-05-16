@@ -9,13 +9,13 @@ python_minor = sys.version_info.minor
 
 
 # Dependencies have different max versions based on python version
-if python_major < 4 and python_minor < 5:  # Python < 3.5
+if sys.version_info < (3, 5):  # Python < 3.5
     version_based_dependencies = [
-        'scikit-learn<=0.20.3'
+        'scikit-learn<0.21.0',
     ]
 else:
     version_based_dependencies = [
-        'scikit-learn'
+        'scikit-learn',
     ]
 
 
@@ -38,7 +38,7 @@ setup(
         'numpy',
         'dill',
         'future',
-        'configparser'
+        'configparser',
     ] + version_based_dependencies,
     extras_require={
         'postgres': ["psycopg2"],
@@ -60,6 +60,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
