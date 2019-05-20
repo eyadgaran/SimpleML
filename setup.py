@@ -41,6 +41,7 @@ setup(
         'future',
         'configparser',
     ] + version_based_dependencies,
+    dependency_links=["https://github.com/absent1706/sqlalchemy-mixins/tarball/master#egg=sqlalchemy_mixins"],
     extras_require={
         'postgres': ["psycopg2"],
         'deep-learning': ["keras", "tensorflow"],
