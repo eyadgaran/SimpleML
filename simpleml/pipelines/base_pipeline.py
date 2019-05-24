@@ -12,6 +12,7 @@ from simpleml.persistables.meta_registry import PipelineRegistry
 from simpleml.persistables.guid import GUID
 
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
+from simpleml.pipelines.validation_split_mixins import Split
 from simpleml.utils.errors import PipelineError
 
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
@@ -185,8 +186,11 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
     def get_dataset_split(self, split=None):
         '''
         Get specific dataset split
-        By default no constraint imposed, but convention is that return should
-        be a tuple of (X, y)
+        Assumes a Split object (`simpleml.pipelines.validation_split_mixins.Split`)
+        is returned. Inherit or implement similar expected attributes to replace
+
+        Uses internal `self._dataset_splits` as the split container - assumes
+        dictionary like itemgetter
         '''
         if split is None:
             split = TRAIN_SPLIT
@@ -194,7 +198,19 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
             self.split_dataset()
 
-        return self._dataset_splits.get(split)
+        return self._dataset_splits[split]
+
+    def X(self, split=None):
+        '''
+        Get X for specific dataset split
+        '''
+        return self.get_dataset_split(split).X
+
+    def y(self, split=None):
+        '''
+        Get labels for specific dataset split
+        '''
+        return self.get_dataset_split(split).y
 
     def fit(self, **kwargs):
         '''
@@ -206,9 +222,16 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
             LOGGER.warning('Cannot refit pipeline, skipping operation')
             return self
 
-        # Only use train fold to fit
-        X, y = self.get_dataset_split(TRAIN_SPLIT)
-        self.external_pipeline.fit(X, y, **kwargs)
+        # Only use default (train) fold to fit
+        # No constraint on split -- can be a dataframe, ndarray, or generator
+        # but must be encased in a Split object
+        split = self.get_dataset_split()
+
+        # Hack for python <3.5 -- cant use fit(**split, **kwargs)
+        temp_kwargs = kwargs.copy()
+        temp_kwargs.update(split)
+
+        self.external_pipeline.fit(**temp_kwargs)
         self.fitted = True
 
         return self
@@ -224,14 +247,14 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         self.assert_fitted('Must fit pipeline before transforming')
 
         if X is None:  # Retrieve dataset split
-            X, y = self.get_dataset_split(dataset_split)
-            if X is None or (isinstance(X, pd.DataFrame) and X.empty):
+            split = self.get_dataset_split(dataset_split)
+            if split.X is None or (isinstance(split.X, pd.DataFrame) and split.X.empty):
                 output = None  # Skip transformations on empty dataset
             else:
-                output = self.external_pipeline.transform(X, **kwargs)
+                output = self.external_pipeline.transform(split.X, **kwargs)
 
             if return_y:
-                return output, y
+                return output, split.y
 
             return output
 
@@ -240,19 +263,17 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
     def fit_transform(self, return_y=False, **kwargs):
         '''
         Wrapper for fit and transform methods
-        ASSUMES only applies to train split
+        ASSUMES only applies to default (train) split
 
         :param return_y: whether to return y with output
             necessary for fitting a supervised model after
         '''
         self.fit(**kwargs)
-        output, y = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True, **kwargs)
+        return self.transform(X=None, return_y=return_y, **kwargs)
 
-        if return_y:
-            return output, y
-
-        return output
-
+    '''
+    Pass-through methods to external pipeline
+    '''
     def get_params(self, **kwargs):
         '''
         Pass through method to external pipeline
@@ -311,7 +332,9 @@ class GeneratorPipeline(Pipeline):
         '''
         Get specific dataset split
         '''
-        X, y = super(GeneratorPipeline, self).get_dataset_split(split)
+        split = super(GeneratorPipeline, self).get_dataset_split(split)
+        X = split.X
+        y = split.y
 
         dataset_size = X.shape[0]
         if dataset_size == 0:  # Return None
@@ -336,14 +359,14 @@ class GeneratorPipeline(Pipeline):
 
             if y is not None and (isinstance(y, (pd.DataFrame, pd.Series)) and not y.empty):  # Supervised
                 if isinstance(X, (pd.DataFrame, pd.Series)):
-                    yield X.loc[batch], np.stack(y.loc[batch].squeeze().values)
+                    yield Split(X=X.loc[batch], y=np.stack(y.loc[batch].squeeze().values))
                 else:
-                    yield X[batch], y[batch]
+                    yield Split(X=X[batch], y=y[batch])
             else:  # Unsupervised
                 if isinstance(X, (pd.DataFrame, pd.Series)):
-                    yield X.loc[batch]
+                    yield Split(X=X.loc[batch])
                 else:
-                    yield X[batch]
+                    yield Split(X=X[batch])
 
             current_index += batch_size
 
@@ -367,12 +390,12 @@ class GeneratorPipeline(Pipeline):
             raise PipelineError('Must fit pipeline before transforming')
 
         if X is None:
-            generator = self.get_dataset_split(dataset_split, **kwargs)
-            for X_batch, y_batch in generator:
-                output = self.external_pipeline.transform(X_batch, **kwargs)
+            generator_split = self.get_dataset_split(dataset_split, **kwargs)
+            for batch in generator_split:
+                output = self.external_pipeline.transform(batch.X, **kwargs)
 
                 if return_y:
-                    yield output, y_batch
+                    yield output, batch.y
                 else:
                     yield output
         else:

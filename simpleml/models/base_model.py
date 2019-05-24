@@ -164,8 +164,8 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
             LOGGER.warning('Cannot refit model, skipping operation')
             return self
 
-        # Explicitly fit only on train split
-        X, y = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_y=True)
+        # Explicitly fit only on default (train) split
+        split = self.transform(X=None, return_y=True)
 
         self._fit(X, y)
 
@@ -215,7 +215,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         '''
         Wrapper method to return labels from dataset
         '''
-        return self.pipeline.get_dataset_split(dataset_split)[1]
+        return self.pipeline.y(dataset_split)
 
     def get_params(self, **kwargs):
         '''

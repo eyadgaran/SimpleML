@@ -16,6 +16,27 @@ from simpleml import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 from abc import ABCMeta, abstractmethod
 from sklearn.model_selection import train_test_split
 from future.utils import with_metaclass
+from collections import defaultdict
+
+
+class Split(dict):
+    '''
+    Container class for splits
+    '''
+    def __getattr__(self, attr):
+        '''
+        Default attribute processor
+        (Used in combination with __getitem__ to enable ** syntax)
+        '''
+        return self.get(attr, None)
+
+
+class SplitContainer(defaultdict):
+    '''
+    Explicit instantiation of a defaultdict returning split objects
+    '''
+    def __init__(self, default_factory=Split, **kwargs):
+        super(SplitContainer, self).__init__(default_factory, **kwargs)
 
 
 class SplitMixin(with_metaclass(ABCMeta, object)):
@@ -36,11 +57,9 @@ class NoSplitMixin(SplitMixin):
 
         TODO: Work in support for generators (k-fold)
         '''
-        self._dataset_splits = {
-            TRAIN_SPLIT: (self.dataset.X, self.dataset.y),
-            VALIDATION_SPLIT: (None, None),
-            TEST_SPLIT: (None, None)
-        }
+        self._dataset_splits = SplitContainer(
+            TRAIN_SPLIT=Split(X=self.dataset.X, y=self.dataset.y)
+        )
 
 
 class ExplicitSplitMixin(SplitMixin):
@@ -49,11 +68,11 @@ class ExplicitSplitMixin(SplitMixin):
         Method to split the dataframe into different sets. Assumes dataset
         explicitly delineates between train, validation, and test
         '''
-        self._dataset_splits = {
-            TRAIN_SPLIT: (self.dataset.get('X', TRAIN_SPLIT), self.dataset.get('y', TRAIN_SPLIT)),
-            VALIDATION_SPLIT: (self.dataset.get('X', VALIDATION_SPLIT), self.dataset.get('y', VALIDATION_SPLIT)),
-            TEST_SPLIT: (self.dataset.get('X', TEST_SPLIT), self.dataset.get('y', TEST_SPLIT))
-        }
+        self._dataset_splits = SplitContainer(
+            TRAIN_SPLIT=Split(X=self.dataset.get('X', TRAIN_SPLIT), y=self.dataset.get('y', TRAIN_SPLIT)),
+            VALIDATION_SPLIT=Split(X=self.dataset.get('X', VALIDATION_SPLIT), y=self.dataset.get('y', VALIDATION_SPLIT)),
+            TEST_SPLIT=Split(X=self.dataset.get('X', TEST_SPLIT), y=self.dataset.get('y', TEST_SPLIT))
+        )
 
 
 class RandomSplitMixin(SplitMixin):
@@ -103,11 +122,11 @@ class RandomSplitMixin(SplitMixin):
         X_train, X_val, y_train, y_val = train_test_split(
             X_remaining, y_remaining, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
 
-        self._dataset_splits = {
-            TRAIN_SPLIT: (X_train, y_train),
-            VALIDATION_SPLIT: (X_val, y_val),
-            TEST_SPLIT: (X_test, y_test)
-        }
+        self._dataset_splits = SplitContainer(
+            TRAIN_SPLIT=Split(X=X_train, y=y_train),
+            VALIDATION_SPLIT=Split(X=X_val, y=y_val),
+            TEST_SPLIT=Split(X=X_test, y=y_test)
+        )
 
 
 class ChronologicalSplitMixin(SplitMixin):

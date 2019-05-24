@@ -19,16 +19,16 @@ class PandasDatasetMixin(AbstractDatasetMixin):
     @property
     def X(self):
         '''
-        Return the subset that isn't in the target labels
+        Return the subset that isn't in the target labels (across all potential splits)
         '''
-        return self.dataframe[self.dataframe.columns.difference(self.label_columns)]
+        return self.get(column='X', split=None)
 
     @property
     def y(self):
         '''
         Return the target label columns
         '''
-        return self.dataframe[self.label_columns]
+        return self.get(column='y', split=None)
 
     def get(self, column, split):
         '''
@@ -40,11 +40,15 @@ class PandasDatasetMixin(AbstractDatasetMixin):
             raise ValueError('Only support columns: X & y')
 
         if isinstance(self.dataframe, pd.DataFrame):
-            df = self.dataframe.query("{}=='{}'".format(DATAFRAME_SPLIT_COLUMN, split))
+            if split is None:  # Return the full dataset (all splits)
+                df = self.dataframe
+            else:
+                df = self.dataframe.query("{}=='{}'".format(DATAFRAME_SPLIT_COLUMN, split))
             df.drop(DATAFRAME_SPLIT_COLUMN, inplace=True, axis=1)
         else:
             df = self.dataframe.get(split)
-        if df is None:
+
+        if df is None:  # Make compatible with subscription syntax
             df = pd.DataFrame()
 
         if column == 'y':
