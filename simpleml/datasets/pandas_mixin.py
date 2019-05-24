@@ -51,8 +51,8 @@ class PandasDatasetMixin(AbstractDatasetMixin):
         if df is None:  # Make compatible with subscription syntax
             df = pd.DataFrame()
 
-        if column == 'y':
-            return df[[col for col in self.label_columns if col in df.columns]]
+        if column == 'y':  # Squeeze to reduce dimensionality of return
+            return df[[col for col in self.label_columns if col in df.columns]].squeeze()
 
         else:
             return df[df.columns.difference(self.label_columns)]

@@ -1,4 +1,3 @@
-from simpleml import TRAIN_SPLIT
 from simpleml.persistables.base_persistable import Persistable, GUID
 from simpleml.persistables.meta_registry import ModelRegistry
 from simpleml.persistables.saving import AllSaveMixin
@@ -109,6 +108,9 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
             2) Model
             3) Params
             4) Config
+        May only include attributes that exist at instantiation.
+        Any attribute that gets calculated later will result in a race condition
+        that may return a different hash depending on when the function is called
         '''
         pipeline_hash = self.pipeline.hash_ or self.pipeline._hash()
         model = self.external_model.__class__.__name__
@@ -144,15 +146,11 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)
 
-    def _fit(self, X, y=None):
+    def _fit(self, **kwargs):
         '''
         Separate out actual fit call for optional overwrite in subclasses
         '''
-        if y is None:
-            self.external_model.fit(X)
-        else:
-            # Reduce dimensionality of y if it is only 1 column
-            self.external_model.fit(X, y.squeeze())
+        self.external_model.fit(**kwargs)
 
     def fit(self, **kwargs):
         '''
@@ -165,9 +163,9 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
             return self
 
         # Explicitly fit only on default (train) split
-        split = self.transform(X=None, return_y=True)
+        split = self.transform(X=None, **kwargs)
 
-        self._fit(X, y)
+        self._fit(**split)
 
         # Mark the state so it doesnt get refit and can now be saved
         self.fitted = True
@@ -195,7 +193,13 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         self.assert_fitted('Must fit model before predicting')
 
         if transform:
-            X = self.transform(X, **kwargs)
+            # Pipeline returns Split object if input is null
+            # Otherwise transformed matrix
+            transformed = self.transform(X, **kwargs)
+            if X is None:
+                X = transformed.X
+            else:
+                X = transformed
 
         if X is None:  # Don't attempt to run through model if no samples
             return np.array([])
@@ -208,8 +212,8 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         '''
         self.fit(**kwargs)
         # Pass X as none to cascade using internal dataset for X
-        # Assumes only applies to training split
-        return self.predict(X=None, dataset_split=TRAIN_SPLIT, **kwargs)
+        # Assumes only applies to default (training) split
+        return self.predict(X=None, **kwargs)
 
     def get_labels(self, dataset_split=None):
         '''
@@ -217,6 +221,9 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         '''
         return self.pipeline.y(dataset_split)
 
+    '''
+    Pass-through methods to external model
+    '''
     def get_params(self, **kwargs):
         '''
         Pass through method to external model

@@ -236,7 +236,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
 
         return self
 
-    def transform(self, X, dataset_split=None, return_y=False, **kwargs):
+    def transform(self, X, dataset_split=None, **kwargs):
         '''
         Pass through method to external pipeline
 
@@ -253,14 +253,13 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
             else:
                 output = self.external_pipeline.transform(split.X, **kwargs)
 
-            if return_y:
-                return output, split.y
-
-            return output
+            # Return input with X replaced by output (transformed X)
+            # Contains y or other named inputs to propagate downstream
+            return Split(X=output, **{k: v for k, v in split.items() if k != 'X'})
 
         return self.external_pipeline.transform(X, **kwargs)
 
-    def fit_transform(self, return_y=False, **kwargs):
+    def fit_transform(self, **kwargs):
         '''
         Wrapper for fit and transform methods
         ASSUMES only applies to default (train) split
@@ -269,7 +268,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
             necessary for fitting a supervised model after
         '''
         self.fit(**kwargs)
-        return self.transform(X=None, return_y=return_y, **kwargs)
+        return self.transform(X=None, **kwargs)
 
     '''
     Pass-through methods to external pipeline
@@ -378,13 +377,16 @@ class GeneratorPipeline(Pipeline):
                 else:
                     break
 
-    def transform(self, X, dataset_split=None, return_y=False, **kwargs):
+    def transform(self, X, dataset_split=None, **kwargs):
         '''
         Pass through method to external pipeline
 
         :param X: dataframe/matrix to transform, if None, use internal dataset
         :param return_y: whether to return y with output - only used if X is None
             necessary for fitting a supervised model after
+
+        NOTE: Downstream objects expect to consume a generator with a tuple of
+        X, y, other... not a Split object, so an ordered tuple will be returned
         '''
         if not self.state['fitted']:
             raise PipelineError('Must fit pipeline before transforming')
@@ -394,9 +396,16 @@ class GeneratorPipeline(Pipeline):
             for batch in generator_split:
                 output = self.external_pipeline.transform(batch.X, **kwargs)
 
-                if return_y:
-                    yield output, batch.y
-                else:
-                    yield output
+                # Return input with X replaced by output (transformed X)
+                # Contains y or other named inputs to propagate downstream
+                # yield Split(X=output, **{k: v for k, v in batch.items() if k != 'X'})
+                return_objects = [output]
+                if batch.y is not None:
+                    return_objects.append(batch.y)
+                for k, v in batch.items():
+                    if k not in ('X', 'y'):
+                        return_objects.append(v)
+                yield tuple(return_objects)
+
         else:
             yield self.external_pipeline.transform(X, **kwargs)
