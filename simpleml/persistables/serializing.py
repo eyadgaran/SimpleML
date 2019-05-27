@@ -9,7 +9,7 @@ subsequently deserialize on load
 __author__ = 'Elisha Yadgaran'
 
 
-import json
+import simplejson as json
 import dill as pickle
 import codecs
 import sys
@@ -62,7 +62,9 @@ def object_hook(data, ignore_dicts=False):
 def custom_dumps(data):
     # Unfortunately JSON doesnt support dict keys as ints so they will automatically
     # get converted. Hopefully this wont be an issue in SimpleML, but be aware...
-    return json.dumps(data, cls=JSONSerializer, ensure_ascii=False)
+    # Ignore NaN converts any non-native json types (NaN, Infinity, etc) to null. Native json library
+    # does not handle those and doesnt recognize them as unserializable (so overwriting default doesnt help)
+    return json.dumps(data, cls=JSONSerializer, ensure_ascii=False, ignore_nan=True)
 
 
 def custom_loads(data):

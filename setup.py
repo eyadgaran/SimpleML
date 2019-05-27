@@ -40,6 +40,7 @@ setup(
         'dill',
         'future',
         'configparser',
+        'simplejson',
     ] + version_based_dependencies,
     dependency_links=["https://github.com/absent1706/sqlalchemy-mixins/tarball/master#egg=sqlalchemy_mixins"],
     extras_require={
