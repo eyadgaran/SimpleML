@@ -58,7 +58,7 @@ class NoSplitMixin(SplitMixin):
         TODO: Work in support for generators (k-fold)
         '''
         self._dataset_splits = SplitContainer(
-            TRAIN_SPLIT=Split(X=self.dataset.X, y=self.dataset.y)
+            **{TRAIN_SPLIT: Split(X=self.dataset.X, y=self.dataset.y)}
         )
 
 
@@ -68,11 +68,11 @@ class ExplicitSplitMixin(SplitMixin):
         Method to split the dataframe into different sets. Assumes dataset
         explicitly delineates between train, validation, and test
         '''
-        self._dataset_splits = SplitContainer(
-            TRAIN_SPLIT=Split(X=self.dataset.get('X', TRAIN_SPLIT), y=self.dataset.get('y', TRAIN_SPLIT)),
-            VALIDATION_SPLIT=Split(X=self.dataset.get('X', VALIDATION_SPLIT), y=self.dataset.get('y', VALIDATION_SPLIT)),
-            TEST_SPLIT=Split(X=self.dataset.get('X', TEST_SPLIT), y=self.dataset.get('y', TEST_SPLIT))
-        )
+        self._dataset_splits = SplitContainer(**{
+            TRAIN_SPLIT: Split(X=self.dataset.get('X', TRAIN_SPLIT), y=self.dataset.get('y', TRAIN_SPLIT)),
+            VALIDATION_SPLIT: Split(X=self.dataset.get('X', VALIDATION_SPLIT), y=self.dataset.get('y', VALIDATION_SPLIT)),
+            TEST_SPLIT: Split(X=self.dataset.get('X', TEST_SPLIT), y=self.dataset.get('y', TEST_SPLIT))
+        })
 
 
 class RandomSplitMixin(SplitMixin):
@@ -122,11 +122,11 @@ class RandomSplitMixin(SplitMixin):
         X_train, X_val, y_train, y_val = train_test_split(
             X_remaining, y_remaining, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
 
-        self._dataset_splits = SplitContainer(
-            TRAIN_SPLIT=Split(X=X_train, y=y_train),
-            VALIDATION_SPLIT=Split(X=X_val, y=y_val),
-            TEST_SPLIT=Split(X=X_test, y=y_test)
-        )
+        self._dataset_splits = SplitContainer(**{
+            TRAIN_SPLIT: Split(X=X_train, y=y_train),
+            VALIDATION_SPLIT: Split(X=X_val, y=y_val),
+            TEST_SPLIT: Split(X=X_test, y=y_test)
+        })
 
 
 class ChronologicalSplitMixin(SplitMixin):

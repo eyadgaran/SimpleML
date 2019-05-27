@@ -23,7 +23,7 @@ INSTALLED_LIBRARIES = {
     'pandas': safe_lookup('pandas'),
     'dill': safe_lookup('dill'),
     'psycopg2': safe_lookup('psycopg2'),
-    'sklearn': safe_lookup('sklearn'),
+    'scikit-learn': safe_lookup('scikit-learn'),
     'hickle': safe_lookup('hickle'),
     'keras': safe_lookup('keras'),
     'tensorflow': safe_lookup('tensorflow')

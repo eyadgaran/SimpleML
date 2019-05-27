@@ -44,7 +44,8 @@ class PandasDatasetMixin(AbstractDatasetMixin):
                 df = self.dataframe
             else:
                 df = self.dataframe.query("{}=='{}'".format(DATAFRAME_SPLIT_COLUMN, split))
-            df.drop(DATAFRAME_SPLIT_COLUMN, inplace=True, axis=1)
+            if DATAFRAME_SPLIT_COLUMN in df.columns:
+                df.drop(DATAFRAME_SPLIT_COLUMN, inplace=True, axis=1)
         else:
             df = self.dataframe.get(split)
 

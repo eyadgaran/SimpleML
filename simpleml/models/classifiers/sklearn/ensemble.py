@@ -18,13 +18,11 @@ LOGGER = logging.getLogger(__name__)
 AdaBoost Classifier
 '''
 
+# TODO: experiment with try excepts on different estimator types (feature_importances_, coefficients, ...)
+
 class WrappedSklearnAdaBoostClassifier(AdaBoostClassifier, ClassificationExternalModelMixin):
-    def get_feature_metadata(self, features, **kwargs):
-        feature_importances = self.feature_importances_.squeeze()
-        if features is None or len(features) < len(feature_importances):
-            LOGGER.warning('Fewer feature names than features passed, defaulting to numbered list')
-            features = range(len(feature_importances))
-        return dict(zip(features, feature_importances))
+    # Boosted classifier doesnt have an easy way to aggregate feature metadata
+    pass
 
 class SklearnAdaBoostClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
