@@ -7,8 +7,8 @@ Define convenience classes composed of different mixins
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_pipeline import Pipeline, GeneratorPipeline
-from .validation_split_mixins import NoSplitMixin, RandomSplitMixin,\
+from .base_pipeline import Pipeline
+from .validation_split_mixins import Split, SplitContainer, NoSplitMixin, RandomSplitMixin,\
     ChronologicalSplitMixin, ExplicitSplitMixin
 
 
@@ -27,24 +27,5 @@ class RandomSplitPipeline(RandomSplitMixin, Pipeline):
 
 
 class ChronologicalSplitPipeline(ChronologicalSplitMixin, Pipeline):
-    # Needs to be used as base class because of MRO initialization
-    pass
-
-
-# Generator implementations
-class NoSplitGeneratorPipeline(GeneratorPipeline, NoSplitMixin):
-    pass
-
-
-class ExplicitSplitGeneratorPipeline(GeneratorPipeline, ExplicitSplitMixin):
-    pass
-
-
-class RandomSplitGeneratorPipeline(RandomSplitMixin, GeneratorPipeline):
-    # Needs to be used as base class because of MRO initialization
-    pass
-
-
-class ChronologicalSplitGeneratorPipeline(ChronologicalSplitMixin, GeneratorPipeline):
     # Needs to be used as base class because of MRO initialization
     pass

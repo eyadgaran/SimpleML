@@ -183,7 +183,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         # By default dont load data unless it actually gets used
         self.dataset.load(load_externals=False)
 
-    def get_dataset_split(self, split=None):
+    def get_dataset_split(self, split=None, return_generator=False, **kwargs):
         '''
         Get specific dataset split
         Assumes a Split object (`simpleml.pipelines.validation_split_mixins.Split`)
@@ -198,7 +198,58 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
             self.split_dataset()
 
+        if return_generator:
+            return self._iterate_split(self._dataset_splits[split], **kwargs)
         return self._dataset_splits[split]
+
+    def _iterate_split(self, split, infinite_loop=False, batch_size=32, shuffle=True, **kwargs):
+        '''
+        Turn a dataset split into a generator
+        '''
+        X = split.X
+        y = split.y
+
+        dataset_size = X.shape[0]
+        if dataset_size == 0:  # Return None
+            return
+
+        # Extract indices to subsample from
+        if isinstance(X, pd.DataFrame):
+            indices = X.index.tolist()
+        elif isinstance(X, np.ndarray):
+            indices = np.arange(X.shape[0])
+        else:
+            raise NotImplementedError
+
+        # Loop through and sample indefinitely
+        first_run = True
+        current_index = 0
+        while True:
+            if current_index == 0 and shuffle and not first_run:
+                np.random.shuffle(indices)
+
+            batch = indices[current_index:min(current_index + batch_size, dataset_size)]
+
+            if y is not None and (isinstance(y, (pd.DataFrame, pd.Series)) and not y.empty):  # Supervised
+                if isinstance(X, (pd.DataFrame, pd.Series)):
+                    yield Split(X=X.loc[batch], y=np.stack(y.loc[batch].squeeze().values))
+                else:
+                    yield Split(X=X[batch], y=y[batch])
+            else:  # Unsupervised
+                if isinstance(X, (pd.DataFrame, pd.Series)):
+                    yield Split(X=X.loc[batch])
+                else:
+                    yield Split(X=X[batch])
+
+            current_index += batch_size
+
+            # Loop so that infinite batches can be generated
+            if current_index >= dataset_size:
+                if infinite_loop:
+                    current_index = 0
+                    first_run = False
+                else:
+                    break
 
     def X(self, split=None):
         '''
@@ -212,7 +263,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         '''
         return self.get_dataset_split(split).y
 
-    def fit(self, **kwargs):
+    def fit(self):
         '''
         Pass through method to external pipeline
         '''
@@ -225,49 +276,84 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         # Only use default (train) fold to fit
         # No constraint on split -- can be a dataframe, ndarray, or generator
         # but must be encased in a Split object
-        split = self.get_dataset_split()
+        # Explicitly prevent generator fit for pipelines
+        split = self.get_dataset_split(return_generator=False)
 
-        # Hack for python <3.5 -- cant use fit(**split, **kwargs)
-        temp_kwargs = kwargs.copy()
-        temp_kwargs.update(split)
-
-        self.external_pipeline.fit(**temp_kwargs)
+        self.external_pipeline.fit(**split)
         self.fitted = True
 
         return self
 
-    def transform(self, X, dataset_split=None, **kwargs):
+    def transform(self, X, return_generator=False, **kwargs):
+        '''
+        Main transform routine - routes to generator or regular method depending
+        on the flag
+
+        :param return_generator: boolean, whether to use the transformation method
+        that returns a generator object or the regular transformed input
+        '''
+        self.assert_fitted('Must fit pipeline before transforming')
+
+        if return_generator:
+            return self._generator_transform(X, **kwargs)
+        else:
+            return self._transform(X)
+
+    def _transform(self, X, dataset_split=None):
         '''
         Pass through method to external pipeline
 
         :param X: dataframe/matrix to transform, if None, use internal dataset
-        :param return_y: whether to return y with output - only used if X is None
-            necessary for fitting a supervised model after
+        :rtype: Split object if no dataset passed (X is Null). Otherwise matrix
+            return of input X
         '''
-        self.assert_fitted('Must fit pipeline before transforming')
-
         if X is None:  # Retrieve dataset split
             split = self.get_dataset_split(dataset_split)
             if split.X is None or (isinstance(split.X, pd.DataFrame) and split.X.empty):
                 output = None  # Skip transformations on empty dataset
             else:
-                output = self.external_pipeline.transform(split.X, **kwargs)
+                output = self.external_pipeline.transform(split.X)
 
             # Return input with X replaced by output (transformed X)
             # Contains y or other named inputs to propagate downstream
             return Split(X=output, **{k: v for k, v in split.items() if k != 'X'})
 
-        return self.external_pipeline.transform(X, **kwargs)
+        return self.external_pipeline.transform(X)
+
+    def _generator_transform(self, X, dataset_split=None, **kwargs):
+        '''
+        Pass through method to external pipeline
+
+        :param X: dataframe/matrix to transform, if None, use internal dataset
+
+        NOTE: Downstream objects expect to consume a generator with a tuple of
+        X, y, other... not a Split object, so an ordered tuple will be returned
+        '''
+        if X is None:
+            generator_split = self.get_dataset_split(dataset_split, return_generator=True, **kwargs)
+            for batch in generator_split:  # Return is a generator of Split objects
+                output = self.external_pipeline.transform(batch.X)
+
+                # Return input with X replaced by output (transformed X)
+                # Contains y or other named inputs to propagate downstream
+                # Explicitly order for *args input -- X, y, other...
+                return_objects = [output]
+                if batch.y is not None:
+                    return_objects.append(batch.y)
+                for k, v in batch.items():
+                    if k not in ('X', 'y'):
+                        return_objects.append(v)
+                yield tuple(return_objects)
+
+        else:
+            yield self.external_pipeline.transform(X, **kwargs)
 
     def fit_transform(self, **kwargs):
         '''
         Wrapper for fit and transform methods
         ASSUMES only applies to default (train) split
-
-        :param return_y: whether to return y with output
-            necessary for fitting a supervised model after
         '''
-        self.fit(**kwargs)
+        self.fit()
         return self.transform(X=None, **kwargs)
 
     '''
@@ -320,92 +406,3 @@ class Pipeline(AbstractPipeline):
         # Index for searching through friendly names
         Index('pipeline_name_index', 'name'),
      )
-
-
-class GeneratorPipeline(Pipeline):
-    '''
-    Generator form of pipeline. Overwrites standard methods with ones that
-    return generator objects
-    '''
-    def get_dataset_split(self, split=None, infinite_loop=False, batch_size=32, shuffle=True, **kwargs):
-        '''
-        Get specific dataset split
-        '''
-        split = super(GeneratorPipeline, self).get_dataset_split(split)
-        X = split.X
-        y = split.y
-
-        dataset_size = X.shape[0]
-        if dataset_size == 0:  # Return None
-            return
-
-        # Extract indices to subsample from
-        if isinstance(X, pd.DataFrame):
-            indices = X.index.tolist()
-        elif isinstance(X, np.ndarray):
-            indices = np.arange(X.shape[0])
-        else:
-            raise NotImplementedError
-
-        # Loop through and sample indefinitely
-        first_run = True
-        current_index = 0
-        while True:
-            if current_index == 0 and shuffle and not first_run:
-                np.random.shuffle(indices)
-
-            batch = indices[current_index:min(current_index + batch_size, dataset_size)]
-
-            if y is not None and (isinstance(y, (pd.DataFrame, pd.Series)) and not y.empty):  # Supervised
-                if isinstance(X, (pd.DataFrame, pd.Series)):
-                    yield Split(X=X.loc[batch], y=np.stack(y.loc[batch].squeeze().values))
-                else:
-                    yield Split(X=X[batch], y=y[batch])
-            else:  # Unsupervised
-                if isinstance(X, (pd.DataFrame, pd.Series)):
-                    yield Split(X=X.loc[batch])
-                else:
-                    yield Split(X=X[batch])
-
-            current_index += batch_size
-
-            # Loop so that infinite batches can be generated
-            if current_index >= dataset_size:
-                if infinite_loop:
-                    current_index = 0
-                    first_run = False
-                else:
-                    break
-
-    def transform(self, X, dataset_split=None, **kwargs):
-        '''
-        Pass through method to external pipeline
-
-        :param X: dataframe/matrix to transform, if None, use internal dataset
-        :param return_y: whether to return y with output - only used if X is None
-            necessary for fitting a supervised model after
-
-        NOTE: Downstream objects expect to consume a generator with a tuple of
-        X, y, other... not a Split object, so an ordered tuple will be returned
-        '''
-        if not self.state['fitted']:
-            raise PipelineError('Must fit pipeline before transforming')
-
-        if X is None:
-            generator_split = self.get_dataset_split(dataset_split, **kwargs)
-            for batch in generator_split:
-                output = self.external_pipeline.transform(batch.X, **kwargs)
-
-                # Return input with X replaced by output (transformed X)
-                # Contains y or other named inputs to propagate downstream
-                # yield Split(X=output, **{k: v for k, v in batch.items() if k != 'X'})
-                return_objects = [output]
-                if batch.y is not None:
-                    return_objects.append(batch.y)
-                for k, v in batch.items():
-                    if k not in ('X', 'y'):
-                        return_objects.append(v)
-                yield tuple(return_objects)
-
-        else:
-            yield self.external_pipeline.transform(X, **kwargs)
