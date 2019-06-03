@@ -8,7 +8,7 @@ means unique to pandas.
 
 __author__ = 'Elisha Yadgaran'
 
-from simpleml import TRAIN_SPLIT
+
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 import pandas as pd
 
@@ -16,6 +16,24 @@ DATAFRAME_SPLIT_COLUMN = 'DATASET_SPLIT'
 
 
 class PandasDatasetMixin(AbstractDatasetMixin):
+    '''
+    "Pandas"esque mixin class with control mechanism for `self.dataframe` of
+    type `dataframe`. Only assumes pandas syntax, not types, so should be compatible
+    with pandas drop-in replacements.
+
+    In particular:
+        A - type of pd.DataFrame:
+            - query()
+            - columns
+            - drop()
+            - __getitem__()
+            - squeeze()
+
+        B - any other type:
+            - get()
+            - __getitem__()
+            - squeeze(
+    '''
     @property
     def X(self):
         '''
@@ -35,6 +53,8 @@ class PandasDatasetMixin(AbstractDatasetMixin):
         Explicitly split validation splits
         Assumes self.dataframe has a get method to return the dataframe associated with the split
         Uses self.label_columns to separate x and y columns inside the returned dataframe
+
+        returns empty dataframe for missing combinations of column & split
         '''
         if column not in ('X', 'y'):
             raise ValueError('Only support columns: X & y')
@@ -58,24 +78,22 @@ class PandasDatasetMixin(AbstractDatasetMixin):
         else:
             return df[df.columns.difference(self.label_columns)]
 
-    def concatenate_dataframes(self, dataframes, splits):
+    def concatenate_dataframes(self, dataframes, split_names):
         '''
         Helper method to merge dataframes into a single one with the split
         specified under `DATAFRAME_SPLIT_COLUMN`
         '''
-        for df, split in zip(dataframes, splits):
-            df[DATAFRAME_SPLIT_COLUMN] = split
+        for df, name in zip(dataframes, split_names):
+            df[DATAFRAME_SPLIT_COLUMN] = name
 
-        return pd.concat(dataframes)
+        # Join row wise - drop index in case duplicates exist
+        return pd.concat(dataframes, axis=0, ignore_index=True)
 
     def get_feature_names(self):
         '''
         Should return a list of the features in the dataset
         '''
-        try:
-            return self.X.columns.tolist()
-        except AttributeError:
-            return self.get('X', TRAIN_SPLIT).columns.tolist()
+        return self.X.columns.tolist()
 
     @staticmethod
     def load_csv(filename, **kwargs):

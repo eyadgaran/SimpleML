@@ -17,6 +17,7 @@ from abc import ABCMeta, abstractmethod
 from sklearn.model_selection import train_test_split
 from future.utils import with_metaclass
 from collections import defaultdict
+import pandas as pd
 
 
 class Split(dict):
@@ -29,6 +30,36 @@ class Split(dict):
         (Used in combination with __getitem__ to enable ** syntax)
         '''
         return self.get(attr, None)
+
+    @staticmethod
+    def is_null_type(obj):
+        '''
+        Helper to check for nulls - useful to not pass "empty" attributes
+        so defaults of None will get returned downstream instead
+        ex: **split -> all non null named params
+        '''
+        # NoneType
+        if obj is None:
+            return True
+
+        # Pandas objects
+        if isinstance(obj, (pd.DataFrame, pd.Series)) and obj.empty:
+            return True
+
+        # Empty built-ins - uses __nonzero__
+        if isinstance(obj, (list, tuple, dict)) and not obj:
+            return True
+
+        # Else
+        return False
+
+    def squeeze(self):
+        '''
+        Helper method to clear up any null-type keys
+        '''
+        for k, v in self.items():
+            if self.is_null_type(v):
+                self.pop(k)
 
 
 class SplitContainer(defaultdict):
@@ -48,6 +79,14 @@ class SplitMixin(with_metaclass(ABCMeta, object)):
         Must set self._dataset_splits
         '''
 
+    def containerize_split(self, split_dict):
+        return SplitContainer(**split_dict)
+
+    def get_split_names(self):
+        if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
+            self.split_dataset()
+        return list(self._dataset_splits.keys())
+
 
 class NoSplitMixin(SplitMixin):
     def split_dataset(self):
@@ -57,9 +96,9 @@ class NoSplitMixin(SplitMixin):
 
         TODO: Work in support for generators (k-fold)
         '''
-        self._dataset_splits = SplitContainer(
-            **{TRAIN_SPLIT: Split(X=self.dataset.X, y=self.dataset.y)}
-        )
+        self._dataset_splits = self.containerize_split({
+            TRAIN_SPLIT: Split(X=self.dataset.X, y=self.dataset.y).squeeze()
+        })
 
 
 class ExplicitSplitMixin(SplitMixin):
@@ -68,10 +107,10 @@ class ExplicitSplitMixin(SplitMixin):
         Method to split the dataframe into different sets. Assumes dataset
         explicitly delineates between train, validation, and test
         '''
-        self._dataset_splits = SplitContainer(**{
-            TRAIN_SPLIT: Split(X=self.dataset.get('X', TRAIN_SPLIT), y=self.dataset.get('y', TRAIN_SPLIT)),
-            VALIDATION_SPLIT: Split(X=self.dataset.get('X', VALIDATION_SPLIT), y=self.dataset.get('y', VALIDATION_SPLIT)),
-            TEST_SPLIT: Split(X=self.dataset.get('X', TEST_SPLIT), y=self.dataset.get('y', TEST_SPLIT))
+        self._dataset_splits = self.containerize_split({
+            TRAIN_SPLIT: Split(X=self.dataset.get('X', TRAIN_SPLIT), y=self.dataset.get('y', TRAIN_SPLIT)).squeeze(),
+            VALIDATION_SPLIT: Split(X=self.dataset.get('X', VALIDATION_SPLIT), y=self.dataset.get('y', VALIDATION_SPLIT)).squeeze(),
+            TEST_SPLIT: Split(X=self.dataset.get('X', TEST_SPLIT), y=self.dataset.get('y', TEST_SPLIT)).squeeze()
         })
 
 
@@ -122,10 +161,10 @@ class RandomSplitMixin(SplitMixin):
         X_train, X_val, y_train, y_val = train_test_split(
             X_remaining, y_remaining, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
 
-        self._dataset_splits = SplitContainer(**{
-            TRAIN_SPLIT: Split(X=X_train, y=y_train),
-            VALIDATION_SPLIT: Split(X=X_val, y=y_val),
-            TEST_SPLIT: Split(X=X_test, y=y_test)
+        self._dataset_splits = self.containerize_split({
+            TRAIN_SPLIT: Split(X=X_train, y=y_train).squeeze(),
+            VALIDATION_SPLIT: Split(X=X_val, y=y_val).squeeze(),
+            TEST_SPLIT: Split(X=X_test, y=y_test).squeeze()
         })
 
 

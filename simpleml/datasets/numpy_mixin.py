@@ -21,33 +21,39 @@ class NumpyDatasetMixin(AbstractDatasetMixin):
         '''
         Return the subset that isn't in the target labels
         '''
-        return self.dataframe.get('X')
+        return self.get(column='X', split=None)
 
     @property
     def y(self):
         '''
         Return the target label columns
         '''
-        if self.label_columns:
-            return self.dataframe.get(self.label_columns[0])
-        return None
+        return self.get(column='y', split=None)
 
     def get(self, column, split):
         '''
         Explicitly split validation splits
         Assumes self.dataframe has a get method to return a dictionary of {'X': X, 'y': y}
         Uses self.label_columns if y is named something else -- only looks at first entry in list
+
+        returns None for any combination of column/split that isn't present
         '''
         if column not in ('X', 'y'):
             raise ValueError('Only support columns: X & y')
 
-        split_dict = self.dataframe.get(split)
+        if split is None:  # Assumes there is no top level split
+            split_dict = self.dataframe
+        else:
+            split_dict = self.dataframe.get(split)
+
+        if split_dict is None:
+            split_dict = {}  # Make compatible with return syntax
 
         if column == 'y':
-            return split_dict.get(self.label_columns[0])
+            return split_dict.get(self.label_columns[0], None)
 
         else:
-            return split_dict.get('X')
+            return split_dict.get('X', None)
 
     def get_feature_names(self):
         '''
