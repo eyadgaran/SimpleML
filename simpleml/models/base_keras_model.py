@@ -6,7 +6,8 @@ need to overwrite other methods at the root
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_model import Model
+from simpleml import VALIDATION_SPLIT
+from .base_model import LibraryModel
 
 import logging
 from abc import abstractmethod
@@ -15,12 +16,39 @@ from abc import abstractmethod
 LOGGER = logging.getLogger(__name__)
 
 
-class KerasModel(Model):
-    def __init__(self, save_method='disk_keras_hdf5', **kwargs):
+class KerasModel(LibraryModel):
+    def __init__(self, save_method='disk_keras_hdf5',
+                 use_training_generator=False, training_generator_params={},
+                 use_validation_generator=False, validation_generator_params={},
+                 **kwargs):
         '''
         Pass default save method as Keras's persistence pattern
+
+        :param use_training_generator: Whether to propagate use of a generator object
+            when training -- does not allow for using a generator in production -- only fit_generator
+        :type use_training_generator: Bool
+        :param use_validation_generator: Whether to ALSO use a generator for validation
+            data while training. Does nothing if use_training_generator is false
+        :type use_validation_generator: Bool
+        :param training_generator_params: parameters to pass to the generator method for train split -
+            normal fit(_generator) params should be passed as params={}
+        :param validation_generator_params: parameters to pass to the generator method for validation split -
+            normal fit(_generator) params should be passed as params={}
         '''
         super(KerasModel, self).__init__(save_method=save_method, **kwargs)
+
+        # Keras supports training and validation with generators
+        # Design choice to put this in config as opposed to state because while
+        # it is true that a specific combination of generator params will yield
+        # the same model artifact as the traditional fit, it is very unlikely and
+        # therefore assumed to be different (hashes will not be equal because of differing param structure)
+        generator_params = {
+            'use_training_generator': use_training_generator,
+            'training_generator_params': training_generator_params,
+            'use_validation_generator': use_validation_generator,
+            'validation_generator_params': validation_generator_params,
+        }
+        self.config.update(generator_params)
 
     @abstractmethod
     def _create_external_model(self, **kwargs):
@@ -46,13 +74,38 @@ class KerasModel(Model):
         '''
         return external_model
 
-    def _fit(self, X, y):
+    def _fit(self):
         '''
         Keras fit parameters (epochs, callbacks...) are stored as self.params so
         retrieve them automatically
         '''
-        # Reduce dimensionality of y if it is only 1 column
-        self.external_model.fit(X, y.squeeze(), **self.get_params())
+
+        # Keras supports fitting on generator objects, so expose additional internal
+        # method, if flag set
+        if self.config['use_training_generator']:
+            self._fit_generator()
+        else:
+            # Explicitly fit only on default (train) split
+            split = self.transform(X=None, return_generator=False)
+            # Hack for python <3.5 -- cant use fit(**split, **kwargs)
+            temp_kwargs = self.get_params().copy()
+            temp_kwargs.update(split)
+            self.external_model.fit(**temp_kwargs)
+
+    def _fit_generator(self):
+        '''
+        Keras fit parameters (epochs, callbacks...) are stored as self.params so
+        retrieve them automatically
+        '''
+        # Explicitly fit only on default (train) split
+        training_generator = self.transform(X=None, return_generator=True, **self.config.get('training_generator_params', {}))
+        if self.config['use_validation_generator']:
+            validation = self.transform(X=None, dataset_split=VALIDATION_SPLIT, return_generator=True, **self.config.get('validation_generator_params', {}))
+        else:
+            validation = None
+
+        self.external_model.fit_generator(
+            training_generator, validation_data=validation, **self.get_params())
 
     def set_params(self, **kwargs):
         '''

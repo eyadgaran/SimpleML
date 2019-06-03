@@ -13,7 +13,7 @@ __author__ = 'Elisha Yadgaran'
 
 # Exposed Classes
 # Base Classes
-from .base_model import Model
+from .base_model import Model, LibraryModel
 from .base_sklearn_model import SklearnModel
 from .base_keras_model import KerasModel
 

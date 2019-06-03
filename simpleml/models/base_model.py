@@ -9,6 +9,7 @@ from sqlalchemy.orm import relationship
 import logging
 from future.utils import with_metaclass
 import numpy as np
+from abc import abstractmethod
 
 
 __author__ = 'Elisha Yadgaran'
@@ -22,6 +23,10 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
     Abstract Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
     stored in the arbitrary metadata field
+
+    Also outlines the expected subclass methods (with NotImplementedError).
+    Design choice to not abstract unified API across all libraries since each
+    has a different internal mechanism
 
     -------
     Schema
@@ -37,7 +42,8 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
 
     object_type = 'MODEL'
 
-    def __init__(self, has_external_files=True, external_model_kwargs={}, params={}, **kwargs):
+    def __init__(self, has_external_files=True, external_model_kwargs={}, params={},
+                 **kwargs):
         '''
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
@@ -146,12 +152,6 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         # By default dont load data unless it actually gets used
         self.pipeline.load(load_externals=False)
 
-    def _fit(self, **kwargs):
-        '''
-        Separate out actual fit call for optional overwrite in subclasses
-        '''
-        self.external_model.fit(**kwargs)
-
     def fit(self, **kwargs):
         '''
         Pass through method to external model after running through pipeline
@@ -162,19 +162,29 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
             LOGGER.warning('Cannot refit model, skipping operation')
             return self
 
-        # Explicitly fit only on default (train) split
-        split = self.transform(X=None, **kwargs)
+        if kwargs:
+            LOGGER.warning('Attempting to pass runtime parameters to fit. All parameters must be initialized with the constructor - Ignoring input!')
 
-        self._fit(**split)
+        # Call actual library version fit routine (without passed parameters)
+        self._fit()
 
         # Mark the state so it doesnt get refit and can now be saved
         self.fitted = True
 
         return self
 
+    def _fit(self):
+        '''
+        Abstract method to act as a placeholder. Inheriting classes MUST instantiate
+        this method to manage the fit operation. Intentionally not abstracting
+        function because each library internally configures a little differently
+        '''
+        raise NotImplementedError
+
     def transform(self, *args, **kwargs):
         '''
-        Run input through pipeline
+        Run input through pipeline -- only method that should reference the pipeline
+        relationship directly (gates the connection point for easy extension in the future)
         '''
         return self.pipeline.transform(*args, **kwargs)
 
@@ -196,12 +206,9 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
             # Pipeline returns Split object if input is null
             # Otherwise transformed matrix
             transformed = self.transform(X, **kwargs)
-            if X is None:
-                X = transformed.X
-            else:
-                X = transformed
+            X = transformed.X if X is None else transformed
 
-        if X is None:  # Don't attempt to run through model if no samples
+        if X is None:  # Don't attempt to run through model if no samples (can't evaulate ahead of transform in case dataset split used)
             return np.array([])
 
         return self._predict(X, **kwargs)
@@ -210,7 +217,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         '''
         Wrapper for fit and predict methods
         '''
-        self.fit(**kwargs)
+        self.fit()
         # Pass X as none to cascade using internal dataset for X
         # Assumes only applies to default (training) split
         return self.predict(X=None, **kwargs)
@@ -275,3 +282,20 @@ class Model(AbstractModel):
         # Index for searching through friendly names
         Index('model_name_index', 'name'),
      )
+
+
+class LibraryModel(Model):
+    '''
+    Main model class needs to be initialize-able in order to play nice with
+    database persistence and loading. This class is the in between that defines
+    the expected methods for each extended library.
+
+    Examples:
+    Scikit-learn estimators --> SklearnModel(LibraryModel): ...
+    Keras estimators --> KerasModel(LibraryModel): ...
+    PyTorch ...
+    ...
+    '''
+    @abstractmethod
+    def _fit(self):
+        pass
