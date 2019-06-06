@@ -18,7 +18,7 @@ class SklearnModel(LibraryModel):
         '''
         Separate out actual fit call for optional overwrite in subclasses
 
-        Sklearn estimators don't support data generators, so do not expose 
+        Sklearn estimators don't support data generators, so do not expose
         fit_generator method
         '''
         # Explicitly fit only on default (train) split
