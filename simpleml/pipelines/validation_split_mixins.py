@@ -57,9 +57,11 @@ class Split(dict):
         '''
         Helper method to clear up any null-type keys
         '''
-        for k, v in self.items():
-            if self.is_null_type(v):
-                self.pop(k)
+        poppable_keys = [k for k, v in self.items() if self.is_null_type(v)]
+        [self.pop(k) for k in poppable_keys]
+
+        # Return self for easy chaining
+        return self
 
 
 class SplitContainer(defaultdict):
