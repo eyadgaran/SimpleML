@@ -1,12 +1,8 @@
 from __future__ import with_statement
-
 from logging.config import fileConfig
-
 from alembic import context
-import os
 
 from simpleml.utils.initialization import Database
-from simpleml.utils.errors import SimpleMLError
 from simpleml.persistables.base_persistable import Persistable
 
 # this is the Alembic Config object, which provides
@@ -23,19 +19,7 @@ fileConfig(config.config_file_name, disable_existing_loggers=False)
 # target_metadata = mymodel.Base.metadata
 if not Persistable.metadata.is_bound():
     # Initialize a new session if one isn't already configured
-    connection_params = {
-        'username': os.getenv('SIMPLEML_DATABASE_USERNAME'),
-        'password': os.getenv('SIMPLEML_DATABASE_PASSWORD'),
-        'database': os.getenv('SIMPLEML_DATABASE_NAME'),
-        'drivername': os.getenv('SIMPLEML_DATABASE_DRIVERNAME'),
-        'host': os.getenv('SIMPLEML_DATABASE_HOST'),
-        'port': os.getenv('SIMPLEML_DATABASE_PORT'),
-    }
-    missing_params = ['SIMPLEML_DATABASE_' + (k.upper() if k != 'database' else 'NAME')
-                      for k, v in connection_params.items() if v is None]
-    if missing_params:
-        raise SimpleMLError('Missing Connection Parameters (env variables): {}'.format(', '.join(missing_params)))
-    Database(**connection_params).initialize(base_list=[Persistable])
+    Database().initialize(base_list=[Persistable])
 
 target_metadata = Persistable.metadata
 

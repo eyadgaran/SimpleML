@@ -27,23 +27,36 @@ from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from os.path import realpath, dirname, join
+import os
 import logging
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Database(URL):
+# Database Defaults
+DATABASE_NAME = os.getenv('SIMPLEML_DATABASE_NAME', 'SimpleML')
+DATABASE_USERNAME = os.getenv('SIMPLEML_DATABASE_USERNAME', 'simpleml')
+DATABASE_PASSWORD = os.getenv('SIMPLEML_DATABASE_PASSWORD', 'simpleml')
+DATABASE_HOST = os.getenv('SIMPLEML_DATABASE_HOST', 'localhost')
+DATABASE_PORT = os.getenv('SIMPLEML_DATABASE_PORT', 5432)
+DATABASE_DRIVERNAME = os.getenv('SIMPLEML_DATABASE_DRIVERNAME', 'postgresql')
+DATABASE_CONF = os.getenv('SIMPLEML_DATABASE_CONF', None)
+DATABASE_URI = os.getenv('SIMPLEML_DATABASE_URI', None)
+
+
+class BaseDatabase(URL):
     '''
-    Basic configuration to interact with database
+    Base Database class to configure db connection
+    Does not assume schema tracking or any other validation
     '''
-    def __init__(self, configuration_section=None, uri=None, database='SimpleML',
-                 username='simpleml', password='simpleml', drivername='postgresql',
-                 host='localhost', port=5432, **kwargs):
+    def __init__(self, configuration_section=DATABASE_CONF, uri=DATABASE_URI, database=DATABASE_NAME,
+                 username=DATABASE_USERNAME, password=DATABASE_PASSWORD, drivername=DATABASE_DRIVERNAME,
+                 host=DATABASE_HOST, port=DATABASE_PORT, **kwargs):
         if configuration_section is not None:
             # Default to credentials in config file
             credentials = dict(CONFIG[configuration_section])
             credentials.update(kwargs)
-            super(Database, self).__init__(**credentials)
+            super(BaseDatabase, self).__init__(**credentials)
         else:
             if uri is not None:
                 # Overwrite all the other parameters and inject URI directly into the engine
@@ -51,7 +64,7 @@ class Database(URL):
                 self.uri = uri
                 LOGGER.info('Inputting dummy parameters to force initialization - still using URI in engine!')
 
-            super(Database, self).__init__(
+            super(BaseDatabase, self).__init__(
                 drivername=drivername,
                 username=username,
                 password=password,
@@ -67,20 +80,90 @@ class Database(URL):
             uri = self.uri
         else:
             uri = self
+        # Custom serializer/deserializer not supported by all drivers
+        # Definitely works for:
+        # - Postgres
+        # Definitely does not work for:
+        # - SQLite
         return create_engine(uri,
                              json_serializer=custom_dumps,
                              json_deserializer=custom_loads,
                              pool_recycle=300)
 
+    def create_tables(self, base, drop_tables=False, ignore_errors=False):
+        '''
+        Creates database tables (and potentially drops existing ones).
+        Assumes to be running under a sufficiently privileged user
+
+        :param drop_tables: Whether or not to drop the existing tables first.
+        :return: None
+        '''
+        try:
+            if drop_tables:
+                base.metadata.drop_all()
+
+            base.metadata.create_all()
+
+        except ProgrammingError as e:  # Permission errors
+            if ignore_errors:
+                LOGGER.debug(e)
+            else:
+                raise(e)
+
+    def _initialize(self, base, create_tables=False, **kwargs):
+        '''
+        Initialization method to set up database connection and inject
+        session manager
+
+        :param create_tables: Bool, whether to create tables in database
+        :param drop_tables: Bool, whether to drop existing tables in database
+        :return: None
+        '''
+        engine = self.engine
+        session = scoped_session(sessionmaker(autocommit=True,
+                                              autoflush=False,
+                                              bind=engine))
+        base.metadata.bind = engine
+        base.query = session.query_property()
+
+        if create_tables:
+            self.create_tables(base, **kwargs)
+
+        base.set_session(session)
+
+    def initialize(self, base_list, **kwargs):
+        '''
+        Initialization method to set up database connection and inject
+        session manager
+
+        Raises a SimpleML error if database schema is not up to date
+
+        :param drop_tables: Bool, whether to drop existing tables in database
+        :param upgrade: Bool, whether to run an upgrade migration after establishing a connection
+        :return: None
+        '''
+        for base in base_list:
+            self._initialize(base, **kwargs)
+
+
+class AlembicDatabase(BaseDatabase):
+    '''
+    Base database class to manage dbs with schema tracking. Includes alembic
+    config references
+    '''
+    def __init__(self, alembic_filepath, script_location='migrations', *args, **kwargs):
+        self.alembic_filepath = alembic_filepath
+        self.script_location = script_location
+        super(AlembicDatabase, self).__init__(*args, **kwargs)
+
     @property
     def alembic_config(self):
         if not hasattr(self, '_alembic_config'):
             # load the Alembic configuration
-            root_path = dirname(dirname(dirname(realpath(__file__))))
-            self._alembic_config = Config(join(root_path, 'alembic.ini'))
+            self._alembic_config = Config(self.alembic_filepath)
             # For some reason, alembic doesnt use a relative path from the ini
             # and cannot find the migration folder without the full path
-            self._alembic_config.set_main_option('script_location', join(root_path, 'simpleml/migrations'))
+            self._alembic_config.set_main_option('script_location', join(dirname(self.alembic_filepath), self.script_location))
         return self._alembic_config
 
     def create_tables(self, base, drop_tables=False, ignore_errors=False):
@@ -140,28 +223,40 @@ class Database(URL):
                                 Set the parameter `upgrade=True` in the initialize method
                                 or manually execute `alembic upgrade head` in a shell''')
 
-    def _initialize(self, base, create_tables=False, **kwargs):
+    def initialize(self, base_list, upgrade=False, **kwargs):
         '''
         Initialization method to set up database connection and inject
         session manager
 
-        :param create_tables: Bool, whether to create tables in database
+        Raises a SimpleML error if database schema is not up to date
+
         :param drop_tables: Bool, whether to drop existing tables in database
+        :param upgrade: Bool, whether to run an upgrade migration after establishing a connection
         :return: None
         '''
-        engine = self.engine
-        session = scoped_session(sessionmaker(autocommit=True,
-                                              autoflush=False,
-                                              bind=engine))
-        base.metadata.bind = engine
-        base.query = session.query_property()
+        # Standard initialization
+        super(AlembicDatabase, self).initialize(base_list, **kwargs)
 
-        if create_tables:
-            self.create_tables(base, **kwargs)
+        # Upgrade schema if necessary
+        if upgrade:
+            self.upgrade()
 
-        base.set_session(session)
+        # Assert current db schema is up-to-date
+        self.validate_schema_version()
 
-    def initialize(self, base_list=None, upgrade=False, **kwargs):
+
+class Database(AlembicDatabase):
+    '''
+    SimpleML specific configuration to interact with the database
+    '''
+    def __init__(self, *args, **kwargs):
+        root_path = dirname(dirname(dirname(realpath(__file__))))
+        alembic_filepath = join(root_path, 'alembic.ini')
+        script_location = 'simpleml/migrations'
+        super(Database, self).__init__(
+            alembic_filepath=alembic_filepath, script_location=script_location, *args, **kwargs)
+
+    def initialize(self, base_list=None, **kwargs):
         '''
         Initialization method to set up database connection and inject
         session manager
@@ -175,11 +270,4 @@ class Database(URL):
         if base_list is None:  # Use defaults in project
             base_list = [Persistable]
 
-        for base in base_list:
-            self._initialize(base, **kwargs)
-
-        if upgrade:
-            self.upgrade()
-
-        # Assert current db schema is up-to-date
-        self.validate_schema_version()
+        super(Database, self).initialize(base_list, **kwargs)
