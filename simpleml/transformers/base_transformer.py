@@ -10,6 +10,8 @@ class TransformerMixin(SklearnTransformerMixin):
 
     Default behavior is to do nothing - overwrite later
     '''
+    object_type = 'TRANSFORMER'
+
     def fit(self, X, y=None, **kwargs):
         return self
 
