@@ -1,5 +1,20 @@
 ## Change Log
 
+### 0.6
+- Full database initialization with alembic
+- DB schema validation on start
+- Main configuration file for all credentials
+- Drop official support for python 3.4
+- Automatic handling of no data operations
+- Remaining cloud provider support
+- Feature metadata for classification models
+- Runtime environment validation
+- Add Split and SplitContainer objects
+- Simplejson dependency
+- Pipeline generator support
+- Library specific model base classes
+- Generalized database connection classes
+
 ### 0.5
 - Default identity pipeline
 - Alembic integration for database migration
