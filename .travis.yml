@@ -66,8 +66,7 @@ matrix:
 deploy:
   provider: pypi
   user: $PYPI_USERNAME
-  password:
-    secure: $PYPI_PASSWORD
+  password: $PYPI_PASSWORD
   on:
     tags: true
     branch: master
