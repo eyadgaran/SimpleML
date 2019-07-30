@@ -5,7 +5,7 @@ Base Module for Pipelines
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml import TRAIN_SPLIT
+from simpleml import TRAIN_SPLIT, Sequence
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.meta_registry import PipelineRegistry
@@ -183,7 +183,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         # By default dont load data unless it actually gets used
         self.dataset.load(load_externals=False)
 
-    def get_dataset_split(self, split=None, return_generator=False, **kwargs):
+    def get_dataset_split(self, split=None, return_generator=False, return_sequence=False, **kwargs):
         '''
         Get specific dataset split
         Assumes a Split object (`simpleml.pipelines.validation_split_mixins.Split`)
@@ -198,7 +198,9 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
             self.split_dataset()
 
-        if return_generator:
+        if return_sequence:  # Use keras thread safe sequence
+            return self._iterate_split_using_sequence(self._dataset_splits[split], **kwargs)
+        if return_generator:  # Vanilla generator form
             return self._iterate_split(self._dataset_splits[split], **kwargs)
         return self._dataset_splits[split]
 
@@ -251,6 +253,13 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
                 else:
                     break
 
+    def _iterate_split_using_sequence(self, split, batch_size=32, shuffle=True, **kwargs):
+        '''
+        Different version of iterate split that uses a keras.utils.sequence object
+        to play nice with keras and enable thread safe generation.
+        '''
+        return DatasetSequence(split, batch_size, shuffle, **kwargs)
+
     def X(self, split=None):
         '''
         Get X for specific dataset split
@@ -284,17 +293,21 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
 
         return self
 
-    def transform(self, X, return_generator=False, **kwargs):
+    def transform(self, X, return_generator=False, return_sequence=False, **kwargs):
         '''
         Main transform routine - routes to generator or regular method depending
         on the flag
 
         :param return_generator: boolean, whether to use the transformation method
         that returns a generator object or the regular transformed input
+        :param return_sequence: boolean, whether to use method that returns a
+        `keras.utils.sequence` object to play nice with keras models
         '''
         self.assert_fitted('Must fit pipeline before transforming')
 
-        if return_generator:
+        if return_sequence:
+            return self._sequence_transform(X, **kwargs)
+        elif return_generator:
             return self._generator_transform(X, **kwargs)
         else:
             return self._transform(X)
@@ -347,6 +360,22 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
 
         else:
             yield self.external_pipeline.transform(X, **kwargs)
+
+    def _sequence_transform(self, X, dataset_split=None, **kwargs):
+        '''
+        Pass through method to external pipeline
+
+        :param X: dataframe/matrix to transform, if None, use internal dataset
+
+        NOTE: Downstream objects expect to consume a sequence with a tuple of
+        X, y, other... not a Split object, so an ordered tuple will be returned
+        '''
+        if X is None:
+            dataset_sequence = self.get_dataset_split(dataset_split, return_sequence=True, **kwargs)
+            return TransformedSequence(self, dataset_sequence)
+
+        else:
+            return self.external_pipeline.transform(X, **kwargs)
 
     def fit_transform(self, **kwargs):
         '''
@@ -406,3 +435,112 @@ class Pipeline(AbstractPipeline):
         # Index for searching through friendly names
         Index('pipeline_name_index', 'name'),
      )
+
+
+class DatasetSequence(Sequence):
+    '''
+    Sequence wrapper for internal datasets. Only used for raw data mapping so
+    return type is internal `Split` object. Transformed sequences are used to
+    conform with external input types (keras tuples)
+    '''
+    def __init__(self, split, batch_size, shuffle):
+        self.X = self.validated_split(split.X)
+        self.y = self.validated_split(split.y)
+
+        self.dataset_size = self.X.shape[0]
+        if self.dataset_size == 0:  # Return None
+            raise ValueError('Attempting to create sequence with no data')
+
+        # Extract indices to subsample from
+        if isinstance(self.X, pd.DataFrame):
+            self.indices = self.X.index.tolist()
+        elif isinstance(self.X, np.ndarray):
+            self.indices = np.arange(self.X.shape[0])
+        else:
+            raise NotImplementedError
+
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+
+    @staticmethod
+    def validated_split(split):
+        '''
+        Confirms data is valid, otherwise returns None (makes downstream checking
+        simpler)
+        '''
+        if split is None:
+            return None
+        elif isinstance(split, (pd.DataFrame, pd.Series)) and split.empty:
+            return None
+        return split
+
+    def __getitem__(self, index):
+        """Gets batch at position `index`.
+        # Arguments
+            index: position of the batch in the Sequence.
+        # Returns
+            A batch
+        """
+        current_index = index * self.batch_size  # list index of batch start
+        batch = self.indices[current_index:min(current_index + self.batch_size, self.dataset_size)]
+
+        if self.y is not None:  # Supervised
+            if isinstance(self.X, (pd.DataFrame, pd.Series)):
+                return Split(X=self.X.loc[batch], y=np.stack(self.y.loc[batch].squeeze().values))
+            else:
+                return Split(X=self.X[batch], y=self.y[batch])
+        else:  # Unsupervised
+            if isinstance(self.X, (pd.DataFrame, pd.Series)):
+                return Split(X=self.X.loc[batch])
+            else:
+                return Split(X=self.X[batch])
+
+    def __len__(self):
+        """Number of batch in the Sequence.
+        # Returns
+            The number of batches in the Sequence.
+        """
+        return int(np.ceil(len(self.X) / float(self.batch_size)))
+
+    def on_epoch_end(self):
+        """Method called at the end of every epoch.
+        """
+        if self.shuffle:
+            np.random.shuffle(self.indices)
+
+
+class TransformedSequence(Sequence):
+    '''
+    Nested sequence class to apply transforms on batches in real-time and forward
+    through as the next batch
+    '''
+    def __init__(self, pipeline, dataset_sequence):
+        self.pipeline = pipeline
+        self.dataset_sequence = dataset_sequence
+
+    def __getitem__(self, *args, **kwargs):
+        '''
+        Pass-through to dataset sequence - applies transform on raw data and returns batch
+        '''
+        raw_batch = self.dataset_sequence(*args, **kwargs)  # Split object
+        transformed_batch = self.pipeline.external_pipeline.transform(raw_batch.X)
+
+        # Return input with X replaced by output (transformed X)
+        # Contains y or other named inputs to propagate downstream
+        # Explicitly order for *args input -- X, y, other...
+        return_objects = [transformed_batch]
+        if raw_batch.y is not None:
+            return_objects.append(raw_batch.y)
+        for k, v in raw_batch.items():
+            if k not in ('X', 'y'):
+                return_objects.append(v)
+        return tuple(return_objects)
+
+    def __len__(self):
+        '''
+        Pass-through. Returns number of batches in dataset sequence
+        '''
+        return len(self.dataset_sequence)
+
+    def on_epoch_end(self):
+        self.dataset_sequence.on_epoch_end()

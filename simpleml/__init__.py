@@ -43,11 +43,13 @@ except ImportError:
 try:
     import keras
     from keras.models import Sequential, Model, load_model
+    from keras.utils import Sequence
 except ImportError:
     keras = None
     load_model = None
     Sequential = type
     Model = type
+    Sequnce = type
     warnings.warn(warning_msg.format(dependency='keras'), ImportWarning)
 
 try:

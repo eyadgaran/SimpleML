@@ -20,6 +20,7 @@ class KerasModel(LibraryModel):
     def __init__(self, save_method='disk_keras_hdf5',
                  use_training_generator=False, training_generator_params={},
                  use_validation_generator=False, validation_generator_params={},
+                 use_sequence_object=False,
                  **kwargs):
         '''
         Pass default save method as Keras's persistence pattern
@@ -44,6 +45,7 @@ class KerasModel(LibraryModel):
         # therefore assumed to be different (hashes will not be equal because of differing param structure)
         generator_params = {
             'use_training_generator': use_training_generator,
+            'use_sequence_object': use_sequence_object,
             'training_generator_params': training_generator_params,
             'use_validation_generator': use_validation_generator,
             'validation_generator_params': validation_generator_params,
@@ -86,7 +88,7 @@ class KerasModel(LibraryModel):
             self._fit_generator()
         else:
             # Explicitly fit only on default (train) split
-            split = self.transform(X=None, return_generator=False)
+            split = self.transform(X=None, return_generator=False, return_sequence=False)
             # Hack for python <3.5 -- cant use fit(**split, **kwargs)
             temp_kwargs = self.get_params().copy()
             temp_kwargs.update(split)
@@ -97,10 +99,17 @@ class KerasModel(LibraryModel):
         Keras fit parameters (epochs, callbacks...) are stored as self.params so
         retrieve them automatically
         '''
+        use_keras_sequence = self.config.get('use_sequence_object', False)
+
         # Explicitly fit only on default (train) split
-        training_generator = self.transform(X=None, return_generator=True, **self.config.get('training_generator_params', {}))
+        training_generator = self.transform(X=None, return_generator=True,
+                                            return_sequence=use_keras_sequence,
+                                            **self.config.get('training_generator_params', {}))
         if self.config['use_validation_generator']:
-            validation = self.transform(X=None, dataset_split=VALIDATION_SPLIT, return_generator=True, **self.config.get('validation_generator_params', {}))
+            validation = self.transform(X=None, dataset_split=VALIDATION_SPLIT,
+                                        return_generator=True,
+                                        return_sequence=use_keras_sequence,
+                                        **self.config.get('validation_generator_params', {}))
         else:
             validation = None
 

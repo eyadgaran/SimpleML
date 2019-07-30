@@ -7,7 +7,7 @@ Define convenience classes composed of different mixins
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_pipeline import Pipeline
+from .base_pipeline import Pipeline, AbstractPipeline, DatasetSequence, TransformedSequence
 from .validation_split_mixins import Split, SplitContainer, NoSplitMixin, RandomSplitMixin,\
     ChronologicalSplitMixin, ExplicitSplitMixin
 
