@@ -39,7 +39,8 @@ from .classifiers.sklearn.tree import SklearnDecisionTreeClassifier, SklearnExtr
 # Keras Classifiers
 from .classifiers.keras.base_keras_classifier import KerasClassifier
 from .classifiers.keras.model import KerasModelClassifier
-from .classifiers.keras.seq2seq import KerasSeq2SeqClassifier, KerasEncoderDecoderClassifier
+from .classifiers.keras.seq2seq import KerasSeq2SeqClassifier, KerasEncoderDecoderClassifier,\
+    KerasEncoderDecoderStateClassifier, KerasEncoderDecoderStatelessClassifier
 from .classifiers.keras.sequential import KerasSequentialClassifier
 
 
