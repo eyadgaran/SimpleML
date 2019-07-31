@@ -49,7 +49,7 @@ except ImportError:
     load_model = None
     Sequential = type
     Model = type
-    Sequnce = type
+    Sequence = type
     warnings.warn(warning_msg.format(dependency='keras'), ImportWarning)
 
 try:
