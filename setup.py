@@ -13,10 +13,12 @@ if sys.version_info < (3, 5):  # Python < 3.5
     version_based_dependencies = [
         'scikit-learn<0.21.0',
         'scipy<1.3.0',  # Scikit-learn dependency
+        'pandas<0.25.0',
     ]
 else:
     version_based_dependencies = [
         'scikit-learn',
+        'pandas',
     ]
 
 
@@ -35,7 +37,6 @@ setup(
         'sqlalchemy',
         'sqlalchemy_mixins',
         'alembic',
-        'pandas',
         'numpy',
         'dill',
         'future',
