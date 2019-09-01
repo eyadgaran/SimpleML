@@ -310,7 +310,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         elif return_generator:
             return self._generator_transform(X, **kwargs)
         else:
-            return self._transform(X)
+            return self._transform(X, **kwargs)
 
     def _transform(self, X, dataset_split=None):
         '''
