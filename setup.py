@@ -21,6 +21,11 @@ else:
         'pandas',
     ]
 
+# Different extras
+postgres_dependencies = ["psycopg2"]
+deep_learning_dependencies = ["keras", "tensorflow", "hickle"]
+cloud_dependencies = ["onedrivesdk", "apache-libcloud", "pycrypto", "sshtunnel"]
+
 
 setup(
     name='simpleml',
@@ -45,11 +50,10 @@ setup(
     ] + version_based_dependencies,
     dependency_links=["https://github.com/absent1706/sqlalchemy-mixins/tarball/master#egg=sqlalchemy_mixins"],
     extras_require={
-        'postgres': ["psycopg2"],
-        'deep-learning': ["keras", "tensorflow"],
-        'hdf5': ["hickle"],
-        'cloud': ["onedrivesdk", "apache-libcloud", "pycrypto"],
-        'all': ["psycopg2", "keras", "tensorflow", "hickle", "onedrivesdk", "apache-libcloud"]
+        'postgres': postgres_dependencies,
+        'deep-learning': deep_learning_dependencies,
+        'cloud': cloud_dependencies,
+        'all': postgres_dependencies + deep_learning_dependencies + cloud_dependencies
     },
     zip_safe=False,
     test_suite='nose.collector',

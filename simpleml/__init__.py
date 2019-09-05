@@ -31,6 +31,7 @@ __version__ = pkg_resources.get_distribution(__name__).version
 # - Keras
 # - Hickle
 # - Onedrivesdk
+# - sshtunnel
 import warnings
 warning_msg = 'Unable to import optional dependency: {dependency}, to use install with `pip install {dependency}`'
 
@@ -64,6 +65,11 @@ except ImportError:
     onedrivesdk = None
     warnings.warn(warning_msg.format(dependency='onedrivesdk'), ImportWarning)
 
+try:
+    from sshtunnel import SSHTunnelForwarder
+except ImportError:
+    SSHTunnelForwarder = None
+    warnings.warn(warning_msg.format(dependency='sshtunnel'), ImportWarning)
 
 # 5) Load configs
 from . import utils

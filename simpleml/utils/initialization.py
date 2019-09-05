@@ -17,6 +17,7 @@ from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.persistables.serializing import custom_dumps, custom_loads
 from simpleml.utils.errors import SimpleMLError
 from simpleml.utils.configuration import CONFIG
+from simpleml import SSHTunnelForwarder
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError
@@ -29,6 +30,7 @@ from alembic.script import ScriptDirectory
 from os.path import realpath, dirname, join
 import os
 import logging
+import random
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,28 +53,70 @@ class BaseDatabase(URL):
     '''
     def __init__(self, configuration_section=DATABASE_CONF, uri=DATABASE_URI, database=DATABASE_NAME,
                  username=DATABASE_USERNAME, password=DATABASE_PASSWORD, drivername=DATABASE_DRIVERNAME,
-                 host=DATABASE_HOST, port=DATABASE_PORT, **kwargs):
+                 host=DATABASE_HOST, port=DATABASE_PORT,
+                 use_ssh_tunnel=False, sshtunnel_params={}, **kwargs):
+        '''
+        :param use_ssh_tunnel: boolean - default false. Whether to tunnel sqlalchemy connection
+            through an ssh tunnel or not
+        :param sshtunnel_params: Dict of ssh params - specify according to sshtunnel project
+            https://github.com/pahaz/sshtunnel/ - direct passthrough
+        '''
+        # Bundle up credentials into dict
+        credentials = {
+            'drivername': drivername,
+            'username': username,
+            'password': password,
+            'host': host,
+            'port': port,
+            'database': database,
+        }
+
         if configuration_section is not None:
             # Default to credentials in config file
             credentials = dict(CONFIG[configuration_section])
-            credentials.update(kwargs)
-            super(BaseDatabase, self).__init__(**credentials)
-        else:
-            if uri is not None:
+        elif uri is not None:
                 # Overwrite all the other parameters and inject URI directly into the engine
                 LOGGER.info('Skipping parameters and using passed URI')
                 self.uri = uri
                 LOGGER.info('Inputting dummy parameters to force initialization - still using URI in engine!')
 
-            super(BaseDatabase, self).__init__(
-                drivername=drivername,
-                username=username,
-                password=password,
-                host=host,
-                port=port,
-                database=database,
-                **kwargs
-            )
+        # Optional ssh configuration
+        self.use_ssh_tunnel = use_ssh_tunnel
+
+        # Reconfigure credentials if SSH tunnel specified
+        if self.use_ssh_tunnel:
+            LOGGER.warning('''SSH Tunnel is unreliable at the moment - connection times
+                            out and doesn't reconnect''')
+            # Overwrite passed ports and hosts to route localhost port to the
+            # original destination via tunnel
+            if uri is not None:
+                # Can't easily deconstruct URI to swap out for localhost tunnel
+                raise SimpleMLError('Unable to establish SSH tunnel with URI specified')
+            credentials, self.ssh_config = self.configure_ssh_tunnel(credentials, sshtunnel_params)
+
+        credentials.update(kwargs)
+        super(BaseDatabase, self).__init__(**credentials)
+
+    def configure_ssh_tunnel(self, credentials, ssh_config):
+        # Actual DB location
+        target_host = credentials.pop('host')
+        target_port = int(credentials.pop('port'))
+
+        # SSH Tunnel location
+        local_host, local_port = ssh_config.get('local_bind_address', (None, None))
+        local_host = local_host or 'localhost'  # In case it's null
+        local_port = local_port or random.randint(4000, 5000)  # In case it's null
+        LOGGER.info("Using {}:{} to bind SSH tunnel".format(local_host, local_port))
+
+        # Swap em - db URI points to the local tunnel opening and the remote
+        # ssh tunnel binds to the original host+port
+        credentials['host'] = local_host
+        credentials['port'] = local_port
+
+        ssh_config['local_bind_address'] = (local_host, local_port)
+        ssh_config['remote_bind_address'] = (target_host, target_port)
+
+        return credentials, ssh_config
 
     @property
     def engine(self):
@@ -89,6 +133,12 @@ class BaseDatabase(URL):
                              json_serializer=custom_dumps,
                              json_deserializer=custom_loads,
                              pool_recycle=300)
+
+    @property
+    def ssh_tunnel(self):
+        if SSHTunnelForwarder is None:  # Not installed
+            raise SimpleMLError('SSHTunnel is not installed, install with `pip install sshtunnel`')
+        return SSHTunnelForwarder(**self.ssh_config)
 
     def create_tables(self, base, drop_tables=False, ignore_errors=False):
         '''
@@ -142,6 +192,9 @@ class BaseDatabase(URL):
         :param upgrade: Bool, whether to run an upgrade migration after establishing a connection
         :return: None
         '''
+        if self.use_ssh_tunnel:
+            self.ssh_tunnel.start()  # Start ssh tunnel
+            # Will stay active until script exits
         for base in base_list:
             self._initialize(base, **kwargs)
 
