@@ -1,4 +1,3 @@
-from simpleml.utils.errors import ModelError
 import numpy as np
 
 
@@ -15,13 +14,15 @@ class ClassificationMixin(object):
         :param transform: bool, whether to transform input via pipeline
          before predicting, default True
         '''
-        if not self.state['fitted']:
-            raise ModelError('Must fit model before predicting')
+        self.assert_fitted('Must fit model before predicting')
 
         if transform:
-            X = self.pipeline.transform(X, **kwargs)
+            # Pipeline returns Split object if input is null
+            # Otherwise transformed matrix
+            transformed = self.transform(X, **kwargs)
+            X = transformed.X if X is None else transformed
 
-        if X is None:  # Don't attempt to run through model if no samples
+        if X is None:  # Don't attempt to run through model if no samples (can't evaulate ahead of transform in case dataset split used)
             return np.array([])
 
         return self.external_model.predict_proba(X)
