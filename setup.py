@@ -43,7 +43,7 @@ setup(
         'sqlalchemy_mixins',
         'alembic',
         'numpy',
-        'dill',
+        'cloudpickle',
         'future',
         'configparser',
         'simplejson',

@@ -63,7 +63,7 @@ function properly without them.
 * `alembic <http://pypi.python.org/pypi/alembic>`_, for database schema management
 * `pandas <http://pypi.python.org/pypi/pandas>`_, for data processing
 * `numpy <http://pypi.python.org/pypi/numpy>`_, for numerical foundations
-* `dill <http://pypi.python.org/pypi/dill>`_, for code pickling
+* `cloudpickle <http://pypi.python.org/pypi/cloudpickle>`_, for code pickling
 * `future <http://pypi.python.org/pypi/future>`_,  for Python 2 and 3 compatibility
 * `configparser <http://pypi.python.org/pypi/configparser>`_, for config management
 * `simplejson <https://pypi.python.org/pypi/simplejson>`_, extended support for json handling

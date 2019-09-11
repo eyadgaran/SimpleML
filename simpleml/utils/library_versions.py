@@ -21,7 +21,7 @@ INSTALLED_LIBRARIES = {
     'sqlalchemy_mixins': safe_lookup('sqlalchemy_mixins'),
     'numpy': safe_lookup('numpy'),
     'pandas': safe_lookup('pandas'),
-    'dill': safe_lookup('dill'),
+    'cloudpickle': safe_lookup('cloudpickle'),
     'psycopg2': safe_lookup('psycopg2'),
     'scikit-learn': safe_lookup('scikit-learn'),
     'hickle': safe_lookup('hickle'),

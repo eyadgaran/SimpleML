@@ -37,7 +37,7 @@ from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
 from abc import ABCMeta, abstractmethod
-import dill as pickle
+import cloudpickle as pickle
 from os.path import join, isfile
 
 # Python 2/3 compatibility

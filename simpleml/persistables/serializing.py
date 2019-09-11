@@ -10,7 +10,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 import simplejson as json
-import dill as pickle
+import cloudpickle as pickle
 import codecs
 import sys
 from decimal import Decimal
