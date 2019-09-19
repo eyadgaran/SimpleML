@@ -5,7 +5,7 @@ Util module to manage postgres specific functions
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml import psycopg2
+from simpleml.imports import psycopg2
 
 
 def create_database(connection_params, database, owner=None, raise_error=True):

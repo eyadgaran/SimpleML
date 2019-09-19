@@ -48,7 +48,7 @@ except ImportError:
 from future.utils import with_metaclass
 
 # Import optional dependencies
-from simpleml import load_model, hickle, onedrivesdk
+from simpleml.imports import load_model, hickle, onedrivesdk
 
 # Shared Connections
 ONEDRIVE_SECTION = 'onedrive'

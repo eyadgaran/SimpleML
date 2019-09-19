@@ -20,7 +20,7 @@ This module is organized by metric and prediction dependencies:
 '''
 
 from simpleml.metrics.base_metric import Metric
-from simpleml import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
+from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 from simpleml.utils.errors import MetricError
 from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_score
 import numpy as np

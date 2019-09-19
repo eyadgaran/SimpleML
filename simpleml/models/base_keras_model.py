@@ -6,7 +6,7 @@ need to overwrite other methods at the root
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml import VALIDATION_SPLIT
+from simpleml.constants import VALIDATION_SPLIT
 from .base_model import LibraryModel
 
 import logging

@@ -5,7 +5,8 @@ Base Module for Pipelines
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml import TRAIN_SPLIT, Sequence
+from simpleml.constants import TRAIN_SPLIT
+from simpleml.imports import Sequence
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.meta_registry import PipelineRegistry

@@ -11,7 +11,7 @@ Module for different split methods for cross validation
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
+from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 
 from abc import ABCMeta, abstractmethod
 from sklearn.model_selection import train_test_split

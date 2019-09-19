@@ -17,7 +17,7 @@ from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.persistables.serializing import custom_dumps, custom_loads
 from simpleml.utils.errors import SimpleMLError
 from simpleml.utils.configuration import CONFIG
-from simpleml import SSHTunnelForwarder
+from simpleml.imports import SSHTunnelForwarder
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError

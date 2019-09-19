@@ -8,7 +8,7 @@ from simpleml.models.classifiers.keras.base_keras_classifier import KerasClassif
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 # Import optional dependencies
-from simpleml import Model
+from simpleml.imports import Model
 
 
 class WrappedKerasModelClassifier(Model, ClassificationExternalModelMixin):
