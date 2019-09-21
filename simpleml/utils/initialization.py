@@ -51,9 +51,9 @@ class BaseDatabase(URL):
     Base Database class to configure db connection
     Does not assume schema tracking or any other validation
     '''
-    def __init__(self, configuration_section=DATABASE_CONF, uri=DATABASE_URI, database=DATABASE_NAME,
-                 username=DATABASE_USERNAME, password=DATABASE_PASSWORD, drivername=DATABASE_DRIVERNAME,
-                 host=DATABASE_HOST, port=DATABASE_PORT,
+    def __init__(self, config=None, configuration_section=None, uri=None, database=None,
+                 username=None, password=None, drivername=None,
+                 host=None, port=None,
                  use_ssh_tunnel=False, sshtunnel_params={}, **kwargs):
         '''
         :param use_ssh_tunnel: boolean - default false. Whether to tunnel sqlalchemy connection
@@ -71,9 +71,14 @@ class BaseDatabase(URL):
             'database': database,
         }
 
+        if configuration_section is None and uri is None and None in credentials.values():
+            raise SimpleMLError('Must pass a section, uri, or credentials!')
+
         if configuration_section is not None:
+            if config is None:
+                raise SimpleMLError('Cannot use config section without a config file')
             # Default to credentials in config file
-            credentials = dict(CONFIG[configuration_section])
+            credentials = dict(config[configuration_section])
         elif uri is not None:
                 # Overwrite all the other parameters and inject URI directly into the engine
                 LOGGER.info('Skipping parameters and using passed URI')
@@ -302,12 +307,18 @@ class Database(AlembicDatabase):
     '''
     SimpleML specific configuration to interact with the database
     '''
-    def __init__(self, *args, **kwargs):
+    def __init__(self, configuration_section=DATABASE_CONF, uri=DATABASE_URI, database=DATABASE_NAME,
+                 username=DATABASE_USERNAME, password=DATABASE_PASSWORD, drivername=DATABASE_DRIVERNAME,
+                 host=DATABASE_HOST, port=DATABASE_PORT,
+                 *args, **kwargs):
         root_path = dirname(dirname(dirname(realpath(__file__))))
         alembic_filepath = join(root_path, 'alembic.ini')
         script_location = 'simpleml/migrations'
         super(Database, self).__init__(
-            alembic_filepath=alembic_filepath, script_location=script_location, *args, **kwargs)
+            config=CONFIG, alembic_filepath=alembic_filepath, script_location=script_location,
+            configuration_section=configuration_section, uri=uri, database=database,
+            username=username, password=password, drivername=drivername, host=host, port=port,
+            *args, **kwargs)
 
     def initialize(self, base_list=None, **kwargs):
         '''
