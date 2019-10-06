@@ -16,7 +16,7 @@ from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.dataset_storage import DatasetStorage, DATASET_SCHEMA
 from simpleml.persistables.meta_registry import DatasetRegistry
-from simpleml.persistables.guid import GUID
+from simpleml.persistables.sqlalchemy_types import GUID
 
 from future.utils import with_metaclass
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index

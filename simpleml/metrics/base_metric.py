@@ -1,8 +1,7 @@
-from simpleml.persistables.base_persistable import Persistable, GUID
+from simpleml.persistables.base_persistable import Persistable, GUID, JSON
 from simpleml.persistables.meta_registry import MetricRegistry
 from simpleml.utils.errors import MetricError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from future.utils import with_metaclass
 
@@ -23,7 +22,7 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
     '''
     __abstract__ = True
 
-    values = Column(JSONB, nullable=False)
+    values = Column(JSON, nullable=False)
 
     object_type = 'METRIC'
 

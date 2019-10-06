@@ -1,5 +1,9 @@
-from sqlalchemy.types import TypeDecorator, CHAR
-from sqlalchemy.dialects.postgresql import UUID
+'''
+Platform independent sqlalchemy types
+'''
+
+from sqlalchemy.types import TypeDecorator, CHAR, JSON as SQLJSON, Text
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
 
 
@@ -38,3 +42,18 @@ class GUID(TypeDecorator):
             if not isinstance(value, uuid.UUID):
                 value = uuid.UUID(value)
             return value
+
+
+class JSON(TypeDecorator):
+    '''
+    Platform-independent JSON type
+
+    Uses PostgreSQL's JSONB type, otherwise falls back to standard JSON
+    '''
+    impl = SQLJSON
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(JSONB(astext_type=Text()))
+        else:
+            return dialect.type_descriptor(SQLJSON())

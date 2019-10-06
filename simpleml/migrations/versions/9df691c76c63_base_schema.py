@@ -7,7 +7,6 @@ Create Date: 2019-02-17 21:46:53.755263
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 import simpleml
 
 # revision identifiers, used by Alembic.
@@ -23,7 +22,7 @@ def upgrade():
         'datasets',
         sa.Column('created_timestamp', sa.DateTime(timezone=True), server_default=sa.text(u'now()'), nullable=False),
         sa.Column('modified_timestamp', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('id', simpleml.persistables.guid.GUID(), nullable=False),
+        sa.Column('id', simpleml.persistables.sqlalchemy_types.GUID(), nullable=False),
         sa.Column('hash', sa.BIGINT(), nullable=False),
         sa.Column('registered_name', sa.String(), nullable=False),
         sa.Column('author', sa.String(), nullable=False),
@@ -32,9 +31,9 @@ def upgrade():
         sa.Column('version', sa.Integer(), nullable=False),
         sa.Column('version_description', sa.String(), nullable=True),
         sa.Column('has_external_files', sa.Boolean(), nullable=True),
-        sa.Column('filepaths', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('pipeline_id', simpleml.persistables.guid.GUID(), nullable=True),
+        sa.Column('filepaths', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('metadata', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('pipeline_id', simpleml.persistables.sqlalchemy_types.GUID(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name', 'version', name='dataset_name_version_unique')
     )
@@ -43,7 +42,7 @@ def upgrade():
         'metrics',
         sa.Column('created_timestamp', sa.DateTime(timezone=True), server_default=sa.text(u'now()'), nullable=False),
         sa.Column('modified_timestamp', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('id', simpleml.persistables.guid.GUID(), nullable=False),
+        sa.Column('id', simpleml.persistables.sqlalchemy_types.GUID(), nullable=False),
         sa.Column('hash', sa.BIGINT(), nullable=False),
         sa.Column('registered_name', sa.String(), nullable=False),
         sa.Column('author', sa.String(), nullable=False),
@@ -52,10 +51,10 @@ def upgrade():
         sa.Column('version', sa.Integer(), nullable=False),
         sa.Column('version_description', sa.String(), nullable=True),
         sa.Column('has_external_files', sa.Boolean(), nullable=True),
-        sa.Column('filepaths', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('values', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column('model_id', simpleml.persistables.guid.GUID(), nullable=True),
+        sa.Column('filepaths', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('metadata', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('values', simpleml.persistables.sqlalchemy_types.JSON(), nullable=False),
+        sa.Column('model_id', simpleml.persistables.sqlalchemy_types.GUID(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name', 'model_id', 'version', name='metric_name_model_version_unique')
     )
@@ -64,7 +63,7 @@ def upgrade():
         'models',
         sa.Column('created_timestamp', sa.DateTime(timezone=True), server_default=sa.text(u'now()'), nullable=False),
         sa.Column('modified_timestamp', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('id', simpleml.persistables.guid.GUID(), nullable=False),
+        sa.Column('id', simpleml.persistables.sqlalchemy_types.GUID(), nullable=False),
         sa.Column('hash', sa.BIGINT(), nullable=False),
         sa.Column('registered_name', sa.String(), nullable=False),
         sa.Column('author', sa.String(), nullable=False),
@@ -73,11 +72,11 @@ def upgrade():
         sa.Column('version', sa.Integer(), nullable=False),
         sa.Column('version_description', sa.String(), nullable=True),
         sa.Column('has_external_files', sa.Boolean(), nullable=True),
-        sa.Column('filepaths', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('params', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('feature_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('pipeline_id', simpleml.persistables.guid.GUID(), nullable=True),
+        sa.Column('filepaths', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('metadata', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('params', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('feature_metadata', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('pipeline_id', simpleml.persistables.sqlalchemy_types.GUID(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name', 'version', name='model_name_version_unique')
     )
@@ -86,7 +85,7 @@ def upgrade():
         'pipelines',
         sa.Column('created_timestamp', sa.DateTime(timezone=True), server_default=sa.text(u'now()'), nullable=False),
         sa.Column('modified_timestamp', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('id', simpleml.persistables.guid.GUID(), nullable=False),
+        sa.Column('id', simpleml.persistables.sqlalchemy_types.GUID(), nullable=False),
         sa.Column('hash', sa.BIGINT(), nullable=False),
         sa.Column('registered_name', sa.String(), nullable=False),
         sa.Column('author', sa.String(), nullable=False),
@@ -95,10 +94,10 @@ def upgrade():
         sa.Column('version', sa.Integer(), nullable=False),
         sa.Column('version_description', sa.String(), nullable=True),
         sa.Column('has_external_files', sa.Boolean(), nullable=True),
-        sa.Column('filepaths', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('params', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-        sa.Column('dataset_id', simpleml.persistables.guid.GUID(), nullable=True),
+        sa.Column('filepaths', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('metadata', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('params', simpleml.persistables.sqlalchemy_types.JSON(), nullable=True),
+        sa.Column('dataset_id', simpleml.persistables.sqlalchemy_types.GUID(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name', 'version', name='pipeline_name_version_unique')
     )

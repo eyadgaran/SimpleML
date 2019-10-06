@@ -1,10 +1,9 @@
-from simpleml.persistables.base_persistable import Persistable, GUID
+from simpleml.persistables.base_persistable import Persistable, GUID, JSON
 from simpleml.persistables.meta_registry import ModelRegistry
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.utils.errors import ModelError
 
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 import logging
 from future.utils import with_metaclass
@@ -37,8 +36,8 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
     __abstract__ = True
 
     # Additional model specific metadata
-    params = Column(JSONB, default={})
-    feature_metadata = Column(JSONB, default={})
+    params = Column(JSON, default={})
+    feature_metadata = Column(JSON, default={})
 
     object_type = 'MODEL'
 

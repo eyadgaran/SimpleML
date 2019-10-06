@@ -10,7 +10,7 @@ from simpleml.imports import Sequence
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.meta_registry import PipelineRegistry
-from simpleml.persistables.guid import GUID
+from simpleml.persistables.sqlalchemy_types import GUID, JSON
 
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
 from simpleml.pipelines.validation_split_mixins import Split
@@ -18,7 +18,6 @@ from simpleml.utils.errors import PipelineError
 
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB
 from future.utils import with_metaclass
 import logging
 import numpy as np
@@ -43,7 +42,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
     __abstract__ = True
 
     # Additional pipeline specific metadata
-    params = Column(JSONB, default={})
+    params = Column(JSON, default={})
 
     object_type = 'PIPELINE'
 

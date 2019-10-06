@@ -1,7 +1,6 @@
 from sqlalchemy import MetaData, Column, func, String, Boolean, Integer
-from sqlalchemy.dialects.postgresql import JSONB
 from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
-from simpleml.persistables.guid import GUID
+from simpleml.persistables.sqlalchemy_types import GUID, JSON
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.hashing import CustomHasherMixin
@@ -85,10 +84,10 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
 
     # Persistence of fitted states
     has_external_files = Column(Boolean, default=False)
-    filepaths = Column(JSONB, default={})
+    filepaths = Column(JSON, default={})
 
     # Generic store and metadata for all child objects
-    metadata_ = Column('metadata', JSONB, default={})
+    metadata_ = Column('metadata', JSON, default={})
 
 
     def __init__(self, name=None, has_external_files=False,
