@@ -312,8 +312,8 @@ class Database(AlembicDatabase):
                  host=DATABASE_HOST, port=DATABASE_PORT,
                  *args, **kwargs):
         root_path = dirname(dirname(dirname(realpath(__file__))))
-        alembic_filepath = join(root_path, 'alembic.ini')
-        script_location = 'simpleml/migrations'
+        alembic_filepath = join(root_path, 'simpleml/migrations/alembic.ini')
+        script_location = ''
         super(Database, self).__init__(
             config=CONFIG, alembic_filepath=alembic_filepath, script_location=script_location,
             configuration_section=configuration_section, uri=uri, database=database,

@@ -1,0 +1,13 @@
+# Non python files to include in installed binary
+
+# Top level files
+include CHANGELOG.md
+include LICENSE
+include README.md
+
+# Database Migrations
+include simpleml/migrations/alembic.ini
+include simpleml/migrations/script.py.mako
+
+# Exclude all the compiled files
+global-exclude *.py[cod]
