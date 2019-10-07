@@ -106,16 +106,16 @@ def upgrade():
     # Use "batch" operations to support sqlite restrictions
     with op.batch_alter_table('datasets') as batch_op:
         batch_op.create_foreign_key('datasets_pipeline_id_fkey', 'pipelines',
-                              ['pipeline_id'], ['id'], ondelete='CASCADE')
+                                    ['pipeline_id'], ['id'], ondelete='CASCADE')
     with op.batch_alter_table('pipelines') as batch_op:
         batch_op.create_foreign_key('pipelines_dataset_id_fkey', 'datasets',
-                              ['dataset_id'], ['id'], ondelete='CASCADE')
+                                    ['dataset_id'], ['id'], ondelete='CASCADE')
     with op.batch_alter_table('models') as batch_op:
         batch_op.create_foreign_key('models_pipeline_id_fkey', 'pipelines',
-                              ['pipeline_id'], ['id'], ondelete='CASCADE')
+                                    ['pipeline_id'], ['id'], ondelete='CASCADE')
     with op.batch_alter_table('metrics') as batch_op:
         batch_op.create_foreign_key('metrics_model_id_fkey', 'models',
-                              ['model_id'], ['id'], ondelete='CASCADE')
+                                    ['model_id'], ['id'], ondelete='CASCADE')
     # ### end Alembic commands ###
 
 

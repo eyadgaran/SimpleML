@@ -130,10 +130,10 @@ class ExternalSaveMixin(with_metaclass(ABCMeta, object)):
         a relative filepath from that location
         '''
         if filepath is None:  # Return string instead of saving to file
-            return pickle.dumps(obj)  #, protocol=pickle.HIGHEST_PROTOCOL)
+            return pickle.dumps(obj)  # , protocol=pickle.HIGHEST_PROTOCOL)
 
         with open(join(PICKLED_FILESTORE_DIRECTORY, filepath), 'wb') as pickled_file:
-            pickle.dump(obj, pickled_file)  #, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(obj, pickled_file)  # , protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
     def load_pickled_object(filepath, stream=False):

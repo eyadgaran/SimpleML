@@ -67,17 +67,17 @@ class BaseDatabase(URL):
             # Default to credentials in config file
             credentials = dict(config[configuration_section])
         elif uri is not None:
-                # Deconstruct URI into credentials
-                url = make_url(uri)
-                credentials = {
-                    'drivername': url.drivername,
-                    'username': url.username,
-                    'password': url.password,
-                    'host': url.host,
-                    'port': url.port,
-                    'database': url.database,
-                    'query': url.query,
-                }
+            # Deconstruct URI into credentials
+            url = make_url(uri)
+            credentials = {
+                'drivername': url.drivername,
+                'username': url.username,
+                'password': url.password,
+                'host': url.host,
+                'port': url.port,
+                'database': url.database,
+                'query': url.query,
+            }
 
         # Reconfigure credentials if SSH tunnel specified
         if self.use_ssh_tunnel:
@@ -296,7 +296,7 @@ class Database(AlembicDatabase):
                  *args, **kwargs):
 
         if configuration_section is None and uri is None \
-            and all([i is None for i in (database, username, password, drivername, port, query)]):
+          and all([i is None for i in (database, username, password, drivername, port, query)]):
             # Use default creds for a sqlite database in filestore directory
             LOGGER.info('No database connection specified, using default SQLite db in {}'.format(FILESTORE_DIRECTORY))
             uri = 'sqlite:///{}'.format(join(FILESTORE_DIRECTORY, 'SimpleML.db'))
