@@ -1,5 +1,16 @@
 ## Change Log
 
+### 0.7
+- Thread-safe Keras Sequence dataset splits
+- Additional Seq2Seq models
+- Bastion tunneling support for SSH db connections
+- Explicit modules for constants and imports
+- Additional base classes for database connections (plain and alembic)
+- Database independent sqlachemy types
+- Switched pickle library from dill to cloudpickle
+- SQLite support
+- Changed default DB connection to SQLite
+
 ### 0.6
 - Full database initialization with alembic
 - DB schema validation on start

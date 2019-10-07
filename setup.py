@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys
 
-__version__ = '0.6'
+__version__ = '0.7'
 
 
 python_major = sys.version_info.major
