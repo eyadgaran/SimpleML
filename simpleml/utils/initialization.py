@@ -14,7 +14,7 @@ import simpleml.models.base_model
 import simpleml.metrics.base_metric
 from simpleml.persistables.serializing import custom_dumps, custom_loads
 from simpleml.utils.errors import SimpleMLError
-from simpleml.utils.configuration import CONFIG
+from simpleml.utils.configuration import CONFIG, FILESTORE_DIRECTORY
 from simpleml.imports import SSHTunnelForwarder
 
 from sqlalchemy import create_engine
@@ -34,12 +34,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 # Database Defaults
-DATABASE_NAME = os.getenv('SIMPLEML_DATABASE_NAME', 'SimpleML')
-DATABASE_USERNAME = os.getenv('SIMPLEML_DATABASE_USERNAME', 'simpleml')
-DATABASE_PASSWORD = os.getenv('SIMPLEML_DATABASE_PASSWORD', 'simpleml')
-DATABASE_HOST = os.getenv('SIMPLEML_DATABASE_HOST', 'localhost')
-DATABASE_PORT = os.getenv('SIMPLEML_DATABASE_PORT', 5432)
-DATABASE_DRIVERNAME = os.getenv('SIMPLEML_DATABASE_DRIVERNAME', 'postgresql')
+DATABASE_NAME = os.getenv('SIMPLEML_DATABASE_NAME', None)
+DATABASE_USERNAME = os.getenv('SIMPLEML_DATABASE_USERNAME', None)
+DATABASE_PASSWORD = os.getenv('SIMPLEML_DATABASE_PASSWORD', None)
+DATABASE_HOST = os.getenv('SIMPLEML_DATABASE_HOST', None)
+DATABASE_PORT = os.getenv('SIMPLEML_DATABASE_PORT', None)
+DATABASE_DRIVERNAME = os.getenv('SIMPLEML_DATABASE_DRIVERNAME', None)
 DATABASE_QUERY = os.getenv('SIMPLEML_DATABASE_QUERY', None)
 DATABASE_CONF = os.getenv('SIMPLEML_DATABASE_CONF', None)
 DATABASE_URI = os.getenv('SIMPLEML_DATABASE_URI', None)
@@ -288,11 +288,19 @@ class AlembicDatabase(BaseDatabase):
 class Database(AlembicDatabase):
     '''
     SimpleML specific configuration to interact with the database
+    Defaults to sqlite db in filestore directory
     '''
     def __init__(self, configuration_section=DATABASE_CONF, uri=DATABASE_URI, database=DATABASE_NAME,
                  username=DATABASE_USERNAME, password=DATABASE_PASSWORD, drivername=DATABASE_DRIVERNAME,
                  host=DATABASE_HOST, port=DATABASE_PORT, query=DATABASE_QUERY,
                  *args, **kwargs):
+
+        if configuration_section is None and uri is None \
+            and all([i is None for i in (database, username, password, drivername, port, query)]):
+            # Use default creds for a sqlite database in filestore directory
+            LOGGER.info('No database connection specified, using default SQLite db in {}'.format(FILESTORE_DIRECTORY))
+            uri = 'sqlite:///{}'.format(join(FILESTORE_DIRECTORY, 'SimpleML.db'))
+
         root_path = dirname(dirname(dirname(realpath(__file__))))
         alembic_filepath = join(root_path, 'simpleml/migrations/alembic.ini')
         script_location = ''

@@ -2,7 +2,7 @@ from __future__ import with_statement
 from logging.config import fileConfig
 from alembic import context
 
-from simpleml.utils.initialization import Database
+from simpleml.utils.initialization import BaseDatabase
 from simpleml.persistables.base_persistable import Persistable
 
 # this is the Alembic Config object, which provides
@@ -19,7 +19,8 @@ fileConfig(config.config_file_name, disable_existing_loggers=False)
 # target_metadata = mymodel.Base.metadata
 if not Persistable.metadata.is_bound():
     # Initialize a new session if one isn't already configured
-    Database().initialize(base_list=[Persistable])
+    # Use BaseDatabase to avoid any cyclical errors on migration status
+    BaseDatabase().initialize(base_list=[Persistable])
 
 target_metadata = Persistable.metadata
 
