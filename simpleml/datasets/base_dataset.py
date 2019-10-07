@@ -14,7 +14,6 @@ __author__ = 'Elisha Yadgaran'
 
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import AllSaveMixin
-from simpleml.persistables.dataset_storage import DatasetStorage, DATASET_SCHEMA
 from simpleml.persistables.meta_registry import DatasetRegistry
 from simpleml.persistables.sqlalchemy_types import GUID
 
@@ -61,14 +60,6 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable, AllSaveMixin)
 
         # By default assume unsupervised so no targets
         self.config['label_columns'] = label_columns
-
-    @property
-    def _schema(self):
-        return DATASET_SCHEMA
-
-    @property
-    def _engine(self):
-        return DatasetStorage.metadata.bind
 
     @property
     def dataframe(self):

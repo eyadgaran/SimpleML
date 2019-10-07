@@ -12,8 +12,6 @@ import simpleml.datasets.base_dataset
 import simpleml.pipelines.base_pipeline
 import simpleml.models.base_model
 import simpleml.metrics.base_metric
-from simpleml.persistables.dataset_storage import DatasetStorage
-from simpleml.persistables.binary_blob import BinaryBlob
 from simpleml.persistables.serializing import custom_dumps, custom_loads
 from simpleml.utils.errors import SimpleMLError
 from simpleml.utils.configuration import CONFIG

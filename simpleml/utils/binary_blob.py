@@ -2,7 +2,7 @@
 Optional module to persist pickled objects in database instead of filesystem
 '''
 
-from simpleml.persistables.guid import GUID
+from simpleml.persistables.sqlalchemy_types import GUID
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
 from sqlalchemy import MetaData, Column, String, LargeBinary, event, DDL
 import uuid

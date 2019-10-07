@@ -32,7 +32,8 @@ Nomenclature -> Save Location : Save Format
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.persistables.binary_blob import BinaryBlob
+from simpleml.utils.binary_blob import BinaryBlob
+from simpleml.utils.dataset_storage import DatasetStorage, DATASET_SCHEMA
 from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
@@ -200,9 +201,7 @@ class DatabaseTableSaveMixin(ExternalSaveMixin):
 
     Expects the following available attributes:
         - self._external_file
-        - self._schema
         - self.id
-        - self._engine
         - self.dataframe
 
     Sets the following attributes:
@@ -224,19 +223,21 @@ class DatabaseTableSaveMixin(ExternalSaveMixin):
         '''
         Shared method to save dataframe into a new table with name = GUID
         '''
-        self.df_to_sql(self._engine, self.dataframe,
-                       str(self.id), schema=self._schema)
+        engine = DatasetStorage.metadata.bind
+        self.df_to_sql(engine, self.dataframe,
+                       str(self.id), schema=DATASET_SCHEMA)
 
-        self.filepaths = {"database_table": [(self._schema, str(self.id))]}
+        self.filepaths = {"database_table": [(DATASET_SCHEMA, str(self.id))]}
 
     def _load_dataframe_from_table(self):
         '''
         Shared method to load dataframe from database
         '''
         schema, tablename = self.filepaths['database_table'][0]
+        engine = DatasetStorage.metadata.bind
         self._external_file = self.load_sql(
             'select * from "{}"."{}"'.format(schema, tablename),
-            self._engine
+            engine
         )
 
         # Indicate externals were loaded
