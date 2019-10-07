@@ -39,7 +39,7 @@ setup(
     packages=find_packages(),
     keywords=['machine-learning', 'deep-learning', 'automated-learning'],
     install_requires=[
-        'sqlalchemy',
+        'sqlalchemy>=1.3.7',  # Unified json_serializer/deserializer for sqlite
         'sqlalchemy_mixins',
         'alembic',
         'numpy',

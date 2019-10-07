@@ -63,7 +63,9 @@ def run_migrations_online():
     with connectable.connect() as connection:
         context.configure(
             connection=connection, target_metadata=target_metadata,
-            compare_type=True, transaction_per_migration=True
+            compare_type=True,
+            transaction_per_migration=True,
+            render_as_batch=True  # for SQLite support: https://alembic.sqlalchemy.org/en/latest/batch.html
         )
 
         with context.begin_transaction():

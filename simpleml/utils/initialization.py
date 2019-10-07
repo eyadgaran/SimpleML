@@ -22,7 +22,7 @@ from simpleml.imports import SSHTunnelForwarder
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.engine.url import URL
+from sqlalchemy.engine.url import URL, make_url
 from alembic import command
 from alembic.config import Config
 from alembic.migration import MigrationContext
@@ -42,6 +42,7 @@ DATABASE_PASSWORD = os.getenv('SIMPLEML_DATABASE_PASSWORD', 'simpleml')
 DATABASE_HOST = os.getenv('SIMPLEML_DATABASE_HOST', 'localhost')
 DATABASE_PORT = os.getenv('SIMPLEML_DATABASE_PORT', 5432)
 DATABASE_DRIVERNAME = os.getenv('SIMPLEML_DATABASE_DRIVERNAME', 'postgresql')
+DATABASE_QUERY = os.getenv('SIMPLEML_DATABASE_QUERY', None)
 DATABASE_CONF = os.getenv('SIMPLEML_DATABASE_CONF', None)
 DATABASE_URI = os.getenv('SIMPLEML_DATABASE_URI', None)
 
@@ -51,42 +52,34 @@ class BaseDatabase(URL):
     Base Database class to configure db connection
     Does not assume schema tracking or any other validation
     '''
-    def __init__(self, config=None, configuration_section=None, uri=None, database=None,
-                 username=None, password=None, drivername=None,
-                 host=None, port=None,
-                 use_ssh_tunnel=False, sshtunnel_params={}, **kwargs):
+    def __init__(self, config=None, configuration_section=None, uri=None,
+                 use_ssh_tunnel=False, sshtunnel_params={}, **credentials):
         '''
         :param use_ssh_tunnel: boolean - default false. Whether to tunnel sqlalchemy connection
             through an ssh tunnel or not
         :param sshtunnel_params: Dict of ssh params - specify according to sshtunnel project
             https://github.com/pahaz/sshtunnel/ - direct passthrough
         '''
-        # Bundle up credentials into dict
-        credentials = {
-            'drivername': drivername,
-            'username': username,
-            'password': password,
-            'host': host,
-            'port': port,
-            'database': database,
-        }
+        self.use_ssh_tunnel = use_ssh_tunnel
 
-        if configuration_section is None and uri is None and None in credentials.values():
-            raise SimpleMLError('Must pass a section, uri, or credentials!')
-
+        # Sort out which credentials are the final ones -- default to remaining passed params
         if configuration_section is not None:
             if config is None:
                 raise SimpleMLError('Cannot use config section without a config file')
             # Default to credentials in config file
             credentials = dict(config[configuration_section])
         elif uri is not None:
-                # Overwrite all the other parameters and inject URI directly into the engine
-                LOGGER.info('Skipping parameters and using passed URI')
-                self.uri = uri
-                LOGGER.info('Inputting dummy parameters to force initialization - still using URI in engine!')
-
-        # Optional ssh configuration
-        self.use_ssh_tunnel = use_ssh_tunnel
+                # Deconstruct URI into credentials
+                url = make_url(uri)
+                credentials = {
+                    'drivername': url.drivername,
+                    'username': url.username,
+                    'password': url.password,
+                    'host': url.host,
+                    'port': url.port,
+                    'database': url.database,
+                    'query': url.query,
+                }
 
         # Reconfigure credentials if SSH tunnel specified
         if self.use_ssh_tunnel:
@@ -94,12 +87,8 @@ class BaseDatabase(URL):
                             out and doesn't reconnect''')
             # Overwrite passed ports and hosts to route localhost port to the
             # original destination via tunnel
-            if uri is not None:
-                # Can't easily deconstruct URI to swap out for localhost tunnel
-                raise SimpleMLError('Unable to establish SSH tunnel with URI specified')
             credentials, self.ssh_config = self.configure_ssh_tunnel(credentials, sshtunnel_params)
 
-        credentials.update(kwargs)
         super(BaseDatabase, self).__init__(**credentials)
 
     def configure_ssh_tunnel(self, credentials, ssh_config):
@@ -125,16 +114,11 @@ class BaseDatabase(URL):
 
     @property
     def engine(self):
-        if hasattr(self, 'uri') and self.uri is not None:
-            uri = self.uri
-        else:
-            uri = self
         # Custom serializer/deserializer not supported by all drivers
         # Definitely works for:
         # - Postgres
-        # Definitely does not work for:
-        # - SQLite
-        return create_engine(uri,
+        # - SQLite >= 1.3.7 -- Use _json_serializer for below
+        return create_engine(self,
                              json_serializer=custom_dumps,
                              json_deserializer=custom_loads,
                              pool_recycle=300)
@@ -309,7 +293,7 @@ class Database(AlembicDatabase):
     '''
     def __init__(self, configuration_section=DATABASE_CONF, uri=DATABASE_URI, database=DATABASE_NAME,
                  username=DATABASE_USERNAME, password=DATABASE_PASSWORD, drivername=DATABASE_DRIVERNAME,
-                 host=DATABASE_HOST, port=DATABASE_PORT,
+                 host=DATABASE_HOST, port=DATABASE_PORT, query=DATABASE_QUERY,
                  *args, **kwargs):
         root_path = dirname(dirname(dirname(realpath(__file__))))
         alembic_filepath = join(root_path, 'simpleml/migrations/alembic.ini')
@@ -317,7 +301,8 @@ class Database(AlembicDatabase):
         super(Database, self).__init__(
             config=CONFIG, alembic_filepath=alembic_filepath, script_location=script_location,
             configuration_section=configuration_section, uri=uri, database=database,
-            username=username, password=password, drivername=drivername, host=host, port=port,
+            username=username, password=password, drivername=drivername,
+            host=host, port=port, query=query,
             *args, **kwargs)
 
     def initialize(self, base_list=None, **kwargs):
