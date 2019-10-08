@@ -37,6 +37,7 @@ setup(
     url='https://github.com/eyadgaran/SimpleML',
     download_url='https://github.com/eyadgaran/SimpleML/archive/v{}.tar.gz'.format(__version__),
     packages=find_packages(),
+    include_package_data=True,
     keywords=['machine-learning', 'deep-learning', 'automated-learning'],
     install_requires=[
         'sqlalchemy>=1.3.7',  # Unified json_serializer/deserializer for sqlite
