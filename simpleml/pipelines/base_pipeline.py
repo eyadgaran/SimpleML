@@ -90,7 +90,11 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         if external_pipeline_class == 'default':
             return DefaultPipeline(transformers)
         elif external_pipeline_class == 'sklearn':
-            return SklearnPipeline(transformers, **kwargs)
+            return SklearnPipeline(
+                transformers,
+                # Only supported sklearn params
+                **{k: v for k, v in kwargs.items() if k in ('memory', 'verbose')}
+            )
         else:
             raise NotImplementedError('Only default or sklearn pipelines supported')
 

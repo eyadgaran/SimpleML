@@ -114,6 +114,16 @@ class SklearnPipeline(Pipeline):
         index = [i for i, j in enumerate(self.steps) if j[0] == name][0]
         self.steps.pop(index)
 
+    def get_params(self, **kwargs):
+        '''
+        Wrapper around sklearn implementation to drop non parameter returns
+        '''
+        params = super(SklearnPipeline, self).get_params(**kwargs)
+        # actual params have k__v format
+        steps = params.pop('steps', [])
+        step_names = [step[0] for step in steps]
+        return {k: v for k, v in params.items() if k not in step_names}
+
     def get_transformers(self):
         '''
         Get list of (step, transformer) tuples

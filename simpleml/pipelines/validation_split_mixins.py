@@ -155,13 +155,20 @@ class RandomSplitMixin(SplitMixin):
         shuffle = self.config.get('shuffle')
 
         # Sklearn's train test split can only accomodate one split per iteration
-        X_remaining, X_test, y_remaining, y_test = train_test_split(
-            self.dataset.X, self.dataset.y, test_size=test_size, random_state=random_state, shuffle=shuffle)
+        if test_size == 0:  # No split necessary
+            X_remaining, y_remaining = self.dataset.X, self.dataset.y
+            X_test, y_test = [], []
+        else:
+            X_remaining, X_test, y_remaining, y_test = train_test_split(
+                self.dataset.X, self.dataset.y, test_size=test_size, random_state=random_state, shuffle=shuffle)
 
         calibrated_validation_size = float(validation_size) / (validation_size + train_size)
-
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_remaining, y_remaining, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
+        if calibrated_validation_size == 0:  # No split necessary
+            X_train, y_train = X_remaining, y_remaining
+            X_val, y_val = [], []
+        else:
+            X_train, X_val, y_train, y_val = train_test_split(
+                X_remaining, y_remaining, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
 
         self._dataset_splits = self.containerize_split({
             TRAIN_SPLIT: Split(X=X_train, y=y_train).squeeze(),
