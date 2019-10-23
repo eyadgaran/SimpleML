@@ -290,14 +290,34 @@ class Database(AlembicDatabase):
     SimpleML specific configuration to interact with the database
     Defaults to sqlite db in filestore directory
     '''
-    def __init__(self, configuration_section=DATABASE_CONF, uri=DATABASE_URI, database=DATABASE_NAME,
-                 username=DATABASE_USERNAME, password=DATABASE_PASSWORD, drivername=DATABASE_DRIVERNAME,
-                 host=DATABASE_HOST, port=DATABASE_PORT, query=DATABASE_QUERY,
+    def __init__(self,
+                 configuration_section=None,
+                 uri=None,
+                 database=None,
+                 username=None,
+                 password=None,
+                 drivername=None,
+                 host=None,
+                 port=None,
+                 query=None,
                  *args, **kwargs):
 
         if configuration_section is None and uri is None \
           and all([i is None for i in (database, username, password, drivername, port, query)]):
-            # Use default creds for a sqlite database in filestore directory
+            # Fill with env variable values if none are passed directly
+            configuration_section = DATABASE_CONF
+            uri = DATABASE_URI
+            database = DATABASE_NAME
+            username = DATABASE_USERNAME
+            password = DATABASE_PASSWORD
+            drivername = DATABASE_DRIVERNAME
+            host = DATABASE_HOST
+            port=DATABASE_PORT
+            query=DATABASE_QUERY
+
+        if configuration_section is None and uri is None \
+          and all([i is None for i in (database, username, password, drivername, port, query)]):
+            # Use default creds for a sqlite database in filestore directory if env variables are also null
             LOGGER.info('No database connection specified, using default SQLite db in {}'.format(FILESTORE_DIRECTORY))
             uri = 'sqlite:///{}'.format(join(FILESTORE_DIRECTORY, 'SimpleML.db'))
 

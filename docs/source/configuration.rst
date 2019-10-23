@@ -130,6 +130,7 @@ The full list of variables that can be referenced are::
     - SIMPLEML_DATABASE_HOST
     - SIMPLEML_DATABASE_PORT
     - SIMPLEML_DATABASE_DRIVERNAME
+    - SIMPLEML_DATABASE_QUERY
     - SIMPLEML_DATABASE_CONF
     - SIMPLEML_DATABASE_URI
 
@@ -138,14 +139,15 @@ Code Defaults
 Defaults are specified for expected database parameters::
 
     - SIMPLEML_CONFIGURATION_FILE = ~/.simpleml/simpleml.conf
-    - SIMPLEML_DATABASE_NAME = SimpleML
-    - SIMPLEML_DATABASE_USERNAME = simpleml
-    - SIMPLEML_DATABASE_PASSWORD = simpleml
-    - SIMPLEML_DATABASE_HOST = localhost
-    - SIMPLEML_DATABASE_PORT = 5432
-    - SIMPLEML_DATABASE_DRIVERNAME = postgresql
+    - SIMPLEML_DATABASE_NAME = None
+    - SIMPLEML_DATABASE_USERNAME = None
+    - SIMPLEML_DATABASE_PASSWORD = None
+    - SIMPLEML_DATABASE_HOST = None
+    - SIMPLEML_DATABASE_PORT = None
+    - SIMPLEML_DATABASE_DRIVERNAME = None
+    - SIMPLEML_DATABASE_QUERY = None
     - SIMPLEML_DATABASE_CONF = None
-    - SIMPLEML_DATABASE_URI = None
+    - SIMPLEML_DATABASE_URI = 'sqlite:///{}'.format(join(FILESTORE_DIRECTORY, 'SimpleML.db'))
 
 
 The first is the location of the configuration file. The remainder are database
