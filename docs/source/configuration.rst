@@ -147,7 +147,7 @@ Defaults are specified for expected database parameters::
     - SIMPLEML_DATABASE_DRIVERNAME = None
     - SIMPLEML_DATABASE_QUERY = None
     - SIMPLEML_DATABASE_CONF = None
-    - SIMPLEML_DATABASE_URI = 'sqlite:///{}'.format(join(FILESTORE_DIRECTORY, 'SimpleML.db'))
+    - SIMPLEML_DATABASE_URI = None
 
 
 The first is the location of the configuration file. The remainder are database

@@ -24,7 +24,9 @@ Refer to the installation guide for other methods of installation (:doc:`Install
 Set Up a Database
 -----------------
 
-Postgres is the preferred (and tested) database flavor, but since sqlalchemy is used to manage
+By default a local sqlite database will be created and used, but Postgres is the
+preferred (and tested) database flavor for production systems.
+Internally since sqlalchemy is used to manage
 all communication, any supported database should work. While it is possible to use SimpleML on
 an existing database (provided there are no overlapping tables), it is recommended to
 create a new database with the appropriate role-based access.
@@ -69,10 +71,8 @@ the titanic dataset from kaggle_::
     from simpleml import TEST_SPLIT
 
 
-    # Initialize Database Connection
-    db = Database(
-      username='simpleml', password='simpleml', database='SIMPLEML', host='localhost'
-    ).initialize(upgrade=True)
+    # Initialize Database Connection - Uses Sqlite Default
+    Database().initialize(upgrade=True)
 
     # Define Dataset and point to loading file
     class TitanicDataset(PandasDataset):
@@ -121,10 +121,8 @@ API layer using flask and serve predictions from our trained model::
     import pandas as pd
     from simpleml.utils import PersistableLoader
 
-    # Initialize Database Connection
-    db = Database(
-      username='simpleml', password='simpleml', database='SIMPLEML', host='localhost'
-    ).initialize()
+    # Initialize Database Connection (Same Sqlite DB)
+    Database().initialize()
 
     app = Flask(__name__)
     MODEL = PersistableLoader.load_model(name='titanic', version=1)
