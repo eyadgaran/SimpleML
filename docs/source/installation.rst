@@ -43,9 +43,9 @@ The general command is ``pip install simpleml[extras]`` (substituting "extras" w
 These are the current supported extras::
 
     'postgres': ["psycopg2"]
-    'deep-learning': ["keras", "tensorflow"]
+    'deep-learning': ["keras", "tensorflow", "hickle"]
     'hdf5': ["hickle"]
-    'cloud': ["onedrivesdk", "apache-libcloud", "pycrypto"]
+    'cloud': ["onedrivesdk", "apache-libcloud", "pycrypto", "sshtunnel"]
 
 Additionally, a convenience extra titled ``all`` is defined to install the full list
 of optional dependencies.

@@ -29,7 +29,7 @@ else:
 # Different extras
 postgres_dependencies = ["psycopg2"]
 deep_learning_dependencies = ["keras", "tensorflow", "hickle"]
-cloud_dependencies = ["onedrivesdk", "apache-libcloud", "pycrypto", "sshtunnel"]
+cloud_dependencies = ["onedrivesdk<2", "apache-libcloud", "pycrypto", "sshtunnel"]
 
 
 setup(
