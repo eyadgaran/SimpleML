@@ -42,7 +42,7 @@ Why use SimpleML over a SAS cloud solution?
 
 - Avoid vendor lockin - fully open source codebase, compatible with any cloud infrastructure and algorithm backend.
 - Drop in replacement for most workflows
-- Can still deploy your models on-prem without changing your application
+- Can still deploy models on-prem without changing the application
 
 
 Supported Frameworks
@@ -85,7 +85,7 @@ See guidelines here: Contributing_
 
 Support
 -------
-SimpleML core is open source and is powered by generous donations. Please donate
+SimpleML core is open source and powered by generous donations. Please donate
 if you find it contributing to your projects. Technical support and contract
 opportunities are also available - contact the author, `Elisha Yadgaran`_, for details.
 
