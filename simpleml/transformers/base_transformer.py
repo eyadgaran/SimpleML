@@ -4,6 +4,8 @@ from sklearn.base import TransformerMixin as SklearnTransformerMixin
 __author__ = 'Elisha Yadgaran'
 
 
+# Figure out database persistence via metaclass
+
 class TransformerMixin(SklearnTransformerMixin):
     '''
     Base Transformer class that implements all the necessary methods

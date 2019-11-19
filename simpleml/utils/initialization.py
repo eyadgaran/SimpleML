@@ -58,6 +58,7 @@ class BaseDatabase(URL):
         :param sshtunnel_params: Dict of ssh params - specify according to sshtunnel project
             https://github.com/pahaz/sshtunnel/ - direct passthrough
         '''
+        # TODO: change up order to read from config default section
         self.use_ssh_tunnel = use_ssh_tunnel
 
         # Sort out which credentials are the final ones -- default to remaining passed params

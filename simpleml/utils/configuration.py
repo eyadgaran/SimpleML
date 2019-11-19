@@ -20,6 +20,7 @@ if CONFIGURATION_FILE is None:
     LOGGER.debug('Configuration File Environment Variable Not Set (`SIMPLEML_CONFIGURATION_FILE`), using default')
     CONFIGURATION_FILE = os.path.expanduser("~/.simpleml/simpleml.conf")
 
+# TODO: parser for env variable injection !ENV
 CONFIG = ConfigParser(converters={'list': lambda x: [i.strip() for i in x.split(',')]})
 if os.path.isfile(CONFIGURATION_FILE):
     CONFIG.read(CONFIGURATION_FILE)
