@@ -81,8 +81,13 @@ class BaseDatabase(URL):
 
         # Reconfigure credentials if SSH tunnel specified
         if self.use_ssh_tunnel:
-            LOGGER.warning('''SSH Tunnel is unreliable at the moment - connection times
-                            out and doesn't reconnect''')
+            LOGGER.warning(
+                '''
+                SSH Tunnel is unreliable at the moment - connections time out randomly.
+                Usage: call Database.start_tunnel() before Database.initialize() and
+                end script with Database.stop_tunnel()
+                '''
+            )
             # Overwrite passed ports and hosts to route localhost port to the
             # original destination via tunnel
             credentials, self.ssh_config = self.configure_ssh_tunnel(credentials, sshtunnel_params)
@@ -110,6 +115,12 @@ class BaseDatabase(URL):
 
         return credentials, ssh_config
 
+    def open_tunnel(self):
+        self.ssh_tunnel.start()
+
+    def close_tunnel(self):
+        self.ssh_tunnel.stop()
+
     @property
     def engine(self):
         # Custom serializer/deserializer not supported by all drivers
@@ -125,7 +136,10 @@ class BaseDatabase(URL):
     def ssh_tunnel(self):
         if SSHTunnelForwarder is None:  # Not installed
             raise SimpleMLError('SSHTunnel is not installed, install with `pip install sshtunnel`')
-        return SSHTunnelForwarder(**self.ssh_config)
+
+        if not hasattr(self, '_sshtunnel'):
+            self._sshtunnel = SSHTunnelForwarder(**self.ssh_config)
+        return self._sshtunnel
 
     def create_tables(self, base, drop_tables=False, ignore_errors=False):
         '''
@@ -179,9 +193,6 @@ class BaseDatabase(URL):
         :param upgrade: Bool, whether to run an upgrade migration after establishing a connection
         :return: None
         '''
-        if self.use_ssh_tunnel:
-            self.ssh_tunnel.start()  # Start ssh tunnel
-            # Will stay active until script exits
         for base in base_list:
             self._initialize(base, **kwargs)
 
@@ -302,8 +313,8 @@ class Database(AlembicDatabase):
                  query=None,
                  *args, **kwargs):
 
-        if configuration_section is None and uri is None \
-          and all([i is None for i in (database, username, password, drivername, port, query)]):
+        if configuration_section is None and uri is None and \
+           all([i is None for i in (database, username, password, drivername, port, query)]):
             # Fill with env variable values if none are passed directly
             configuration_section = DATABASE_CONF
             uri = DATABASE_URI
@@ -312,11 +323,11 @@ class Database(AlembicDatabase):
             password = DATABASE_PASSWORD
             drivername = DATABASE_DRIVERNAME
             host = DATABASE_HOST
-            port=DATABASE_PORT
-            query=DATABASE_QUERY
+            port = DATABASE_PORT
+            query = DATABASE_QUERY
 
-        if configuration_section is None and uri is None \
-          and all([i is None for i in (database, username, password, drivername, port, query)]):
+        if configuration_section is None and uri is None and \
+           all([i is None for i in (database, username, password, drivername, port, query)]):
             # Use default creds for a sqlite database in filestore directory if env variables are also null
             LOGGER.info('No database connection specified, using default SQLite db in {}'.format(FILESTORE_DIRECTORY))
             uri = 'sqlite:///{}'.format(join(FILESTORE_DIRECTORY, 'SimpleML.db'))
