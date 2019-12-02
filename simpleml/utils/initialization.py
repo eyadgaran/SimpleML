@@ -313,8 +313,8 @@ class Database(AlembicDatabase):
                  query=None,
                  *args, **kwargs):
 
-        if configuration_section is None and uri is None \
-          and all([i is None for i in (database, username, password, drivername, port, query)]):
+        if configuration_section is None and uri is None and \
+           all([i is None for i in (database, username, password, drivername, port, query)]):
             # Fill with env variable values if none are passed directly
             configuration_section = DATABASE_CONF
             uri = DATABASE_URI
@@ -326,8 +326,8 @@ class Database(AlembicDatabase):
             port = DATABASE_PORT
             query = DATABASE_QUERY
 
-        if configuration_section is None and uri is None \
-          and all([i is None for i in (database, username, password, drivername, port, query)]):
+        if configuration_section is None and uri is None and \
+           all([i is None for i in (database, username, password, drivername, port, query)]):
             # Use default creds for a sqlite database in filestore directory if env variables are also null
             LOGGER.info('No database connection specified, using default SQLite db in {}'.format(FILESTORE_DIRECTORY))
             uri = 'sqlite:///{}'.format(join(FILESTORE_DIRECTORY, 'SimpleML.db'))
