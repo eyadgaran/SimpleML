@@ -1,5 +1,12 @@
 ## Change Log
 
+### 0.7.2
+- SSH Tunnel Workflow
+
+### 0.7.1
+- Sklearn Pipeline patch
+- Changed default log level to INFO
+
 ### 0.7
 - Thread-safe Keras Sequence dataset splits
 - Additional Seq2Seq models
