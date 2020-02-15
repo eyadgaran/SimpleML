@@ -50,6 +50,18 @@ These are the current supported extras::
 Additionally, a convenience extra titled ``all`` is defined to install the full list
 of optional dependencies.
 
+While it is recommended to install optional dependencies via simpleml, installing
+a minimal set of dependencies manually will function the same way. Any dependency
+that is found will load automatically on import and null types will be assigned to
+the rest. Attempting to execute code that references a missing dependency will
+result in an error.
+
+Note: running SimpleML in an interactive environment (eg Jupyter) will require
+a restart of the kernel to dynamically install new dependencies. For most libraries
+this is not the case because there is no caching of missing imports, but SimpleML
+only checks for dependencies on the first import. The relevant code can be found
+here: `https://github.com/eyadgaran/SimpleML/blob/master/simpleml/imports.py`
+
 
 Dependencies
 ------------
