@@ -102,11 +102,14 @@ Index
    Installation <installation.rst>
    Configuration <configuration.rst>
    Quickstart <quickstart.rst>
+   Database <database.rst>
    Persistables <persistables.rst>
    Datasets <datasets.rst>
    Pipelines <pipelines.rst>
    Models <models.rst>
    Metrics <metrics.rst>
+   Structs <structs.rst>
+   CLI <cli.rst>
    Utilities <utilities.rst>
    API <api.rst>
    Changelog <https://github.com/eyadgaran/SimpleML/blob/master/CHANGELOG.md>
