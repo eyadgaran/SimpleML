@@ -133,6 +133,19 @@ class BinaryClassificationMetric(ClassificationMetric):
 
         return self._confusion_matrix
 
+    @staticmethod
+    def _create_confusion_matrix(thresholds, probabilities, labels):
+        '''
+        Independent computation method (easier testing)
+        '''
+        results = []
+        for threshold in thresholds:
+            predictions = np.where(probabilities >= threshold, 1, 0)
+            tn, fp, fn, tp = confusion_matrix(labels, predictions, labels=[0, 1]).ravel()
+            results.append((threshold, tn, fp, fn, tp))
+
+        return pd.DataFrame(results, columns=['threshold', 'tn', 'fp', 'fn', 'tp'])
+
     def create_confusion_matrix(self):
         '''
         Iterate through each threshold and compute confusion matrix
