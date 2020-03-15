@@ -46,7 +46,7 @@ setup(
     keywords=['machine-learning', 'deep-learning', 'automated-learning'],
     install_requires=[
         'sqlalchemy>=1.3.7',  # Unified json_serializer/deserializer for sqlite
-        'sqlalchemy_mixins',
+        'proxy-sqlalchemy-mixins',
         'alembic',
         'numpy',
         'cloudpickle',
@@ -54,7 +54,6 @@ setup(
         'configparser',
         'simplejson',
     ] + version_based_dependencies,
-    dependency_links=["https://github.com/absent1706/sqlalchemy-mixins/tarball/master#egg=sqlalchemy_mixins"],
     extras_require={
         'postgres': postgres_dependencies,
         'deep-learning': deep_learning_dependencies,
