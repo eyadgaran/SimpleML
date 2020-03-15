@@ -15,6 +15,11 @@ if sys.version_info < (3, 5):  # Python < 3.5
         'scipy<1.3.0',  # Scikit-learn dependency
         'pandas<0.25.0',
     ]
+elif sys.version_info <= (3, 6, 1):  # Python 3.5/3.6
+    version_based_dependencies = [
+        'scikit-learn',
+        'pandas<1.0.0',
+    ]
 else:
     version_based_dependencies = [
         'scikit-learn',
