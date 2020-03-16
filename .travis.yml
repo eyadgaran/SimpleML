@@ -41,13 +41,21 @@ after_success:
 
 matrix:
   include:
+    - python: 3.2
+      dist: trusty
+      script: python setup.py test
+      after_success: True
     - python: 3.3
+      dist: trusty
       script: python setup.py test
       after_success: True
     - python: 3.4
       script: python setup.py test
       after_success: True
     - python: 3.7
+      dist: xenial
+      sudo: true
+    - python: 3.8
       dist: xenial
       sudo: true
     - python: pypy
@@ -57,6 +65,8 @@ matrix:
       script: python setup.py test
       after_success: True
   allow_failures:
+    - python: 2.7
+    - python: 3.2
     - python: 3.3
     - python: 3.4
     - python: pypy
