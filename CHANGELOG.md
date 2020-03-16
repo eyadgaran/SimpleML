@@ -1,13 +1,17 @@
 ## Change Log
 
-### 0.7.2
+
+### 0.8.0 (2020-03-15)
+- EOL Python 2 support
+
+### 0.7.2 (2019-12-01)
 - SSH Tunnel Workflow
 
-### 0.7.1
+### 0.7.1 (2019-10-13)
 - Sklearn Pipeline patch
 - Changed default log level to INFO
 
-### 0.7
+### 0.7 (2019-10-07)
 - Thread-safe Keras Sequence dataset splits
 - Additional Seq2Seq models
 - Bastion tunneling support for SSH db connections
@@ -18,7 +22,7 @@
 - SQLite support
 - Changed default DB connection to SQLite
 
-### 0.6
+### 0.6 (2019-06-19)
 - Full database initialization with alembic
 - DB schema validation on start
 - Main configuration file for all credentials
@@ -33,7 +37,7 @@
 - Library specific model base classes
 - Generalized database connection classes
 
-### 0.5
+### 0.5 (2019-02-17)
 - Default identity pipeline
 - Alembic integration for database migration
 - Standardized model inheritance pattern
@@ -46,7 +50,7 @@
 - Moved composed subclasses to inits
 - Unified datasets and pipelines
 
-### 0.4
+### 0.4 (2019-01-04)
 - Keras Seq2Seq support
 - Keras model support
 - Minimized required installation dependencies
@@ -55,14 +59,14 @@
 - Python 3 compatibility
 - Travis and tox for CI/testing
 
-### 0.3
+### 0.3 (2018-12-01)
 - Save mixins for external files
 - Keras sequential model support
 - hdf5 binary saving mechanism
 - numpy hashing support
 - Some tests
 
-### 0.2
+### 0.2 (2018-09-09)
 - Error classes
 - Sphinx documentation
 - Classification metrics
