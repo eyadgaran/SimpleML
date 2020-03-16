@@ -62,6 +62,7 @@ matrix:
       script: python setup.py test
       after_success: True
   allow_failures:
+    - python: 2.7
     - python: 3.2
     - python: 3.3
     - python: 3.4
