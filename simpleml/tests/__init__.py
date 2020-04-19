@@ -1,34 +1,63 @@
 '''
-Setup testing env
+Combine all the test suites and execute
 
-Assumes user `simpleml` exists with password `simpleml`
+Testing Paradigm: Hierarchical tests broken out by directory.
+Invocation Paths:
+    1) python setup.py test
+    2) simpleml {test, unit-test, integration-test, regression-test}
+    3) python simpleml/tests/[unit, integration, regression, {module-name}]
+
+1) Integrated into setuptools invocation. Done by registering `load_tests` in this
+module as the entrypoint for tests
+```
+    test_suite='simpleml.tests.load_tests'
+```
+
+2) Setuptools registered entrypoints resolving to the run_tests functions in the
+respective directories. `run_tests` calls `load_tests` so it executes the same tests
+as other invokation paths
+```
+    entry_points = {
+        'console_scripts': [
+            'simpleml-test=simpleml.tests:run_tests',
+            'simpleml-unit-test=simpleml.tests.unit:run_tests',
+            'simpleml-integration-test=simpleml.tests.integration:run_tests',
+            'simpleml-regression-test=simpleml.tests.regression:run_tests',
+        ],
+    }
+```
+
+3) Calling the modules directly also invokes `run_tests` when calling the __init__.
+Otherwise it executes just the tests in the module for easy iteration on specific tests.
+```
+    if __name__ == '__main__':
+        unittest.main()
+```
 '''
 
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.utils.initialization import Database
-from simpleml.utils.postgres import create_database, drop_database
-import random
+import unittest
+
+from simpleml.tests.unit import load_tests as unit_test_loader
+from simpleml.tests.integration import load_tests as integration_test_loader
+from simpleml.tests.regression import load_tests as regression_test_loader
 
 
-TEST_DATABASE = 'SimpleML-TEST-{}'.format(random.randint(10000, 99999))
-ADMIN_CONNECTION_PARAMS = {  # psycopg2.connect parameters
-    'user': 'simpleml', 'password': 'simpleml', 'host': 'localhost',
-    'port': 5432, 'database': 'postgres'
-}
-CONNECTION_PARAMS = {  # sqlalchemy.URL parameters
-    'username': 'simpleml', 'password': 'simpleml', 'host': 'localhost',
-    'port': 5432, 'database': TEST_DATABASE, 'drivername': 'postgresql'
-}
+def load_tests(*args, **kwargs):
+    unit_tests = unit_test_loader()
+    integration_tests = integration_test_loader()
+    regression_tests = regression_test_loader()
+    all_tests = unittest.TestSuite()
+    all_tests.addTests([unit_tests, integration_tests, regression_tests])
+    return all_tests
 
 
-def setup_package():
-    print('Setting up testing env')
-    create_database(ADMIN_CONNECTION_PARAMS, TEST_DATABASE)
-    Database(**CONNECTION_PARAMS).initialize(create_tables=True, drop_tables=True)
+def run_tests():
+    runner = unittest.TextTestRunner(verbosity=3)
+    result = runner.run(load_tests())
 
 
-def teardown_package():
-    print('Tearing Down')
-    drop_database(ADMIN_CONNECTION_PARAMS, TEST_DATABASE, force=True)
+if __name__ == '__main__':
+    run_tests()

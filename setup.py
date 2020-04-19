@@ -68,8 +68,16 @@ setup(
         'all': postgres_dependencies + deep_learning_dependencies + cloud_dependencies
     },
     zip_safe=False,
-    test_suite='nose.collector',
+    test_suite='simpleml.tests.load_tests',
     tests_require=['nose'],
+    entry_points = {
+        'console_scripts': [
+            'simpleml-test=simpleml.tests:run_tests',
+            'simpleml-unit-test=simpleml.tests.unit:run_tests',
+            'simpleml-integration-test=simpleml.tests.integration:run_tests',
+            'simpleml-regression-test=simpleml.tests.regression:run_tests',
+        ],
+    },
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
