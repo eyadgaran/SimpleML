@@ -55,3 +55,7 @@ class PersistableTests(unittest.TestCase):
         '''
         # Delete dependency file and check that it works
         # Then reference dependency and assert error
+
+
+if __name__ == '__main__':
+    unittest.main()

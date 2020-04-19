@@ -83,3 +83,7 @@ class SerializingTests(unittest.TestCase):
         dumped = custom_dumps(obj)
         loaded = custom_loads(dumped)
         self.assertEqual(obj, loaded)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -93,3 +93,7 @@ class MetaRegistryTests(unittest.TestCase):
         # Test
         self.assertIn(class_name, SIMPLEML_REGISTRY.registry)
         self.assertEqual(fake_class, SIMPLEML_REGISTRY.get(class_name))
+
+
+if __name__ == '__main__':
+    unittest.main()
