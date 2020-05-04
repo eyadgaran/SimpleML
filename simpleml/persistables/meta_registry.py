@@ -3,8 +3,11 @@ Meta class to auto register new classes
 '''
 from sqlalchemy.ext.declarative import declarative_base
 from abc import ABCMeta
+import logging
 
 __author__ = 'Elisha Yadgaran'
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Registry(object):
@@ -15,12 +18,17 @@ class Registry(object):
         self.registry = {}
 
     def register(self, cls):
-        if cls.__name__ in self.registry:
+        # Check for class duplication. Some workflows reload everything and 
+        # that is ok. As long as the definitions are the same
+        if cls.__name__ in self.registry and cls is not self.registry[cls.__name__]:
             raise ValueError('Cannot duplicate class in registry: {}'.format(cls.__name__))
         self.registry[cls.__name__] = cls
 
     def get_from_registry(self, class_name):
-        return self.registry.get(class_name)
+        cls = self.registry.get(class_name)
+        if cls is None:
+            LOGGER.error('Class not found for {}. Make sure to import the class into the registry before calling'.format(class_name))
+        return cls
 
     def get(self, class_name):
         return self.get_from_registry(class_name)
