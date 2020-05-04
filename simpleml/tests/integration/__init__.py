@@ -16,6 +16,8 @@ import glob
 from simpleml.utils.configuration import FILESTORE_DIRECTORY
 from simpleml.utils.initialization import Database
 from simpleml.utils.postgres import create_database, drop_database
+from simpleml.utils.dataset_storage import DatasetStorage
+from simpleml.persistables.base_persistable import Persistable
 
 
 DIRECTORY_IMPORT_PATH = 'simpleml.tests.integration'
@@ -60,7 +62,10 @@ class SqliteIntegrationTestSuite(IntegrationTestSuite):
 
     def setUp(self):
         print('Running SQLite Integration Tests')
-        Database(**self.connection_params).initialize(upgrade=True, create_tables=True, drop_tables=True)
+        print(self.database_path)
+        Database(**self.connection_params).initialize(
+            base_list=[Persistable],
+            upgrade=True, create_tables=True, drop_tables=True)
 
     def tearDown(self):
         print('Finished Running SQLite Integration Tests')
@@ -87,8 +92,11 @@ class PostgresIntegrationTestSuite(IntegrationTestSuite):
 
     def setUp(self):
         print('Running Postgres Integration Tests')
+        print(self.database_name)
         create_database(self.admin_connection_params, self.database_name)
-        Database(**self.connection_params).initialize(upgrade=True, create_tables=True, drop_tables=True)
+        Database(**self.connection_params).initialize(
+            base_list=[Persistable, DatasetStorage],
+            upgrade=True, create_tables=True, drop_tables=True)
 
     def tearDown(self):
         print('Finished Running Postgres Integration Tests')
