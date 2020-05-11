@@ -15,7 +15,13 @@ if sys.version_info < (3, 5):  # Python < 3.5
         'scipy<1.3.0',  # Scikit-learn dependency
         'pandas<0.25.0',
     ]
-elif sys.version_info <= (3, 6, 1):  # Python 3.5/3.6
+elif sys.version_info < (3, 6):  # Python 3.5
+    version_based_dependencies = [
+        'scikit-learn<0.23.0',
+        'pandas<1.0.0',
+        'markupsafe<2.0.0',
+    ]
+elif sys.version_info <= (3, 6, 1):  # Python 3.6
     version_based_dependencies = [
         'scikit-learn',
         'pandas<1.0.0',
@@ -46,7 +52,7 @@ setup(
     keywords=['machine-learning', 'deep-learning', 'automated-learning'],
     install_requires=[
         'sqlalchemy>=1.3.7',  # Unified json_serializer/deserializer for sqlite
-        'proxy-sqlalchemy-mixins',
+        'sqlalchemy-mixins',
         'alembic',
         'numpy',
         'cloudpickle',
