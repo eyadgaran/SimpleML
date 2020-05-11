@@ -46,7 +46,7 @@ setup(
     keywords=['machine-learning', 'deep-learning', 'automated-learning'],
     install_requires=[
         'sqlalchemy>=1.3.7',  # Unified json_serializer/deserializer for sqlite
-        'proxy-sqlalchemy-mixins',
+        'sqlalchemy-mixins',
         'alembic',
         'numpy',
         'cloudpickle',
