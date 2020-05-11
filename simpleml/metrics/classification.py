@@ -88,7 +88,8 @@ class ClassificationMetric(Metric):
 class BinaryClassificationMetric(ClassificationMetric):
     @property
     def labels(self):
-        labels = self.model.get_labels(dataset_split=self.dataset_split)
+        # extends parent label retrieval with a validation step for binary values
+        labels = super(BinaryClassificationMetric, self).labels 
         self.validate_labels(labels)
         return labels
 
