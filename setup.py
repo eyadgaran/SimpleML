@@ -19,6 +19,7 @@ elif sys.version_info < (3, 6):  # Python 3.5
     version_based_dependencies = [
         'scikit-learn<0.23.0',
         'pandas<1.0.0',
+        'markupsafe<2.0.0',
     ]
 elif sys.version_info <= (3, 6, 1):  # Python 3.6
     version_based_dependencies = [
