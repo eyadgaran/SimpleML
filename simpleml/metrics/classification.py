@@ -87,6 +87,24 @@ class ClassificationMetric(Metric):
 
 class BinaryClassificationMetric(ClassificationMetric):
     @property
+    def labels(self):
+        # extends parent label retrieval with a validation step for binary values
+        labels = super(BinaryClassificationMetric, self).labels
+        self.validate_labels(labels)
+        return labels
+
+    @staticmethod
+    def validate_labels(labels):
+        invalid = None
+        if labels is None:
+            invalid = True
+        else:
+            invalid = (len(set(labels) - {0, 1}) > 0)
+
+        if invalid:
+            raise MetricError('Attempting to score a binary metric with labels outside of {0,1}')
+
+    @property
     def probabilities(self):
         probabilities = super(BinaryClassificationMetric, self).probabilities
         if len(probabilities.shape) > 1 and probabilities.shape[1] > 1:
@@ -125,7 +143,7 @@ class BinaryClassificationMetric(ClassificationMetric):
         results = []
         for threshold in thresholds:
             predictions = np.where(probabilities >= threshold, 1, 0)
-            tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
+            tn, fp, fn, tp = confusion_matrix(labels, predictions, labels=[0, 1]).ravel()
             results.append((threshold, tn, fp, fn, tp))
 
         self._confusion_matrix = pd.DataFrame(results, columns=['threshold', 'tn', 'fp', 'fn', 'tp'])
