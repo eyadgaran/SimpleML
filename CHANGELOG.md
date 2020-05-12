@@ -1,6 +1,10 @@
 ## Change Log
 
 
+### 0.8.1 (2020-05-11)
+- Python 3.5 Dependencies
+- Binary Classification Metric patches
+
 ### 0.8.0 (2020-03-15)
 - EOL Python 2 support
 
