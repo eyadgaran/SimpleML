@@ -89,7 +89,7 @@ class BinaryClassificationMetric(ClassificationMetric):
     @property
     def labels(self):
         # extends parent label retrieval with a validation step for binary values
-        labels = super(BinaryClassificationMetric, self).labels 
+        labels = super(BinaryClassificationMetric, self).labels
         self.validate_labels(labels)
         return labels
 
