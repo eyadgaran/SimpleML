@@ -42,7 +42,7 @@ def load_tests(*args, **kwargs):
 
 
 def run_tests():
-    runner = unittest.TextTestRunner(verbosity=3)
+    runner = unittest.TextTestRunner(verbosity=2)
     runner.run(load_tests())
 
 
