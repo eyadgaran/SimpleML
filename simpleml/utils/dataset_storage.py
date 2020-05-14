@@ -29,7 +29,7 @@ class DatasetStorage(BaseSQLAlchemy):
         # https://www.sqlite.org/lang_attach.html
         if connection.dialect.name == 'postgresql':
             LOGGER.debug('Issuing create schema if not exists')
-            DDL('''CREATE SCHEMA IF NOT EXISTS "{}";'''.format(DATASET_SCHEMA))
+            DDL('''CREATE SCHEMA IF NOT EXISTS "{}";'''.format(DATASET_SCHEMA)).execute(connection)
 
         # elif connection.dialect.name == 'sqlite':
         #     raise NotImplementedError('SQLite does not support multiple schemas right now')
