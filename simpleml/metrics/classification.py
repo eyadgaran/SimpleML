@@ -23,6 +23,7 @@ from simpleml.metrics.base_metric import Metric
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 from simpleml.utils.errors import MetricError
 from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_score
+from abc import abstractmethod
 import numpy as np
 import pandas as pd
 
