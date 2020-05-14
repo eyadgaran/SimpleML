@@ -37,6 +37,7 @@ class ClassificationMetric(Metric):
     '''
     TODO: Figure out multiclass generalizations
     '''
+
     def __init__(self, dataset_split, **kwargs):
         '''
         :param dataset_split: string denoting which dataset split to use
@@ -141,13 +142,7 @@ class BinaryClassificationMetric(ClassificationMetric):
         probabilities = self.probabilities
         labels = self.labels
 
-        results = []
-        for threshold in thresholds:
-            predictions = np.where(probabilities >= threshold, 1, 0)
-            tn, fp, fn, tp = confusion_matrix(labels, predictions, labels=[0, 1]).ravel()
-            results.append((threshold, tn, fp, fn, tp))
-
-        self._confusion_matrix = pd.DataFrame(results, columns=['threshold', 'tn', 'fp', 'fn', 'tp'])
+        self._confusion_matrix = self._create_confusion_matrix(thresholds, probabilities, labels)
 
     @staticmethod
     def dedupe_curve(keys, values, maximize=True, round_places=3):
@@ -268,7 +263,7 @@ class BinaryClassificationMetric(ClassificationMetric):
         Convenience property for the Matthews Correlation Coefficient (TP*TN-FP*FN/((FP+TP)*(TP+FN)*(TN+FP)*(TN+FN))^0.5)
         '''
         return (self.confusion_matrix.tp * self.confusion_matrix.tn - self.confusion_matrix.fp * self.confusion_matrix.fn) /\
-            ((self.confusion_matrix.fp + self.confusion_matrix.tp) * (self.confusion_matrix.tp + self.confusion_matrix.fn) *\
+            ((self.confusion_matrix.fp + self.confusion_matrix.tp) * (self.confusion_matrix.tp + self.confusion_matrix.fn) *
              (self.confusion_matrix.tn + self.confusion_matrix.fp) * (self.confusion_matrix.tn + self.confusion_matrix.fn))**0.5
 
     @property
@@ -293,59 +288,73 @@ Pointwise metrics using only the predict scoring method
 (fixed operating point)
 '''
 
-class AccuracyMetric(BinaryClassificationMetric):
+
+class AggregateBinaryClassificationMetric(BinaryClassificationMetric):
+    @staticmethod
+    @abstractmethod
+    def _score(predictions, labels):
+        '''
+        Each aggregate needs to define a separate private method to actually
+        calculate the aggregate
+
+        Separated from the public score method to enable easier testing and
+        extension (values can be passed from non internal properties)
+        '''
+
+    def score(self):
+        '''
+        Main scoring method. Uses internal values and passes to class level
+        aggregation method
+        '''
+        predictions = self.predictions
+        labels = self.labels
+        self.values = {'agg': self._score(predictions, labels)}
+
+
+class AccuracyMetric(AggregateBinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'classification_accuracy'
         super(AccuracyMetric, self).__init__(**kwargs)
 
-    def score(self):
-        predictions = self.predictions
-        labels = self.labels
-        accuracy = accuracy_score(y_true=labels, y_pred=predictions)
+    @staticmethod
+    def _score(predictions, labels):
+        return accuracy_score(y_true=labels, y_pred=predictions)
 
-        self.values = {'agg': accuracy}
 
-class TprMetric(BinaryClassificationMetric):
+class TprMetric(AggregateBinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'tpr'
         super(TprMetric, self).__init__(**kwargs)
 
-    def score(self):
-        predictions = self.predictions
-        labels = self.labels
+    @staticmethod
+    def _score(predictions, labels):
         tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
-        tpr = float(tp) / (tp + fn)
+        return float(tp) / (tp + fn)
 
-        self.values = {'agg': tpr}
 
-class FprMetric(BinaryClassificationMetric):
+class FprMetric(AggregateBinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'fpr'
         super(FprMetric, self).__init__(**kwargs)
 
-    def score(self):
-        predictions = self.predictions
-        labels = self.labels
+    @staticmethod
+    def _score(predictions, labels):
         tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
-        fpr = float(fp) / (fp + tn)
+        return float(fp) / (fp + tn)
 
-        self.values = {'agg': fpr}
 
-class F1ScoreMetric(BinaryClassificationMetric):
+class F1ScoreMetric(AggregateBinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'f1_score'
         super(F1ScoreMetric, self).__init__(**kwargs)
 
-    def score(self):
-        predictions = self.predictions
-        labels = self.labels
-        f1_score_ = f1_score(y_true=labels, y_pred=predictions)
-
-        self.values = {'agg': f1_score_}
+    @staticmethod
+    def _score(predictions, labels):
+        return f1_score(y_true=labels, y_pred=predictions)
 
 
 '''
@@ -353,24 +362,29 @@ Aggregate metrics computed by evaluating over entire curves
 (Requires proba method)
 '''
 
+
 class RocAucMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'roc_auc'
         super(RocAucMetric, self).__init__(**kwargs)
 
+    @staticmethod
+    def _score(probabilities, labels):
+        return roc_auc_score(y_true=labels, y_score=probabilities)
+
     def score(self):
         probabilities = self.probabilities
         labels = self.labels
-        auc = roc_auc_score(y_true=labels, y_score=probabilities)
-
-        self.values = {'agg': auc}
+        self.values = {'agg': self._score(probabilities, labels)}
 
 ############################### CURVE METRICS ###############################
+
 
 '''
 Threshold Constrained Metrics
 '''
+
 
 class ThresholdTprMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -390,6 +404,7 @@ class ThresholdTnrMetric(BinaryClassificationMetric):
 
     def score(self):
         self.values = self.dedupe_curve(self.thresholds, self.true_negative_rate, maximize=True)
+
 
 class ThresholdFnrMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -524,6 +539,7 @@ class ThresholdMarkednessMetric(BinaryClassificationMetric):
 '''
 FPR Constrained Metrics
 '''
+
 
 class FprThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -679,6 +695,7 @@ class FprMarkednessMetric(BinaryClassificationMetric):
 TPR Constrained Metrics
 '''
 
+
 class TprThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -832,6 +849,7 @@ class TprMarkednessMetric(BinaryClassificationMetric):
 '''
 TNR Constrained Metrics
 '''
+
 
 class TnrThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -987,6 +1005,7 @@ class TnrMarkednessMetric(BinaryClassificationMetric):
 FNR Constrained Metrics
 '''
 
+
 class FnrThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -1137,10 +1156,10 @@ class FnrMarkednessMetric(BinaryClassificationMetric):
         self.values = self.dedupe_curve(self.false_negative_rate, self.markedness, maximize=True)
 
 
-
 '''
 FDR Constrained Metrics
 '''
+
 
 class FdrThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -1296,6 +1315,7 @@ class FdrMarkednessMetric(BinaryClassificationMetric):
 FOR Constrained Metrics
 '''
 
+
 class ForThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -1449,6 +1469,7 @@ class ForMarkednessMetric(BinaryClassificationMetric):
 '''
 PPV Constrained Metrics
 '''
+
 
 class PpvThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -1604,6 +1625,7 @@ class PpvMarkednessMetric(BinaryClassificationMetric):
 NPV Constrained Metrics
 '''
 
+
 class NpvThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -1758,6 +1780,7 @@ class NpvMarkednessMetric(BinaryClassificationMetric):
 Predicted Positive Rate Constrained Metrics
 '''
 
+
 class PredictedPositiveRateThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -1911,6 +1934,7 @@ class PredictedPositiveRateMarkednessMetric(BinaryClassificationMetric):
 '''
 Predicted Negative Rate Constrained Metrics
 '''
+
 
 class PredictedNegativeRateThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
