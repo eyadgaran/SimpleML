@@ -40,6 +40,7 @@ from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
 from simpleml.utils.errors import SimpleMLError
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
 import cloudpickle as pickle
+import pandas as pd
 from os.path import join, isfile
 from typing import Optional, Any, Union, Callable, Dict, Type
 from io import StringIO
@@ -436,6 +437,11 @@ class ExternalArtifactsMixin(object):
         return load_model(
             str(join(HDF5_FILESTORE_DIRECTORY, filepath)),
             custom_objects=KERAS_REGISTRY.registry)
+
+    @staticmethod
+    def load_sql(query, connection, **kwargs):
+        '''Helper method to read in sql data'''
+        return pd.read_sql_query(query, connection, **kwargs)
 
 
 @ExternalArtifactsMixin.Decorators.register_save_pattern(
