@@ -8,9 +8,14 @@ from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 import uuid
 from abc import abstractmethod
 from future.utils import with_metaclass
+from collections import defaultdict
+import logging
 
 
 __author__ = 'Elisha Yadgaran'
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, CustomHasherMixin)):
@@ -89,10 +94,14 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
     # Generic store and metadata for all child objects
     metadata_ = Column('metadata', JSON, default={})
 
+    # Internal Registry for all allowed external files
+    # Does not need to be persisted because it gets populated on import
+    # (and can therefore be changed between versions)
+    ARTIFACTS = {}
 
     def __init__(self, name=None, has_external_files=False,
                  author=None, project=None, version_description=None,
-                 save_method='disk_pickled', **kwargs):
+                 save_method=None, **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
@@ -101,6 +110,10 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         self.name = name
         self.has_external_files = has_external_files
         self.version_description = version_description
+
+        if has_external_files and save_method is None:
+            LOGGER.warn('Persistable has external artifacts, but has not specified any save methods. Defaulting to local `disk_pickled`')
+            save_method = defaultdict(['disk_pickled'])
 
         # Special place for SimpleML internal params
         # Think of as the config to initialize objects
@@ -159,7 +172,7 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         so can still call super(Persistable, self).save()
         '''
         if self.has_external_files:
-            self._save_external_files()
+            self.save_external_files()
 
         # Hash contents upon save
         self.hash_ = self._hash()
@@ -171,6 +184,14 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         self.metadata_['library_versions'] = INSTALLED_LIBRARIES
 
         super(Persistable, self).save()
+
+    def save_external_files(self):
+        '''
+        Unimplemented method to manage persistence of any external files. It is
+        expected that each subclass that contains external artifacts implements
+        this method with definitions of the artifacts it contains
+        '''
+        raise NotImplementedError
 
     def load(self, load_externals=True):
         '''
@@ -188,13 +209,21 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         self.__class__ = self._load_class()
 
         if self.has_external_files and load_externals:
-            self._load_external_files()
+            self.load_external_files()
 
         if self.has_external_files and not load_externals:
             self.unloaded_externals = True
 
         else:
             self.unloaded_externals = False
+
+    def load_external_files(self):
+        '''
+        Unimplemented method to manage loading of any external files. It is
+        expected that each subclass that contains external artifacts implements
+        this method with definitions of the artifacts it contains
+        '''
+        raise NotImplementedError
 
     def _load_class(self):
         '''
