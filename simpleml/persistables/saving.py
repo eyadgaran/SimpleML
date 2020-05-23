@@ -36,10 +36,12 @@ from simpleml.utils.binary_blob import BinaryBlob
 from simpleml.utils.dataset_storage import DatasetStorage, DATASET_SCHEMA
 from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
+from simpleml.utils.errors import SimpleMLError
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
 from abc import ABCMeta, abstractmethod
 import cloudpickle as pickle
 from os.path import join, isfile
+from typing import Optional, Any, Union
 
 # Python 2/3 compatibility
 try:
@@ -57,24 +59,105 @@ ONEDRIVE_CONNECTION = {}
 CLOUD_DRIVER = None
 
 
-class ExternalSaveMixin(with_metaclass(ABCMeta, object)):
     '''
-    Base Class with save methods
-    Subclasses should define the saving and loading patterns
     '''
-    @abstractmethod
-    def _save_external_files(self):
-        '''
-        Define pattern for saving external files
-        '''
 
-    @abstractmethod
-    def _load_external_files(self):
+class ExternalArtifactsMixin(object):
+    '''
+    Adds support for external artifacts. Contains decorators and internal registries
+    for:
+        - Artifacts
+        - Save methods
+        - Load methods
+
+    This base class contains only staticmethods for interacting with different
+    save location as well as the main methods for saving and loading using the
+    registries.
+
+    It is expected that this mixin will be used with a SimpleML persistable since
+    it depends on the `self.filepaths` attribute
+
+    The persistence paradigm:
+        filepaths = {
+            artifact_name: {
+                save_pattern: filepaths: Any
+            }
+        }
+
+    The nested notation is because any persistable can implement multiple save
+    options (with arbitrary priority) and arbitrary inputs. Simple serialization
+    could have only a single string location whereas complex artifacts might have
+    a list or map of filepaths
+    '''
+    # Keep a registry of the different save methods and the save/load functions
+    # that correspond. Avoiding a nested if/else block to allow subclasses to
+    # extend/overwrite without reimplementing
+    SAVE_METHODS = {}
+    LOAD_METHODS = {}
+
+    class Decorators(object):
+        '''
+        Private decorators that can be used for registering methods for loading
+        and saving.
+
+        Contained in an internal class to enable decoration within the class
+        (https://medium.com/@vadimpushtaev/decorator-inside-python-class-1e74d23107f6)
+        '''
+        @staticmethod
+        def save_method_decorator(save_method: Optional[str]=None):
+            def register(func):
+                # Register the function name to be loaded with getattr(self, attribute)
+                # Dont register the function directly to ensure the bound method gets
+                # Called when invoked
+                ExternalArtifactsMixin.SAVE_METHODS[save_method] = func.__name__
+                return func
+            return register
+
+        @staticmethod
+        def load_method_decorator(save_method: Optional[str]=None):
+            def register(func):
+                # Register the function name to be loaded with getattr(self, attribute)
+                # Dont register the function directly to ensure the bound method gets
+                # Called when invoked
+                ExternalArtifactsMixin.LOAD_METHODS[save_method] = func.__name__
+                return func
+            return register
+
+    def save_external_file(self,
+                           artifact_name: str, save_method: str,
+                           **save_params) -> None:
+        '''
+        Abstracted pattern to save an artifact via one of the registered
+        methods and update the filepaths location
+        '''
+        method = self.SAVE_METHODS.get(save_method, None)
+        if method is None:
+            raise SimpleMLError(f'No registered save pattern for {save_method}')
+        filepath_data = getattr(self, method)(**save_params)
+
+        # Update filepaths
+        self.filepaths[artifact_name][save_method] = filepath_data
+
+    def load_external_file(self, artifact_name: str, save_method: str) -> Any:
         '''
         Define pattern for loading external files
-
-        should set the self._external_file attribute
+        returns the object for assignment
+        Inverted operation from saving. Registered functions should take in
+        the same data (in the same form) of what is saved in the filepath
         '''
+        method = self.LOAD_METHODS.get(save_method, None)
+        if method is None:
+            raise SimpleMLError(f'No registered load pattern for {save_method}')
+
+        # Do some validation in case attempting to load unsaved artifact
+        artifact = self.filepaths.get('artifact_name', None)
+        if artifact is None:
+            raise SimpleMLError(f'No artifact saved for {artifact_name}')
+        if save_method not in artifact:
+            raise SimpleMLError(f'No artifact saved using save pattern {save_method} for {artifact_name}')
+
+        filepath_data = artifact[save_method]
+        return getattr(self, method)(filepath_data)
 
     @staticmethod
     def df_to_sql(engine, df, table, dtype=None, schema='public',
