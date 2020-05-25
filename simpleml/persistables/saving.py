@@ -32,6 +32,7 @@ Nomenclature -> Save Location : Save Format
 __author__ = 'Elisha Yadgaran'
 
 
+import pandas as pd
 from simpleml.utils.binary_blob import BinaryBlob
 from simpleml.utils.dataset_storage import DatasetStorage, DATASET_SCHEMA
 from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
@@ -41,7 +42,7 @@ from simpleml.persistables.meta_registry import KERAS_REGISTRY
 from abc import ABCMeta, abstractmethod
 import cloudpickle as pickle
 from os.path import join, isfile
-from typing import Optional, Any, Union
+from typing import Optional, Any, Union, Callable
 
 # Python 2/3 compatibility
 try:
@@ -88,12 +89,27 @@ class ExternalArtifactsMixin(object):
     options (with arbitrary priority) and arbitrary inputs. Simple serialization
     could have only a single string location whereas complex artifacts might have
     a list or map of filepaths
-    '''
-    # Keep a registry of the different save methods and the save/load functions
-    # that correspond. Avoiding a nested if/else block to allow subclasses to
-    # extend/overwrite without reimplementing
+
+    Keep a registry of the different save methods and the save/load functions
+    that correspond. Avoiding a nested if/else block to allow subclasses to
+    extend/overwrite without reimplementing
     SAVE_METHODS = {}
     LOAD_METHODS = {}
+    Cannot implement the above lines in the base class because it propagates
+    as a mutable object through different subclasses (ie: A -> B, A -> C,
+    registering on C will also exist on A and B)
+    Decorator is configured to create on first implementation and have all
+    subclasses automatically inherit
+
+    DEVELOPER BEWARE - Because of this behavior, combining multiple mixins (not
+    subclassing) will overwrite the registry and require re-decoration
+    ```
+    class CombinedMixin(Mixin1, Mixin2,...):
+    ```
+    This will follow standard python inheritance and use the `Mixin1.SAVE_METHODS`
+    as the resulting registry, discarding anything registered on any of the other
+    classes
+    '''
 
     class Decorators(object):
         '''
@@ -104,23 +120,45 @@ class ExternalArtifactsMixin(object):
         (https://medium.com/@vadimpushtaev/decorator-inside-python-class-1e74d23107f6)
         '''
         @staticmethod
-        def save_method_decorator(save_method: Optional[str]=None):
-            def register(func):
-                # Register the function name to be loaded with getattr(self, attribute)
-                # Dont register the function directly to ensure the bound method gets
-                # Called when invoked
-                ExternalArtifactsMixin.SAVE_METHODS[save_method] = func.__name__
-                return func
-            return register
+        def save_pattern_decorator(
+            save_pattern: Optional[str]=None,
+            save_method: Optional[str]=None,
+            load_method: Optional[str]=None,
+        ) -> Callable:
+            '''
+            Decorates a class to register the method(s) to use for saving and
+            loading for the particular pattern
 
-        @staticmethod
-        def load_method_decorator(save_method: Optional[str]=None):
-            def register(func):
+            :param save_pattern: the optional string denoting the pattern this
+                class implements (e.g. `disk_pickled`)
+            :param save_method: the optional string referencing the class method
+                that is used for saving (`getattr(self, save_method)(...)`)
+            :param load_method: the optional string referencing the class method
+                that is used for loading (`getattr(self, load_method)(...)`)
+            '''
+            def register(cls):
                 # Register the function name to be loaded with getattr(self, attribute)
                 # Dont register the function directly to ensure the bound method gets
                 # Called when invoked
-                ExternalArtifactsMixin.LOAD_METHODS[save_method] = func.__name__
-                return func
+                if not hasattr(cls, 'SAVE_METHODS'):
+                    cls.SAVE_METHODS = {}
+
+                if not hasattr(cls, 'LOAD_METHODS'):
+                    cls.LOAD_METHODS = {}
+
+                nonlocal save_pattern
+                if save_pattern is None:
+                    if not hasattr(cls, 'SAVE_PATTERN'):
+                        raise SimpleMLError('Cannot register save pattern without passing the `save_pattern` parameter or setting the class attribute `cls.SAVE_PATTERN`')
+                    save_pattern = cls.SAVE_PATTERN
+
+                if save_method is not None:
+                    cls.SAVE_METHODS[save_pattern] = save_method
+
+                if load_method is not None:
+                    cls.LOAD_METHODS[save_pattern] = load_method
+
+                return cls
             return register
 
     def save_external_file(self,
@@ -278,7 +316,9 @@ class ExternalArtifactsMixin(object):
             custom_objects=KERAS_REGISTRY.registry)
 
 
-class DatabaseTableSaveMixin(ExternalSaveMixin):
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_dataframe_to_table', load_method='_load_dataframe_from_table')
+class DatabaseTableSaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save dataframes to a database table
 
@@ -303,6 +343,8 @@ class DatabaseTableSaveMixin(ExternalSaveMixin):
         self._load_dataframe_from_table()
 
     def _save_dataframe_to_table(self):
+    SAVE_PATTERN = 'database_table'
+
         '''
         Shared method to save dataframe into a new table with name = GUID
         '''
@@ -327,7 +369,9 @@ class DatabaseTableSaveMixin(ExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class DatabasePickleSaveMixin(ExternalSaveMixin):
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_pickle_to_database', load_method='_load_pickle_from_database')
+class DatabasePickleSaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save binary objects to a database table
 
@@ -351,6 +395,8 @@ class DatabasePickleSaveMixin(ExternalSaveMixin):
         Unless overwritten only use this mixin's paradigm
         '''
         self._load_pickle_from_database()
+    SAVE_PATTERN = 'database_pickled'
+
 
     def _save_pickle_to_database(self):
         '''
@@ -379,7 +425,9 @@ class DatabasePickleSaveMixin(ExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class DiskPickleSaveMixin(ExternalSaveMixin):
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_pickle_to_disk', load_method='_load_pickle_from_disk')
+class DiskPickleSaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save objects to disk in pickled format
 
@@ -402,6 +450,7 @@ class DiskPickleSaveMixin(ExternalSaveMixin):
         Unless overwritten only use this mixin's paradigm
         '''
         self._load_pickle_from_disk()
+    SAVE_PATTERN = 'disk_pickled'
 
     def _save_pickle_to_disk(self):
         '''
@@ -422,7 +471,9 @@ class DiskPickleSaveMixin(ExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class DiskHDF5SaveMixin(ExternalSaveMixin):
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_hdf5_to_disk', load_method='_load_hdf5_from_disk')
+class DiskHDF5SaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save objects to disk in HDF5 format with hickle
 
@@ -465,7 +516,9 @@ class DiskHDF5SaveMixin(ExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class KerasDiskHDF5SaveMixin(ExternalSaveMixin):
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_keras_hdf5_to_disk', load_method='_load_keras_hdf5_from_disk')
+class KerasDiskHDF5SaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save objects to disk in Keras's HDF5 format
     Keras's internal persistence mechanism utilizes HDF5 and implements a custom pattern
@@ -489,6 +542,7 @@ class KerasDiskHDF5SaveMixin(ExternalSaveMixin):
         Unless overwritten only use this mixin's paradigm
         '''
         self._load_keras_hdf5_from_disk()
+    SAVE_PATTERN = 'disk_keras_hdf5'
 
     def _save_keras_hdf5_to_disk(self):
         '''
@@ -509,7 +563,7 @@ class KerasDiskHDF5SaveMixin(ExternalSaveMixin):
         self.unloaded_externals = False
 
 
-class OnedriveBase(ExternalSaveMixin):
+class OnedriveBase(ExternalArtifactsMixin):
     '''
     Base class to save/load objects to Microsoft Onedrive
     '''
@@ -666,6 +720,8 @@ class OnedriveBase(ExternalSaveMixin):
         self.client.item(id=bucket_id).children[filename].download(filepath)
 
 
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_pickle_to_onedrive', load_method='_load_pickle_from_onedrive')
 class OnedrivePickleSaveMixin(OnedriveBase):
     '''
     Mixin class to save objects to Microsoft Onedrive in pickled format
@@ -689,6 +745,7 @@ class OnedrivePickleSaveMixin(OnedriveBase):
         Unless overwritten only use this mixin's paradigm
         '''
         self._load_pickle_from_onedrive()
+    SAVE_PATTERN = 'onedrive_pickled'
 
     def _save_pickle_to_onedrive(self):
         '''
@@ -715,6 +772,8 @@ class OnedrivePickleSaveMixin(OnedriveBase):
         self.unloaded_externals = False
 
 
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_hdf5_to_onedrive', load_method='_load_hdf5_from_onedrive')
 class OnedriveHDF5SaveMixin(OnedriveBase):
     '''
     Mixin class to save objects to Microsoft Onedrive in HDF5 format
@@ -738,6 +797,7 @@ class OnedriveHDF5SaveMixin(OnedriveBase):
         Unless overwritten only use this mixin's paradigm
         '''
         self._load_hdf5_from_onedrive()
+    SAVE_PATTERN = 'onedrive_hdf5'
 
     def _save_hdf5_to_onedrive(self):
         '''
@@ -764,6 +824,8 @@ class OnedriveHDF5SaveMixin(OnedriveBase):
         self.unloaded_externals = False
 
 
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_keras_hdf5_to_onedrive', load_method='_load_keras_hdf5_from_onedrive')
 class OnedriveKerasHDF5SaveMixin(OnedriveBase):
     '''
     Mixin class to save objects to Microsoft Onedrive in Keras HDF5 format
@@ -787,6 +849,7 @@ class OnedriveKerasHDF5SaveMixin(OnedriveBase):
         Unless overwritten only use this mixin's paradigm
         '''
         self._load_keras_hdf5_from_onedrive()
+    SAVE_PATTERN = 'onedrive_keras_hdf5'
 
     def _save_keras_hdf5_to_onedrive(self):
         '''
@@ -813,7 +876,7 @@ class OnedriveKerasHDF5SaveMixin(OnedriveBase):
         self.unloaded_externals = False
 
 
-class CloudBase(ExternalSaveMixin):
+class CloudBase(ExternalArtifactsMixin):
     '''
     Base class to save/load objects via Apache Libcloud
 
@@ -931,6 +994,8 @@ class CloudBase(ExternalSaveMixin):
                                     delete_on_failure=True)
 
 
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_pickle_to_cloud', load_method='_load_pickle_from_cloud')
 class CloudPickleSaveMixin(CloudBase):
     '''
     Mixin class to save objects to Cloud in pickled format
@@ -954,6 +1019,7 @@ class CloudPickleSaveMixin(CloudBase):
         Unless overwritten only use this mixin's paradigm
         '''
         self._load_pickle_from_cloud()
+    SAVE_PATTERN = 'cloud_pickled'
 
     def _save_pickle_to_cloud(self):
         '''
@@ -980,6 +1046,8 @@ class CloudPickleSaveMixin(CloudBase):
         self.unloaded_externals = False
 
 
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_hdf5_to_cloud', load_method='_load_hdf5_from_cloud')
 class CloudHDF5SaveMixin(CloudBase):
     '''
     Mixin class to save objects to Cloud in HDF5 format
@@ -1003,6 +1071,7 @@ class CloudHDF5SaveMixin(CloudBase):
         Unless overwritten only use this mixin's paradigm
         '''
         self._load_hdf5_from_cloud()
+    SAVE_PATTERN = 'cloud_hdf5'
 
     def _save_hdf5_to_cloud(self):
         '''
@@ -1029,6 +1098,8 @@ class CloudHDF5SaveMixin(CloudBase):
         self.unloaded_externals = False
 
 
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_method='_save_keras_hdf5_to_cloud', load_method='_load_keras_hdf5_from_cloud')
 class CloudKerasHDF5SaveMixin(CloudBase):
     '''
     Mixin class to save objects to Cloud in Keras HDF5 format
@@ -1052,6 +1123,7 @@ class CloudKerasHDF5SaveMixin(CloudBase):
         Unless overwritten only use this mixin's paradigm
         '''
         self._load_keras_hdf5_from_cloud()
+    SAVE_PATTERN = 'cloud_keras_hdf5'
 
     def _save_keras_hdf5_to_cloud(self):
         '''
@@ -1078,80 +1150,35 @@ class CloudKerasHDF5SaveMixin(CloudBase):
         self.unloaded_externals = False
 
 
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='cloud_keras_hdf5', save_method='_save_keras_hdf5_to_cloud', load_method='_load_keras_hdf5_from_cloud')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='cloud_hdf5', save_method='_save_hdf5_to_cloud', load_method='_load_hdf5_from_cloud')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='cloud_pickled', save_method='_save_pickle_to_cloud', load_method='_load_pickle_from_cloud')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='onedrive_keras_hdf5', save_method='_save_keras_hdf5_to_onedrive', load_method='_load_keras_hdf5_from_onedrive')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='onedrive_hdf5', save_method='_save_hdf5_to_onedrive', load_method='_load_hdf5_from_onedrive')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='onedrive_pickled', save_method='_save_pickle_to_onedrive', load_method='_load_pickle_from_onedrive')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='disk_keras_hdf5', save_method='_save_keras_hdf5_to_disk', load_method='_load_keras_hdf5_from_disk')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='disk_hdf5', save_method='_save_hdf5_to_disk', load_method='_load_hdf5_from_disk')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='disk_pickled', save_method='_save_pickle_to_disk', load_method='_load_pickle_from_disk')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='database_pickled', save_method='_save_pickle_to_database', load_method='_load_pickle_from_database')
+@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+    save_pattern='database_table', save_method='_save_dataframe_to_table', load_method='_load_dataframe_from_table')
 class AllSaveMixin(DatabaseTableSaveMixin, DatabasePickleSaveMixin,
                    DiskPickleSaveMixin, DiskHDF5SaveMixin, KerasDiskHDF5SaveMixin,
                    OnedrivePickleSaveMixin, OnedriveHDF5SaveMixin, OnedriveKerasHDF5SaveMixin,
                    CloudPickleSaveMixin, CloudHDF5SaveMixin, CloudKerasHDF5SaveMixin):
-    def _save_external_files(self):
-        '''
-        Wrapper method around save mixins for different persistence patterns
-        '''
-        save_method = self.state['save_method']
-
-        if save_method == 'database_table':
-            self._save_dataframe_to_table()
-        elif save_method == 'database_pickled':
-            self._save_pickle_to_database()
-        elif save_method == 'disk_pickled':
-            self._save_pickle_to_disk()
-        elif save_method == 'disk_hdf5':
-            self._save_hdf5_to_disk()
-        elif save_method == 'disk_keras_hdf5':
-            self._save_keras_hdf5_to_disk()
-        elif save_method == 'cloud_pickled':
-            cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == ONEDRIVE_SECTION:
-                self._save_pickle_to_onedrive()
-            else:
-                self._save_pickle_to_cloud()
-        elif save_method == 'cloud_hdf5':
-            cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == ONEDRIVE_SECTION:
-                self._save_hdf5_to_onedrive()
-            else:
-                self._save_hdf5_to_cloud()
-        elif save_method == 'cloud_keras_hdf5':
-            cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == ONEDRIVE_SECTION:
-                self._save_keras_hdf5_to_onedrive()
-            else:
-                self._save_keras_hdf5_to_cloud()
-        else:
-            raise ValueError('Unsupported Save Method: {}'.format(save_method))
-
-    def _load_external_files(self):
-        '''
-        Wrapper method around save mixins for different persistence patterns
-        '''
-        save_method = self.state['save_method']
-
-        if save_method == 'database_table':
-            self._load_dataframe_from_table()
-        elif save_method == 'database_pickled':
-            self._load_pickle_from_database()
-        elif save_method == 'disk_pickled':
-            self._load_pickle_from_disk()
-        elif save_method == 'disk_hdf5':
-            self._load_hdf5_from_disk()
-        elif save_method == 'disk_keras_hdf5':
-            self._load_keras_hdf5_from_disk()
-        elif save_method == 'cloud_pickled':
-            cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == ONEDRIVE_SECTION:
-                self._load_pickle_from_onedrive()
-            else:
-                self._load_pickle_from_cloud()
-        elif save_method == 'cloud_hdf5':
-            cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == ONEDRIVE_SECTION:
-                self._load_hdf5_from_onedrive()
-            else:
-                self._load_hdf5_from_cloud()
-        elif save_method == 'cloud_keras_hdf5':
-            cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
-            if cloud_section == ONEDRIVE_SECTION:
-                self._load_keras_hdf5_from_onedrive()
-            else:
-                self._load_keras_hdf5_from_cloud()
-        else:
-            raise ValueError('Unsupported Load Method: {}'.format(save_method))
+    '''
+    Convenience container to assemble all the save patterns into a single class
+    '''
+    SAVE_PATTERN = None
+    SAVE_METHODS = {}
+    LOAD_METHODS = {}
