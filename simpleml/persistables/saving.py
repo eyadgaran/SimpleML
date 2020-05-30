@@ -39,10 +39,9 @@ from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
 from simpleml.utils.errors import SimpleMLError
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
-from abc import ABCMeta, abstractmethod
 import cloudpickle as pickle
 from os.path import join, isfile
-from typing import Optional, Any, Union, Callable
+from typing import Optional, Any, Union, Callable, Dict
 
 # Python 2/3 compatibility
 try:
@@ -59,9 +58,6 @@ ONEDRIVE_SECTION = 'onedrive'
 ONEDRIVE_CONNECTION = {}
 CLOUD_DRIVER = None
 
-
-    '''
-    '''
 
 class ExternalArtifactsMixin(object):
     '''
@@ -198,8 +194,9 @@ class ExternalArtifactsMixin(object):
         return getattr(self, method)(filepath_data)
 
     @staticmethod
-    def df_to_sql(engine, df, table, dtype=None, schema='public',
-                  if_exists='replace', sep='|', encoding='utf8', index=False):
+    def df_to_sql(engine, df: pd.DataFrame, table: str, dtype: Optional[Dict[str, str]]=None,
+                  schema: str='public', if_exists: str='replace',
+                  sep: str='|', encoding: str='utf8', index: bool=False) -> None:
         '''
         Utility to bulk insert pandas dataframe via `copy from`
 
@@ -242,22 +239,35 @@ class ExternalArtifactsMixin(object):
         connection.close()
 
     @staticmethod
-    def pickle_object(obj, filepath=None):
+    def pickle_object(obj: Any, filepath: Optional[str]=None, overwrite: bool=True) -> Union[str, None]:
         '''
         Pickles an object to a string or to the filesystem. Assumes that a NULL
         filepath expects a serialized string returned
 
         Prepends path to SimpleML Pickle directory before saving. ONLY pass in
         a relative filepath from that location
+
+        :param overwrite: Boolean indicating whether to first check if pickled
+            object is already serialized. Defaults to not checking, but can be
+            leverage by implementations that want the same artifact in multiple
+            places
         '''
         if filepath is None:  # Return string instead of saving to file
             return pickle.dumps(obj)  # , protocol=pickle.HIGHEST_PROTOCOL)
 
-        with open(join(PICKLED_FILESTORE_DIRECTORY, filepath), 'wb') as pickled_file:
+        # Append the filepath to the pickle storage directory
+        filepath = join(PICKLED_FILESTORE_DIRECTORY, filepath)
+
+        if not overwrite:
+            # Check if file was already serialized
+            if isfile(filepath):
+                return
+
+        with open(filepath, 'wb') as pickled_file:
             pickle.dump(obj, pickled_file)  # , protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load_pickled_object(filepath, stream=False):
+    def load_pickled_object(filepath: str, stream: bool=False) -> Any:
         '''
         Loads an object from a serialized string or filesystem. When stream is
         True, it tries to load the file directly from the string.
@@ -272,18 +282,28 @@ class ExternalArtifactsMixin(object):
             return pickle.load(pickled_file)
 
     @staticmethod
-    def hickle_object(obj, filepath):
+    def hickle_object(obj: Any, filepath: str, overwrite: bool=True) -> None:
         '''
         Serializes an object to the filesystem in HDF5 format.
 
         Prepends path to SimpleML HDF5 directory before saving. ONLY pass in
         a relative filepath from that location
+
+        :param overwrite: Boolean indicating whether to first check if HDF5
+            object is already serialized. Defaults to not checking, but can be
+            leverage by implementations that want the same artifact in multiple
+            places
         '''
+        # Append the filepath to the HDF5 storage directory
         hickle_file = join(HDF5_FILESTORE_DIRECTORY, filepath)
+        if not overwrite:
+            # Check if file was already serialized
+            if isfile(hickle_file):
+                return
         hickle.dump(obj, hickle_file, compression='gzip', compression_opts=9)
 
     @staticmethod
-    def load_hickled_object(filepath):
+    def load_hickled_object(filepath: str) -> Any:
         '''
         Loads an object from the filesystem.
 
@@ -294,17 +314,28 @@ class ExternalArtifactsMixin(object):
         return hickle.load(hickle_file)
 
     @staticmethod
-    def save_keras_object(obj, filepath):
+    def save_keras_object(obj: Any, filepath: str, overwrite: bool=True) -> None:
         '''
         Serializes an object to the filesystem in Keras HDF5 format.
 
         Prepends path to SimpleML HDF5 directory before saving. ONLY pass in
         a relative filepath from that location
+
+        :param overwrite: Boolean indicating whether to first check if HDF5
+            object is already serialized. Defaults to not checking, but can be
+            leverage by implementations that want the same artifact in multiple
+            places
         '''
-        obj.save(join(HDF5_FILESTORE_DIRECTORY, filepath))
+        # Append the filepath to the HDF5 storage directory
+        hdf5_file = join(HDF5_FILESTORE_DIRECTORY, filepath)
+        if not overwrite:
+            # Check if file was already serialized
+            if isfile(hdf5_file):
+                return
+        obj.save(hdf5_file)
 
     @staticmethod
-    def load_keras_object(filepath):
+    def load_keras_object(filepath: str) -> Any:
         '''
         Loads a Keras object from the filesystem.
 
