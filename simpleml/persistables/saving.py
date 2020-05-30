@@ -361,43 +361,34 @@ class DatabaseTableSaveMixin(ExternalArtifactsMixin):
     Sets the following attributes:
         - self.filepaths
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_dataframe_to_table()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_dataframe_from_table()
-
-    def _save_dataframe_to_table(self):
     SAVE_PATTERN = 'database_table'
 
+    @classmethod
+    def _save_dataframe_to_table(cls, obj: pd.DataFrame, persistable_id: str,
+                                 schema: str=DATASET_SCHEMA, **kwargs) -> Dict[str, str]:
         '''
         Shared method to save dataframe into a new table with name = GUID
+        Updates filepath for the artifact with the schema and table
         '''
         engine = DatasetStorage.metadata.bind
-        self.df_to_sql(engine, self.dataframe,
-                       str(self.id), schema=DATASET_SCHEMA)
+        cls.df_to_sql(engine, df=obj, table=persistable_id, schema=schema)
 
-        self.filepaths = {"database_table": [(DATASET_SCHEMA, str(self.id))]}
+        return {'schema': schema, 'table': persistable_id}
 
-    def _load_dataframe_from_table(self):
+    @classmethod
+    def _load_dataframe_from_table(cls, filepath_data: Dict[str, str], **kwargs) -> pd.DataFrame:
         '''
         Shared method to load dataframe from database
         '''
-        schema, tablename = self.filepaths['database_table'][0]
+        schema = filepath_data['schema']
+        table = filepath_data['table']
         engine = DatasetStorage.metadata.bind
-        self._external_file = self.load_sql(
-            'select * from "{}"."{}"'.format(schema, tablename),
+        df = cls.load_sql(
+            'select * from "{}"."{}"'.format(schema, table),
             engine
         )
 
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        return df
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
@@ -415,45 +406,32 @@ class DatabasePickleSaveMixin(ExternalArtifactsMixin):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_pickle_to_database()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_pickle_from_database()
     SAVE_PATTERN = 'database_pickled'
 
-
-    def _save_pickle_to_database(self):
+    @classmethod
+    def _save_pickle_to_database(cls, obj: Any, persistable_type: str,
+                                 persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files into binary schema
 
         Hardcoded to only store pickled objects in database so overwrite to use
         other storage mechanism
         '''
-        pickled_file = self.pickle_object(self._external_file, as_stream=True)
+        pickled_stream = cls.pickle_object(obj, as_stream=True)
         pickled_record = BinaryBlob.create(
-            object_type=self.object_type, object_id=self.id, binary_blob=pickled_file)
-        self.filepaths = {"database_pickled": [str(pickled_record.id)]}
+            object_type=persistable_type, object_id=persistable_id, binary_blob=pickled_stream)
+        return str(pickled_record.id)
 
-    def _load_pickle_from_database(self):
+    @classmethod
+    def _load_pickle_from_database(cls, primary_key: str, **kwargs) -> Any:
         '''
         Shared method to load files from database
 
         Hardcoded to only pull from pickled so overwrite to use
         other storage mechanism
         '''
-        pickled_id = self.filepaths['database_pickled'][0]
-        pickled_file = BinaryBlob.find(pickled_id).binary_blob
-        self._external_file = self.load_pickled_object(pickled_file, stream=True)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        pickled_stream = BinaryBlob.find(primary_key).binary_blob
+        return cls.load_pickled_object(pickled_stream, stream=True)
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
@@ -470,36 +448,23 @@ class DiskPickleSaveMixin(ExternalArtifactsMixin):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_pickle_to_disk()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_pickle_from_disk()
     SAVE_PATTERN = 'disk_pickled'
 
-    def _save_pickle_to_disk(self):
+    @classmethod
+    def _save_pickle_to_disk(cls, obj: Any, persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files to disk in pickled format
         '''
-        filepath = str(self.id) + '.pkl'
-        self.pickle_object(self._external_file, filepath)
-        self.filepaths = {"disk_pickled": [filepath]}
+        filename = f'{persistable_id}.pkl'
+        cls.pickle_object(obj, filename)
+        return filename
 
-    def _load_pickle_from_disk(self):
+    @classmethod
+    def _load_pickle_from_disk(cls, filepath, **kwargs) -> Any:
         '''
         Shared method to load files from disk in pickled format
         '''
-        filepath = self.filepaths['disk_pickled'][0]
-        self._external_file = self.load_pickled_object(filepath)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        return cls.load_pickled_object(filepath)
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
@@ -516,35 +481,23 @@ class DiskHDF5SaveMixin(ExternalArtifactsMixin):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_hdf5_to_disk()
+    SAVE_PATTERN = 'disk_hdf5'
 
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_hdf5_from_disk()
-
-    def _save_hdf5_to_disk(self):
+    @classmethod
+    def _save_hdf5_to_disk(cls, obj: Any, persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files to disk in hickle's HDF5 format
         '''
-        filepath = str(self.id) + '.h5'
-        self.hickle_object(self._external_file, filepath)
-        self.filepaths = {"disk_hdf5": [filepath]}
+        filename = f'{persistable_id}.h5'
+        cls.hickle_object(obj, filename)
+        return filename
 
-    def _load_hdf5_from_disk(self):
+    @classmethod
+    def _load_hdf5_from_disk(cls, filename: str, **kwargs) -> Any:
         '''
         Shared method to load files from disk in hickle's HDF5 format
         '''
-        filepath = self.filepaths['disk_hdf5'][0]
-        self._external_file = self.load_hickled_object(filepath)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        return cls.load_hickled_object(filename)
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
@@ -562,36 +515,23 @@ class KerasDiskHDF5SaveMixin(ExternalArtifactsMixin):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_keras_hdf5_to_disk()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_keras_hdf5_from_disk()
     SAVE_PATTERN = 'disk_keras_hdf5'
 
-    def _save_keras_hdf5_to_disk(self):
+    @classmethod
+    def _save_keras_hdf5_to_disk(cls, obj: Any, persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files to disk in Keras's HDF5 format
         '''
-        filename = str(self.id) + '.h5'
-        self.save_keras_object(self._external_file, filename)
-        self.filepaths = {"disk_keras_hdf5": [filename]}
+        filename = f'{persistable_id}.h5'
+        cls.save_keras_object(obj, filename)
+        return filename
 
-    def _load_keras_hdf5_from_disk(self):
+    @classmethod
+    def _load_keras_hdf5_from_disk(cls, filename: str, **kwargs) -> Any:
         '''
         Shared method to load files from disk in Keras's HDF5 format
         '''
-        filepath = self.filepaths['disk_keras_hdf5'][0]
-        self._external_file = self.load_keras_object(filepath)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        return cls.load_keras_object(filename)
 
 
 class OnedriveBase(ExternalArtifactsMixin):
@@ -765,42 +705,29 @@ class OnedrivePickleSaveMixin(OnedriveBase):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_pickle_to_onedrive()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_pickle_from_onedrive()
     SAVE_PATTERN = 'onedrive_pickled'
 
-    def _save_pickle_to_onedrive(self):
+    @classmethod
+    def _save_pickle_to_onedrive(cls, obj: Any, persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files to disk in pickled format
         Then upload pickled file from disk to onedrive
         '''
-        filename = str(self.id) + '.pkl'
+        filename = f'{persistable_id}.pkl'
         bucket = 'pickle'
-        self.pickle_object(self._external_file, filename)
-        self.upload_to_onedrive(bucket, filename)
-        self.filepaths = {"cloud_pickled": [filename]}
+        cls.pickle_object(obj, filename)
+        cls.upload_to_onedrive(bucket, filename)
+        return filename
 
-    def _load_pickle_from_onedrive(self):
+    @classmethod
+    def _load_pickle_from_onedrive(cls, filename: str, **kwargs) -> Any:
         '''
         Download pickled file from onedrive to disk
         Then load files from disk in pickled format
         '''
-        filename = self.filepaths['cloud_pickled'][0]
         bucket = 'pickle'
-        self.download_from_onedrive(bucket, filename)
-        self._external_file = self.load_pickled_object(filename)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        cls.download_from_onedrive(bucket, filename)
+        return cls.load_pickled_object(filename)
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
@@ -817,42 +744,29 @@ class OnedriveHDF5SaveMixin(OnedriveBase):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_hdf5_to_onedrive()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_hdf5_from_onedrive()
     SAVE_PATTERN = 'onedrive_hdf5'
 
-    def _save_hdf5_to_onedrive(self):
+    @classmethod
+    def _save_hdf5_to_onedrive(cls, obj: Any, persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files to disk in HDF5 format
         Then upload HDF5 file from disk to onedrive
         '''
-        filename = str(self.id) + '.h5'
+        filename = f'{persistable_id}.h5'
         bucket = 'hdf5'
-        self.hickle_object(self._external_file, filename)
-        self.upload_to_onedrive(bucket, filename)
-        self.filepaths = {"cloud_hdf5": [filename]}
+        cls.hickle_object(obj, filename)
+        cls.upload_to_onedrive(bucket, filename)
+        return filename
 
-    def _load_hdf5_from_onedrive(self):
+    @classmethod
+    def _load_hdf5_from_onedrive(cls, filename: str, **kwargs) -> Any:
         '''
         Download HDF5 file from onedrive to disk
         Then load files from disk in HDF5 format
         '''
-        filename = self.filepaths['cloud_hdf5'][0]
         bucket = 'hdf5'
-        self.download_from_onedrive(bucket, filename)
-        self._external_file = self.load_hickled_object(filename)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        cls.download_from_onedrive(bucket, filename)
+        return cls.load_hickled_object(filename)
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
@@ -869,42 +783,29 @@ class OnedriveKerasHDF5SaveMixin(OnedriveBase):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_keras_hdf5_to_onedrive()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_keras_hdf5_from_onedrive()
     SAVE_PATTERN = 'onedrive_keras_hdf5'
 
-    def _save_keras_hdf5_to_onedrive(self):
+    @classmethod
+    def _save_keras_hdf5_to_onedrive(cls, obj: Any, persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files to disk in Keras HDF5 format
         Then upload HDF5 file from disk to onedrive
         '''
-        filename = str(self.id) + '.h5'
+        filename = f'{persistable_id}.h5'
         bucket = 'hdf5'
-        self.save_keras_object(self._external_file, filename)
-        self.upload_to_onedrive(bucket, filename)
-        self.filepaths = {"cloud_keras_hdf5": [filename]}
+        cls.save_keras_object(obj, filename)
+        cls.upload_to_onedrive(bucket, filename)
+        return filename
 
-    def _load_keras_hdf5_from_onedrive(self):
+    @classmethod
+    def _load_keras_hdf5_from_onedrive(cls, filename: str, **kwargs) -> Any:
         '''
         Download HDF5 file from onedrive to disk
         Then load files from disk in HDF5 format
         '''
-        filename = self.filepaths['cloud_keras_hdf5'][0]
         bucket = 'hdf5'
-        self.download_from_onedrive(bucket, filename)
-        self._external_file = self.load_keras_object(filename)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        cls.download_from_onedrive(bucket, filename)
+        return cls.load_keras_object(filename)
 
 
 class CloudBase(ExternalArtifactsMixin):
@@ -1039,42 +940,29 @@ class CloudPickleSaveMixin(CloudBase):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_pickle_to_cloud()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_pickle_from_cloud()
     SAVE_PATTERN = 'cloud_pickled'
 
-    def _save_pickle_to_cloud(self):
+    @classmethod
+    def _save_pickle_to_cloud(cls, obj: Any, persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files to disk in pickled format
         Then upload pickled file from disk to cloud
         '''
-        filename = str(self.id) + '.pkl'
+        filename = f'{persistable_id}.pkl'
         folder = 'pickle'
-        self.pickle_object(self._external_file, filename)
-        self.upload_to_cloud(folder, filename)
-        self.filepaths = {"cloud_pickled": [filename]}
+        cls.pickle_object(obj, filename)
+        cls.upload_to_cloud(folder, filename)
+        return filename
 
-    def _load_pickle_from_cloud(self):
+    @classmethod
+    def _load_pickle_from_cloud(cls, filename: str, **kwargs) -> Any:
         '''
         Download pickled file from cloud to disk
         Then load files from disk in pickled format
         '''
-        filename = self.filepaths['cloud_pickled'][0]
         folder = 'pickle'
-        self.download_from_cloud(folder, filename)
-        self._external_file = self.load_pickled_object(filename)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        cls.download_from_cloud(folder, filename)
+        return cls.load_pickled_object(filename)
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
@@ -1091,42 +979,29 @@ class CloudHDF5SaveMixin(CloudBase):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_hdf5_to_cloud()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_hdf5_from_cloud()
     SAVE_PATTERN = 'cloud_hdf5'
 
-    def _save_hdf5_to_cloud(self):
+    @classmethod
+    def _save_hdf5_to_cloud(cls, obj: Any, persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files to disk in HDF5 format
         Then upload HDF5 file from disk to cloud
         '''
-        filename = str(self.id) + '.h5'
+        filename = f'{persistable_id}.h5'
         folder = 'hdf5'
-        self.hickle_object(self._external_file, filename)
-        self.upload_to_cloud(folder, filename)
-        self.filepaths = {"cloud_hdf5": [filename]}
+        cls.hickle_object(obj, filename)
+        cls.upload_to_cloud(folder, filename)
+        return filename
 
-    def _load_hdf5_from_cloud(self):
+    @classmethod
+    def _load_hdf5_from_cloud(cls, filename: str, **kwargs) -> Any:
         '''
         Download HDF5 file from cloud to disk
         Then load files from disk in HDF5 format
         '''
-        filename = self.filepaths['cloud_hdf5'][0]
         folder = 'hdf5'
-        self.download_from_cloud(folder, filename)
-        self._external_file = self.load_hickled_object(filename)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        cls.download_from_cloud(folder, filename)
+        return cls.load_hickled_object(filename)
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
@@ -1143,42 +1018,29 @@ class CloudKerasHDF5SaveMixin(CloudBase):
         - self.filepaths
         - self.unloaded_externals
     '''
-    def _save_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._save_keras_hdf5_to_cloud()
-
-    def _load_external_files(self):
-        '''
-        Unless overwritten only use this mixin's paradigm
-        '''
-        self._load_keras_hdf5_from_cloud()
     SAVE_PATTERN = 'cloud_keras_hdf5'
 
-    def _save_keras_hdf5_to_cloud(self):
+    @classmethod
+    def _save_keras_hdf5_to_cloud(cls, obj: Any, persistable_id: str, **kwargs) -> str:
         '''
         Shared method to save files to disk in Keras HDF5 format
         Then upload HDF5 file from disk to cloud
         '''
-        filename = str(self.id) + '.h5'
+        filename = f'{persistable_id}.h5'
         folder = 'hdf5'
-        self.save_keras_object(self._external_file, filename)
-        self.upload_to_cloud(folder, filename)
-        self.filepaths = {"cloud_keras_hdf5": [filename]}
+        cls.save_keras_object(obj, filename)
+        cls.upload_to_cloud(folder, filename)
+        return filename
 
-    def _load_keras_hdf5_from_cloud(self):
+    @classmethod
+    def _load_keras_hdf5_from_cloud(cls, filename: str, **kwargs) -> Any:
         '''
         Download HDF5 file from cloud to disk
         Then load files from disk in HDF5 format
         '''
-        filename = self.filepaths['cloud_keras_hdf5'][0]
         folder = 'hdf5'
-        self.download_from_cloud(folder, filename)
-        self._external_file = self.load_keras_object(filename)
-
-        # Indicate externals were loaded
-        self.unloaded_externals = False
+        cls.download_from_cloud(folder, filename)
+        return cls.load_keras_object(filename)
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
