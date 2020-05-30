@@ -352,14 +352,6 @@ class ExternalArtifactsMixin(object):
 class DatabaseTableSaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save dataframes to a database table
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-        - self.dataframe
-
-    Sets the following attributes:
-        - self.filepaths
     '''
     SAVE_PATTERN = 'database_table'
 
@@ -396,15 +388,6 @@ class DatabaseTableSaveMixin(ExternalArtifactsMixin):
 class DatabasePickleSaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save binary objects to a database table
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-        - self.object_type
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'database_pickled'
 
@@ -439,14 +422,6 @@ class DatabasePickleSaveMixin(ExternalArtifactsMixin):
 class DiskPickleSaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save objects to disk in pickled format
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'disk_pickled'
 
@@ -472,14 +447,6 @@ class DiskPickleSaveMixin(ExternalArtifactsMixin):
 class DiskHDF5SaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save objects to disk in HDF5 format with hickle
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'disk_hdf5'
 
@@ -506,14 +473,6 @@ class KerasDiskHDF5SaveMixin(ExternalArtifactsMixin):
     '''
     Mixin class to save objects to disk in Keras's HDF5 format
     Keras's internal persistence mechanism utilizes HDF5 and implements a custom pattern
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'disk_keras_hdf5'
 
@@ -696,14 +655,6 @@ class OnedriveBase(ExternalArtifactsMixin):
 class OnedrivePickleSaveMixin(OnedriveBase):
     '''
     Mixin class to save objects to Microsoft Onedrive in pickled format
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'onedrive_pickled'
 
@@ -735,14 +686,6 @@ class OnedrivePickleSaveMixin(OnedriveBase):
 class OnedriveHDF5SaveMixin(OnedriveBase):
     '''
     Mixin class to save objects to Microsoft Onedrive in HDF5 format
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'onedrive_hdf5'
 
@@ -774,14 +717,6 @@ class OnedriveHDF5SaveMixin(OnedriveBase):
 class OnedriveKerasHDF5SaveMixin(OnedriveBase):
     '''
     Mixin class to save objects to Microsoft Onedrive in Keras HDF5 format
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'onedrive_keras_hdf5'
 
@@ -931,14 +866,6 @@ class CloudBase(ExternalArtifactsMixin):
 class CloudPickleSaveMixin(CloudBase):
     '''
     Mixin class to save objects to Cloud in pickled format
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'cloud_pickled'
 
@@ -970,14 +897,6 @@ class CloudPickleSaveMixin(CloudBase):
 class CloudHDF5SaveMixin(CloudBase):
     '''
     Mixin class to save objects to Cloud in HDF5 format
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'cloud_hdf5'
 
@@ -1009,14 +928,6 @@ class CloudHDF5SaveMixin(CloudBase):
 class CloudKerasHDF5SaveMixin(CloudBase):
     '''
     Mixin class to save objects to Cloud in Keras HDF5 format
-
-    Expects the following available attributes:
-        - self._external_file
-        - self.id
-
-    Sets the following attributes:
-        - self.filepaths
-        - self.unloaded_externals
     '''
     SAVE_PATTERN = 'cloud_keras_hdf5'
 
