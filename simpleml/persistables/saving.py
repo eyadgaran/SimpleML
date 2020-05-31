@@ -41,14 +41,8 @@ from simpleml.utils.errors import SimpleMLError
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
 import cloudpickle as pickle
 from os.path import join, isfile
-from typing import Optional, Any, Union, Callable, Dict
-
-# Python 2/3 compatibility
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
-from future.utils import with_metaclass
+from typing import Optional, Any, Union, Callable, Dict, Type
+from io import StringIO
 
 # Import optional dependencies
 from simpleml.imports import load_model, hickle, onedrivesdk
@@ -117,9 +111,9 @@ class ExternalArtifactsMixin(object):
         '''
         @staticmethod
         def save_pattern_decorator(
-            save_pattern: Optional[str]=None,
-            save_method: Optional[str]=None,
-            load_method: Optional[str]=None,
+            save_pattern: Optional[str] = None,
+            save_method: Optional[str] = None,
+            load_method: Optional[str] = None,
         ) -> Callable:
             '''
             Decorates a class to register the method(s) to use for saving and
@@ -132,7 +126,7 @@ class ExternalArtifactsMixin(object):
             :param load_method: the optional string referencing the class method
                 that is used for loading (`getattr(self, load_method)(...)`)
             '''
-            def register(cls):
+            def register(cls: Type) -> Type:
                 # Register the function name to be loaded with getattr(self, attribute)
                 # Dont register the function directly to ensure the bound method gets
                 # Called when invoked
@@ -194,9 +188,11 @@ class ExternalArtifactsMixin(object):
         return getattr(self, method)(filepath_data)
 
     @staticmethod
-    def df_to_sql(engine, df: pd.DataFrame, table: str, dtype: Optional[Dict[str, str]]=None,
-                  schema: str='public', if_exists: str='replace',
-                  sep: str='|', encoding: str='utf8', index: bool=False) -> None:
+    def df_to_sql(engine, df: pd.DataFrame, table: str,
+                  dtype: Optional[Dict[str, str]] = None,
+                  schema: str = 'public', if_exists: str = 'replace',
+                  sep: str = '|', encoding: str = 'utf8',
+                  index: bool = False) -> None:
         '''
         Utility to bulk insert pandas dataframe via `copy from`
 
@@ -267,7 +263,7 @@ class ExternalArtifactsMixin(object):
             pickle.dump(obj, pickled_file)  # , protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def load_pickled_object(filepath: str, stream: bool=False) -> Any:
+    def load_pickled_object(filepath: str, stream: bool = False) -> Any:
         '''
         Loads an object from a serialized string or filesystem. When stream is
         True, it tries to load the file directly from the string.
@@ -282,7 +278,7 @@ class ExternalArtifactsMixin(object):
             return pickle.load(pickled_file)
 
     @staticmethod
-    def hickle_object(obj: Any, filepath: str, overwrite: bool=True) -> None:
+    def hickle_object(obj: Any, filepath: str, overwrite: bool = True) -> None:
         '''
         Serializes an object to the filesystem in HDF5 format.
 
@@ -314,7 +310,7 @@ class ExternalArtifactsMixin(object):
         return hickle.load(hickle_file)
 
     @staticmethod
-    def save_keras_object(obj: Any, filepath: str, overwrite: bool=True) -> None:
+    def save_keras_object(obj: Any, filepath: str, overwrite: bool = True) -> None:
         '''
         Serializes an object to the filesystem in Keras HDF5 format.
 
@@ -357,7 +353,8 @@ class DatabaseTableSaveMixin(ExternalArtifactsMixin):
 
     @classmethod
     def _save_dataframe_to_table(cls, obj: pd.DataFrame, persistable_id: str,
-                                 schema: str=DATASET_SCHEMA, **kwargs) -> Dict[str, str]:
+                                 schema: str = DATASET_SCHEMA,
+                                 **kwargs) -> Dict[str, str]:
         '''
         Shared method to save dataframe into a new table with name = GUID
         Updates filepath for the artifact with the schema and table
@@ -435,11 +432,11 @@ class DiskPickleSaveMixin(ExternalArtifactsMixin):
         return filename
 
     @classmethod
-    def _load_pickle_from_disk(cls, filepath, **kwargs) -> Any:
+    def _load_pickle_from_disk(cls, filename: str, **kwargs) -> Any:
         '''
         Shared method to load files from disk in pickled format
         '''
-        return cls.load_pickled_object(filepath)
+        return cls.load_pickled_object(filename)
 
 
 @ExternalArtifactsMixin.Decorators.save_pattern_decorator(
