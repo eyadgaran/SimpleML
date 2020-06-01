@@ -5,10 +5,12 @@ from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.hashing import CustomHasherMixin
 from simpleml.utils.library_versions import INSTALLED_LIBRARIES
+from simpleml.utils.errors import SimpleMLError
 import uuid
 from abc import abstractmethod
 from future.utils import with_metaclass
 from collections import defaultdict
+from typing import Dict, Union, Optional, Any
 import logging
 
 
@@ -122,7 +124,7 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         self.metadata_['state'] = {}  # Place for transitory values that may be set post initialization (and want to be persisted)
 
         # For external loading - initialize to None
-        self.unloaded_externals = None
+        self.unloaded_artifacts = []
         # Store save method in state metadata as an operational setting, otherwise
         # it could affect the hash and result in a different object per save location
         self.state['save_method'] = save_method
@@ -187,11 +189,30 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
 
     def save_external_files(self):
         '''
-        Unimplemented method to manage persistence of any external files. It is
-        expected that each subclass that contains external artifacts implements
-        this method with definitions of the artifacts it contains
+        Main routine to save registered external artifacts. Each save pattern
+        is defined using the standard api for the save params defined here. If
+        a pattern requires more imports, it needs to be added here
+
+        Uses a standardized nomenclature to reuse params regardless of save method
+        {
+            'persistable_id': the database id of the persistable. typically used as the root name of the saved object. implementations will pre/suffix,
+            'persistable_type': the persistable type (DATASET/PIPELINE..),
+            'overwrite': boolean. shortcut in case save method redefines a serialization routine
+        }
         '''
-        raise NotImplementedError
+        save_params: Dict[str, Union[str, bool]]
+        save_params = {
+            'persistable_id': str(self.id),
+            'persistable_type': self.object_type,
+            'overwrite': False,
+        }
+        # Iterate through each artifact and save
+        for artifact_name, save_methods in self.state.get('save_methods', {}).items():
+            # Artifact has to be registered in self.ARTIFACTS
+            obj = self.get_artifact(artifact_name)
+            # Iterate through list of save methods
+            for save_method in save_methods:
+                self.save_external_file(obj=obj, **save_params)
 
     def load(self, load_externals=True):
         '''
@@ -208,22 +229,52 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         # Lookup appropriate class and reinstantiate
         self.__class__ = self._load_class()
 
+        # Track the list of artifacts
+        self.unloaded_artifacts = list(self.filepaths.keys())
+
         if self.has_external_files and load_externals:
             self.load_external_files()
 
-        if self.has_external_files and not load_externals:
-            self.unloaded_externals = True
+    def load_external_files(self, artifact_name: Optional[str] = None):
+        '''
+        Main routine to restore registered external artifacts. Will iterate
+        through save patterns and break after the first successful restore
+        (allows robustness in the event of unavailable resources)
+        '''
+        def _load(artifact_name: str, save_methods: Dict[str, Any]):
+            # Iterate through dict of save methods and file data
+            for save_method in save_methods:
+                try:
+                    obj = self.load_external_file(artifact_name, save_method)
+                    self.restore_artifact(artifact_name, obj)
+                    break
+                except Exception as e:
+                    LOGGER.error(f'Failed to restore {artifact_name} via {save_method} ({e}). Trying next save pattern...')
+            else:
+                raise SimpleMLError(f'Unable to restore {artifact_name} via any registered pattern')
 
+        # Iterate through each artifact and restore
+        if artifact_name is None:
+            for artifact_name, save_methods in self.filepaths.items():
+                _load(artifact_name, save_methods)
         else:
-            self.unloaded_externals = False
+            _load(artifact_name, self.filepaths.get(artifact_name, {}))
 
-    def load_external_files(self):
+    def load_if_unloaded(self, artifact_name: str) -> None:
         '''
-        Unimplemented method to manage loading of any external files. It is
-        expected that each subclass that contains external artifacts implements
-        this method with definitions of the artifacts it contains
+        Convenience method to load an artifact if not already loaded.
+        Easy dropin in property methods
+        ```
+        @property
+        def artifact(self):
+            self.load_if_unloaded(artifact_name)
+            if not hasattr(self, artifact_attribute):
+                self.create_artifact()
+            return self.artifact_attribute
+        ```
         '''
-        raise NotImplementedError
+        if artifact_name in self.unloaded_artifacts:
+            self.load_external_files(artifact_name=artifact_name)
 
     def _load_class(self):
         '''
