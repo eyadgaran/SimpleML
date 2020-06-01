@@ -1,6 +1,6 @@
 from simpleml.persistables.base_persistable import Persistable, GUID, JSON
 from simpleml.persistables.meta_registry import ModelRegistry
-from simpleml.persistables.saving import AllSaveMixin
+from simpleml.persistables.saving import ExternalArtifactsMixin
 from simpleml.utils.errors import ModelError
 
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
@@ -17,7 +17,9 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
+@ExternalArtifactsMixin.Decorators.register_artifact(
+    artifact_name='model', save_attribute='external_model', restore_attribute='_external_file')
+class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
     '''
     Abstract Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
@@ -73,9 +75,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         Wrapper around whatever underlying class is desired
         (eg sklearn or keras)
         '''
-        if self.unloaded_externals:
-            self._load_external_files()
-
+        self.load_if_unloaded('model')
         return self._external_file
 
     def _create_external_model(self, **kwargs):

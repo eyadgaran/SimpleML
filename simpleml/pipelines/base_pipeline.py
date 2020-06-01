@@ -8,7 +8,7 @@ __author__ = 'Elisha Yadgaran'
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.imports import Sequence
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.persistables.saving import AllSaveMixin
+from simpleml.persistables.saving import ExternalArtifactsMixin
 from simpleml.persistables.meta_registry import PipelineRegistry
 from simpleml.persistables.sqlalchemy_types import GUID, JSON
 
@@ -27,7 +27,9 @@ import pandas as pd
 LOGGER = logging.getLogger(__name__)
 
 
-class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixin)):
+@ExternalArtifactsMixin.Decorators.register_artifact(
+    artifact_name='pipeline', save_attribute='external_pipeline', restore_attribute='_external_file')
+class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     '''
     Abstract Base class for all Pipelines objects.
 
@@ -75,9 +77,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable, AllSaveMixi
         Wrapper around whatever underlying class is desired
         (eg sklearn or native)
         '''
-        if self.unloaded_externals:
-            self._load_external_files()
-
+        self.load_if_unloaded('pipeline')
         return self._external_file
 
     def _create_external_pipeline(self, external_pipeline_class, transformers,
