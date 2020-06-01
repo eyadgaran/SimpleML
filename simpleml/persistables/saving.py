@@ -110,7 +110,7 @@ class ExternalArtifactsMixin(object):
         (https://medium.com/@vadimpushtaev/decorator-inside-python-class-1e74d23107f6)
         '''
         @staticmethod
-        def save_pattern_decorator(
+        def register_save_pattern(
             save_pattern: Optional[str] = None,
             save_method: Optional[str] = None,
             load_method: Optional[str] = None,
@@ -150,6 +150,24 @@ class ExternalArtifactsMixin(object):
 
                 return cls
             return register
+
+        @staticmethod
+        def deregister_save_pattern(save_pattern: str) -> Callable:
+            '''
+            Class level decorator to deregister allowed saved patterns. Expects each class to
+            implement as many as needed to accomodate.
+            Expected to be used by subclasses that redefine patterns but dont
+            want to expose the possibility of a developer accessing them.
+            (By default registering patterns only exposes them to be persisted if
+            declared in save_methods)
+            '''
+            def deregister(cls: Type) -> Type:
+                if hasattr(cls, 'SAVE_METHODS'):
+                    cls.SAVE_METHODS.pop(save_pattern)
+                if hasattr(cls, 'LOAD_METHODS'):
+                    cls.LOAD_METHODS.pop(save_pattern)
+                return cls
+            return deregister
 
         @staticmethod
         def register_artifact(artifact_name: str, save_attribute: str, restore_attribute: str) -> Callable:
@@ -416,7 +434,7 @@ class ExternalArtifactsMixin(object):
             custom_objects=KERAS_REGISTRY.registry)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_dataframe_to_table', load_method='_load_dataframe_from_table')
 class DatabaseTableSaveMixin(ExternalArtifactsMixin):
     '''
@@ -453,7 +471,7 @@ class DatabaseTableSaveMixin(ExternalArtifactsMixin):
         return df
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_pickle_to_database', load_method='_load_pickle_from_database')
 class DatabasePickleSaveMixin(ExternalArtifactsMixin):
     '''
@@ -487,7 +505,7 @@ class DatabasePickleSaveMixin(ExternalArtifactsMixin):
         return cls.load_pickled_object(pickled_stream, stream=True)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_pickle_to_disk', load_method='_load_pickle_from_disk')
 class DiskPickleSaveMixin(ExternalArtifactsMixin):
     '''
@@ -512,7 +530,7 @@ class DiskPickleSaveMixin(ExternalArtifactsMixin):
         return cls.load_pickled_object(filename)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_hdf5_to_disk', load_method='_load_hdf5_from_disk')
 class DiskHDF5SaveMixin(ExternalArtifactsMixin):
     '''
@@ -537,7 +555,7 @@ class DiskHDF5SaveMixin(ExternalArtifactsMixin):
         return cls.load_hickled_object(filename)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_keras_hdf5_to_disk', load_method='_load_keras_hdf5_from_disk')
 class KerasDiskHDF5SaveMixin(ExternalArtifactsMixin):
     '''
@@ -720,7 +738,7 @@ class OnedriveBase(ExternalArtifactsMixin):
         self.client.item(id=bucket_id).children[filename].download(filepath)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_pickle_to_onedrive', load_method='_load_pickle_from_onedrive')
 class OnedrivePickleSaveMixin(OnedriveBase):
     '''
@@ -751,7 +769,7 @@ class OnedrivePickleSaveMixin(OnedriveBase):
         return cls.load_pickled_object(filename)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_hdf5_to_onedrive', load_method='_load_hdf5_from_onedrive')
 class OnedriveHDF5SaveMixin(OnedriveBase):
     '''
@@ -782,7 +800,7 @@ class OnedriveHDF5SaveMixin(OnedriveBase):
         return cls.load_hickled_object(filename)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_keras_hdf5_to_onedrive', load_method='_load_keras_hdf5_from_onedrive')
 class OnedriveKerasHDF5SaveMixin(OnedriveBase):
     '''
@@ -931,7 +949,7 @@ class CloudBase(ExternalArtifactsMixin):
                                     delete_on_failure=True)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_pickle_to_cloud', load_method='_load_pickle_from_cloud')
 class CloudPickleSaveMixin(CloudBase):
     '''
@@ -962,7 +980,7 @@ class CloudPickleSaveMixin(CloudBase):
         return cls.load_pickled_object(filename)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_hdf5_to_cloud', load_method='_load_hdf5_from_cloud')
 class CloudHDF5SaveMixin(CloudBase):
     '''
@@ -993,7 +1011,7 @@ class CloudHDF5SaveMixin(CloudBase):
         return cls.load_hickled_object(filename)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_keras_hdf5_to_cloud', load_method='_load_keras_hdf5_from_cloud')
 class CloudKerasHDF5SaveMixin(CloudBase):
     '''
@@ -1024,27 +1042,27 @@ class CloudKerasHDF5SaveMixin(CloudBase):
         return cls.load_keras_object(filename)
 
 
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='cloud_keras_hdf5', save_method='_save_keras_hdf5_to_cloud', load_method='_load_keras_hdf5_from_cloud')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='cloud_hdf5', save_method='_save_hdf5_to_cloud', load_method='_load_hdf5_from_cloud')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='cloud_pickled', save_method='_save_pickle_to_cloud', load_method='_load_pickle_from_cloud')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='onedrive_keras_hdf5', save_method='_save_keras_hdf5_to_onedrive', load_method='_load_keras_hdf5_from_onedrive')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='onedrive_hdf5', save_method='_save_hdf5_to_onedrive', load_method='_load_hdf5_from_onedrive')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='onedrive_pickled', save_method='_save_pickle_to_onedrive', load_method='_load_pickle_from_onedrive')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='disk_keras_hdf5', save_method='_save_keras_hdf5_to_disk', load_method='_load_keras_hdf5_from_disk')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='disk_hdf5', save_method='_save_hdf5_to_disk', load_method='_load_hdf5_from_disk')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='disk_pickled', save_method='_save_pickle_to_disk', load_method='_load_pickle_from_disk')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='database_pickled', save_method='_save_pickle_to_database', load_method='_load_pickle_from_database')
-@ExternalArtifactsMixin.Decorators.save_pattern_decorator(
+@ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_pattern='database_table', save_method='_save_dataframe_to_table', load_method='_load_dataframe_from_table')
 class AllSaveMixin(DatabaseTableSaveMixin, DatabasePickleSaveMixin,
                    DiskPickleSaveMixin, DiskHDF5SaveMixin, KerasDiskHDF5SaveMixin,
