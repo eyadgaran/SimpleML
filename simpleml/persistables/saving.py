@@ -151,6 +151,79 @@ class ExternalArtifactsMixin(object):
                 return cls
             return register
 
+        @staticmethod
+        def register_artifact(artifact_name: str, save_attribute: str, restore_attribute: str) -> Callable:
+            '''
+            Class level decorator to define artifacts produced. Expects each class to
+            implement as many as needed to accomodate.
+
+            Format:
+            ```
+            @register_artifact(artifact_name='model', save_attribute='wrapper_attribute', restore_attribute='_internal_attribute')
+            class NewPersistable(Persistable):
+                @property
+                def wrapper_attribute(self):
+                    if not hasattr(self, _internal_attribute):
+                        self._internal_attribute = self.create_attribute()
+                    return self._internal_attribute
+            ```
+            Intentionally specify different attributes for saving and restoring
+            to allow developer to wrap attribute in property decorator for
+            lazy caching
+            '''
+            def register(cls: Type) -> Type:
+                if not hasattr(cls, 'ARTIFACTS'):
+                    cls.ARTIFACTS: Dict[str, Dict[str, str]] = {}
+                cls.ARTIFACTS[artifact_name] = {'save': save_attribute, 'restore': restore_attribute}
+                return cls
+            return register
+
+        @staticmethod
+        def deregister_artifact(artifact_name: str) -> Callable:
+            '''
+            Class level decorator to deregister artifacts produced. Expects each class to
+            implement as many as needed to accomodate.
+            Expected to be used by subclasses that redefine artifacts but dont
+            want to expose the possibility of a developer accessing them.
+            (By default registering artifacts only exposes them to be persisted if
+            declared in save_methods)
+            '''
+            def deregister(cls: Type) -> Type:
+                if hasattr(cls, 'ARTIFACTS'):
+                    cls.ARTIFACTS.pop(artifact_name)
+                return cls
+            return deregister
+
+    def get_artifact(self, artifact_name: str) -> Any:
+        '''
+        Accessor method to lookup the artifact in the registry and return
+        the corresponding data value
+        '''
+        if not hasattr(self, 'ARTIFACTS'):
+            raise SimpleMLError('Cannot retrieve artifacts before registering. Make sure to decorate class with @ExternalArtifactsMixin.Decorators.register_artifact')
+        if artifact_name not in self.ARTIFACTS:
+            raise SimpleMLError(f'No registered artifact for {artifact_name}')
+        save_attribute = self.ARTIFACTS[artifact_name]['save']
+        return getattr(self, save_attribute)
+
+    def restore_artifact(self, artifact_name: str, obj: Any) -> None:
+        '''
+        Setter method to lookup the restore attribute and set to the passed object
+        '''
+        if not hasattr(self, 'ARTIFACTS'):
+            raise SimpleMLError('Cannot restore artifacts before registering. Make sure to decorate class with @ExternalArtifactsMixin.Decorators.register_artifact')
+        if artifact_name not in self.ARTIFACTS:
+            raise SimpleMLError(f'No registered artifact for {artifact_name}')
+        restore_attribute = self.ARTIFACTS[artifact_name]['restore']
+        setattr(self, restore_attribute, obj)
+
+        # Make note that the artifact was loaded
+        if hasattr(self, 'unloaded_artifacts'):
+            try:
+                self.unloaded_artifacts.remove(artifact_name)
+            except ValueError:
+                pass
+
     def save_external_file(self,
                            artifact_name: str, save_method: str,
                            **save_params) -> None:
