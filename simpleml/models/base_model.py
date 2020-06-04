@@ -41,7 +41,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
 
     object_type = 'MODEL'
 
-    def __init__(self, has_external_files=True, external_model_kwargs={}, params={},
+    def __init__(self, has_external_files=True, external_model_kwargs=None, params=None,
                  **kwargs):
         '''
         Need to explicitly separate passthrough kwargs to external models since
@@ -51,8 +51,11 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate model
+        if external_model_kwargs is None:
+            external_model_kwargs = {}
         self._external_file = self._create_external_model(**external_model_kwargs)
-        self.set_params(**params)
+        if params is not None:
+            self.set_params(**params)
 
         # Initialize as unfitted
         self.fitted = False

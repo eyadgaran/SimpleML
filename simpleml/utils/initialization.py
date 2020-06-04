@@ -51,7 +51,7 @@ class BaseDatabase(URL):
     Does not assume schema tracking or any other validation
     '''
     def __init__(self, config=None, configuration_section=None, uri=None,
-                 use_ssh_tunnel=False, sshtunnel_params={}, **credentials):
+                 use_ssh_tunnel=False, sshtunnel_params=None, **credentials):
         '''
         :param use_ssh_tunnel: boolean - default false. Whether to tunnel sqlalchemy connection
             through an ssh tunnel or not
@@ -84,12 +84,14 @@ class BaseDatabase(URL):
             LOGGER.warning(
                 '''
                 SSH Tunnel is unreliable at the moment - connections time out randomly.
-                Usage: call Database.start_tunnel() before Database.initialize() and
-                end script with Database.stop_tunnel()
+                Usage: call Database.open_tunnel() before Database.initialize() and
+                end script with Database.close_tunnel()
                 '''
             )
             # Overwrite passed ports and hosts to route localhost port to the
             # original destination via tunnel
+            if sshtunnel_params is None:
+                sshtunnel_params = {}
             credentials, self.ssh_config = self.configure_ssh_tunnel(credentials, sshtunnel_params)
 
         super(BaseDatabase, self).__init__(**credentials)
