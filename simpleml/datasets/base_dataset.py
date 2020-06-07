@@ -54,11 +54,13 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable, AllSaveMixin)
 
     object_type = 'DATASET'
 
-    def __init__(self, has_external_files=True, label_columns=[], **kwargs):
+    def __init__(self, has_external_files=True, label_columns=None, **kwargs):
         super(AbstractDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # By default assume unsupervised so no targets
+        if label_columns is None:
+            label_columns = []
         self.config['label_columns'] = label_columns
 
     @property
