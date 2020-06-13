@@ -269,7 +269,7 @@ class ExternalArtifactsMixin(object):
             raise SimpleMLError(f'No registered load pattern for {save_method}')
 
         # Do some validation in case attempting to load unsaved artifact
-        artifact = self.filepaths.get('artifact_name', None)
+        artifact = self.filepaths.get(artifact_name, None)
         if artifact is None:
             raise SimpleMLError(f'No artifact saved for {artifact_name}')
         if save_method not in artifact:
