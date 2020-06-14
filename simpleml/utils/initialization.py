@@ -50,6 +50,7 @@ class BaseDatabase(URL):
     Base Database class to configure db connection
     Does not assume schema tracking or any other validation
     '''
+
     def __init__(self, config=None, configuration_section=None, uri=None,
                  use_ssh_tunnel=False, sshtunnel_params=None, **credentials):
         '''
@@ -83,9 +84,12 @@ class BaseDatabase(URL):
         if self.use_ssh_tunnel:
             LOGGER.warning(
                 '''
-                SSH Tunnel is unreliable at the moment - connections time out randomly.
                 Usage: call Database.open_tunnel() before Database.initialize() and
                 end script with Database.close_tunnel()
+                Configure connection with supported parameters passed via
+                `sshtunnel_params={**configs}`. Binding and routing through local
+                port is automatically handled, but other parameters like `set_keepalive`
+                may be interesting. https://sshtunnel.readthedocs.io/en/latest/
                 '''
             )
             # Overwrite passed ports and hosts to route localhost port to the
@@ -204,6 +208,7 @@ class AlembicDatabase(BaseDatabase):
     Base database class to manage dbs with schema tracking. Includes alembic
     config references
     '''
+
     def __init__(self, alembic_filepath, script_location='migrations', *args, **kwargs):
         self.alembic_filepath = alembic_filepath
         self.script_location = script_location
@@ -303,6 +308,7 @@ class Database(AlembicDatabase):
     SimpleML specific configuration to interact with the database
     Defaults to sqlite db in filestore directory
     '''
+
     def __init__(self,
                  configuration_section=None,
                  uri=None,
