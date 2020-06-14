@@ -1,10 +1,10 @@
-sudo: false
-language: python
+sudo:            false
+language:        python
 services:
   - postgresql
 
 addons:
-  postgresql: "10"
+  postgresql:    "10"
   apt:
     packages:
     - postgresql-10
@@ -26,11 +26,6 @@ install:
  - pip install coveralls
  - pip install flake8
 
-python:
-  - 2.7
-  - 3.5
-  - 3.6
-
 script:
   - flake8 . --ignore=E121,E221,E251,E261,E266,E302,E303,E305,F401,E402,E501,E502 --exclude=.git,.tox,build,dist
   - coverage run setup.py test
@@ -41,49 +36,25 @@ after_success:
 
 matrix:
   include:
-    - python: 3.2
-      dist: trusty
-      script: python setup.py test
-      after_success: True
-    - python: 3.3
-      dist: trusty
-      script: python setup.py test
-      after_success: True
-    - python: 3.4
-      script: python setup.py test
-      after_success: True
-    - python: 3.7
-      dist: xenial
-      sudo: true
-    - python: 3.8
-      dist: xenial
-      sudo: true
-    - python: pypy
-      script: python setup.py test
-      after_success: True
-    - python: pypy3
-      script: python setup.py test
-      after_success: True
-  allow_failures:
-    - python: 2.7
-    - python: 3.2
-    - python: 3.3
-    - python: 3.4
-    - python: pypy
-    - python: pypy3
-
+    - python:    3.6
+    - python:    3.7
+      dist:      xenial
+      sudo:      true
+    - python:    3.8
+      dist:      xenial
+      sudo:      true
 
 deploy:
-  provider: pypi
-  user: $PYPI_USERNAME
-  password: $PYPI_PASSWORD
+  provider:      pypi
+  user:          $PYPI_USERNAME
+  password:      $PYPI_PASSWORD
   on:
-    tags: true
-    branch: master
+    tags:        true
+    branch:      master
   skip_existing: true
 
 # Flake8 Ignored Syntax
-# Codes: http://flake8.pycqa.org/en/latest/user/error-codes.html
+# Codes:         http://flake8.pycqa.org/en/latest/user/error-codes.html
 # E121, # continuation line under-indented for hanging indent
 # E221, # multiple spaces before operator
 # E251, # unexpected spaces around keyword / parameter equals

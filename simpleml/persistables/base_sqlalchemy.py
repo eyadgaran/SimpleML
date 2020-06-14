@@ -6,7 +6,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, DateTime, func
+from sqlalchemy import Column, DateTime, func, event
 from sqlalchemy_mixins import AllFeaturesMixin
 
 
@@ -41,3 +41,9 @@ class BaseSQLAlchemy(Base, AllFeaturesMixin):
     @classmethod
     def query_by(cls, *queries):
         return cls._session.query(*queries)
+
+
+@event.listens_for(BaseSQLAlchemy, 'before_update', propagate=True)
+def _receive_before_update(mapper, connection, target):
+    """Listen for updates and update `modified_timestamp` column."""
+    target.modified_timestamp = func.now()
