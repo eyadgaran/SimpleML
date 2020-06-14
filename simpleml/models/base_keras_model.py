@@ -18,8 +18,8 @@ LOGGER = logging.getLogger(__name__)
 
 class KerasModel(LibraryModel):
     def __init__(self, save_method='disk_keras_hdf5',
-                 use_training_generator=False, training_generator_params={},
-                 use_validation_generator=False, validation_generator_params={},
+                 use_training_generator=False, training_generator_params=None,
+                 use_validation_generator=False, validation_generator_params=None,
                  use_sequence_object=False,
                  **kwargs):
         '''
@@ -43,6 +43,10 @@ class KerasModel(LibraryModel):
         # it is true that a specific combination of generator params will yield
         # the same model artifact as the traditional fit, it is very unlikely and
         # therefore assumed to be different (hashes will not be equal because of differing param structure)
+        if training_generator_params is None:
+            training_generator_params = {}
+        if validation_generator_params is None:
+            validation_generator_params = {}
         generator_params = {
             'use_training_generator': use_training_generator,
             'use_sequence_object': use_sequence_object,

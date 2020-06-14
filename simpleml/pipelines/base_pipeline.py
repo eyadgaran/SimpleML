@@ -48,13 +48,15 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
 
     object_type = 'PIPELINE'
 
-    def __init__(self, has_external_files=True, transformers=[],
+    def __init__(self, has_external_files=True, transformers=None,
                  external_pipeline_class='default', fitted=False,
                  **kwargs):
         super(AbstractPipeline, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate pipeline
+        if transformers is None:
+            transformers = []
         self.config['external_pipeline_class'] = external_pipeline_class
         self._external_file = self._create_external_pipeline(
             external_pipeline_class, transformers, **kwargs)
