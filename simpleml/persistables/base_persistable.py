@@ -230,7 +230,13 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         self.__class__ = self._load_class()
 
         # Track the list of artifacts
-        self.unloaded_artifacts = list(self.filepaths.keys())
+        # New persistables without a specified filepath dictionary have type
+        # sqlalchemy.sql.schema.Column - calling list(Column.keys()) would fail
+        if not isinstance(self.filepaths, dict):
+            LOGGER.warning('Load appears to being called on an unsaved Persistable')
+            self.unloaded_artifacts = []
+        else:
+            self.unloaded_artifacts = list(self.filepaths.keys())
 
         if self.has_external_files and load_externals:
             self.load_external_files()
