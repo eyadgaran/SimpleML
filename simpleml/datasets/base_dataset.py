@@ -165,4 +165,4 @@ class Dataset(AbstractDataset):
         UniqueConstraint('name', 'version', name='dataset_name_version_unique'),
         # Index for searching through friendly names
         Index('dataset_name_index', 'name'),
-     )
+    )

@@ -25,6 +25,7 @@ depends_on = None
 THIS MIGRATION IS NOT REVERSIBLE! DATA CAN BE DROPPED
 '''
 
+
 class UpgradeTableModel(BaseSQLAlchemy):
     '''
     Minimal table model to conduct migrations
@@ -94,7 +95,7 @@ def upgrade_data(table, artifact):
         # Nest under artifact
         filepath = {artifact: record.filepaths}
         # Format the filepath data according to the save pattern
-        for save_pattern, filepath_data in  filepath[artifact].items():
+        for save_pattern, filepath_data in filepath[artifact].items():
             if save_pattern == 'database_table':
                 # Format changed from [(schema, table)] to {schema: schema, table: table}
                 filepath[artifact][save_pattern] = {'schema': filepath_data[0][0], 'table': filepath_data[0][1]}

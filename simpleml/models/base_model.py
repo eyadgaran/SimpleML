@@ -230,6 +230,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
     '''
     Pass-through methods to external model
     '''
+
     def get_params(self, **kwargs):
         '''
         Pass through method to external model
@@ -280,7 +281,7 @@ class Model(AbstractModel):
         UniqueConstraint('name', 'version', name='model_name_version_unique'),
         # Index for searching through friendly names
         Index('model_name_index', 'name'),
-     )
+    )
 
 
 class LibraryModel(Model):

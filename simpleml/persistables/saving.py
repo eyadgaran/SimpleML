@@ -326,7 +326,7 @@ class ExternalArtifactsMixin(object):
         connection.close()
 
     @staticmethod
-    def pickle_object(obj: Any, filepath: Optional[str]=None, overwrite: bool=True) -> Union[str, None]:
+    def pickle_object(obj: Any, filepath: Optional[str] = None, overwrite: bool = True) -> Union[str, None]:
         '''
         Pickles an object to a string or to the filesystem. Assumes that a NULL
         filepath expects a serialized string returned

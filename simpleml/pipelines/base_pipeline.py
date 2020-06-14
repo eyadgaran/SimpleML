@@ -392,6 +392,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     '''
     Pass-through methods to external pipeline
     '''
+
     def get_params(self, **kwargs):
         '''
         Pass through method to external pipeline
@@ -438,7 +439,7 @@ class Pipeline(AbstractPipeline):
         UniqueConstraint('name', 'version', name='pipeline_name_version_unique'),
         # Index for searching through friendly names
         Index('pipeline_name_index', 'name'),
-     )
+    )
 
 
 class DatasetSequence(Sequence):
@@ -447,6 +448,7 @@ class DatasetSequence(Sequence):
     return type is internal `Split` object. Transformed sequences are used to
     conform with external input types (keras tuples)
     '''
+
     def __init__(self, split, batch_size, shuffle):
         self.X = self.validated_split(split.X)
         self.y = self.validated_split(split.y)
@@ -518,6 +520,7 @@ class TransformedSequence(Sequence):
     Nested sequence class to apply transforms on batches in real-time and forward
     through as the next batch
     '''
+
     def __init__(self, pipeline, dataset_sequence):
         self.pipeline = pipeline
         self.dataset_sequence = dataset_sequence
