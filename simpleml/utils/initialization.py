@@ -7,7 +7,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 # Import table models to register in DeclaritiveBase
-from simpleml.persistables.base_persistable import Persistable
+from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy, DatasetStorageSqlalchemy, BinaryStorageSqlalchemy
 import simpleml.datasets.base_dataset
 import simpleml.pipelines.base_pipeline
 import simpleml.models.base_model
@@ -50,6 +50,7 @@ class BaseDatabase(URL):
     Base Database class to configure db connection
     Does not assume schema tracking or any other validation
     '''
+
     def __init__(self, config=None, configuration_section=None, uri=None,
                  use_ssh_tunnel=False, sshtunnel_params=None, **credentials):
         '''
@@ -204,6 +205,7 @@ class AlembicDatabase(BaseDatabase):
     Base database class to manage dbs with schema tracking. Includes alembic
     config references
     '''
+
     def __init__(self, alembic_filepath, script_location='migrations', *args, **kwargs):
         self.alembic_filepath = alembic_filepath
         self.script_location = script_location
@@ -303,6 +305,7 @@ class Database(AlembicDatabase):
     SimpleML specific configuration to interact with the database
     Defaults to sqlite db in filestore directory
     '''
+
     def __init__(self,
                  configuration_section=None,
                  uri=None,
@@ -356,6 +359,50 @@ class Database(AlembicDatabase):
         :return: None
         '''
         if base_list is None:  # Use defaults in project
-            base_list = [Persistable]
+            base_list = [SimplemlCoreSqlalchemy]
 
         super(Database, self).initialize(base_list, **kwargs)
+
+
+class DatasetDatabase(BaseDatabase):
+    '''
+    Hardcoded database mapped to dataset storage metadata
+    '''
+
+    def initialize(self, base_list=None, **kwargs):
+        '''
+        Initialization method to set up database connection and inject
+        session manager
+
+        Raises a SimpleML error if database schema is not up to date
+
+        :param drop_tables: Bool, whether to drop existing tables in database
+        :param upgrade: Bool, whether to run an upgrade migration after establishing a connection
+        :return: None
+        '''
+        if base_list is None:  # Use defaults in project
+            base_list = [DatasetStorageSqlalchemy]
+
+        super(DatasetDatabase, self).initialize(base_list, **kwargs)
+
+
+class BinaryStorageDatabase(BaseDatabase):
+    '''
+    Hardcoded database mapped to binary storage metadata
+    '''
+
+    def initialize(self, base_list=None, **kwargs):
+        '''
+        Initialization method to set up database connection and inject
+        session manager
+
+        Raises a SimpleML error if database schema is not up to date
+
+        :param drop_tables: Bool, whether to drop existing tables in database
+        :param upgrade: Bool, whether to run an upgrade migration after establishing a connection
+        :return: None
+        '''
+        if base_list is None:  # Use defaults in project
+            base_list = [BinaryStorageSqlalchemy]
+
+        super(BinaryStorageDatabase, self).initialize(base_list, **kwargs)

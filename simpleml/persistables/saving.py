@@ -34,7 +34,7 @@ __author__ = 'Elisha Yadgaran'
 
 import pandas as pd
 from simpleml.utils.binary_blob import BinaryBlob
-from simpleml.utils.dataset_storage import DatasetStorage, DATASET_SCHEMA
+from simpleml.persistables.base_sqlalchemy import DatasetStorageSqlalchemy
 from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
 from simpleml.utils.errors import SimpleMLError
@@ -444,13 +444,13 @@ class DatabaseTableSaveMixin(ExternalArtifactsMixin):
 
     @classmethod
     def _save_dataframe_to_table(cls, obj: pd.DataFrame, persistable_id: str,
-                                 schema: str = DATASET_SCHEMA,
+                                 schema: str = DatasetStorageSqlalchemy.SCHEMA,
                                  **kwargs) -> Dict[str, str]:
         '''
         Shared method to save dataframe into a new table with name = GUID
         Updates filepath for the artifact with the schema and table
         '''
-        engine = DatasetStorage.metadata.bind
+        engine = DatasetStorageSqlalchemy.metadata.bind
         cls.df_to_sql(engine, df=obj, table=persistable_id, schema=schema)
 
         return {'schema': schema, 'table': persistable_id}
@@ -462,7 +462,7 @@ class DatabaseTableSaveMixin(ExternalArtifactsMixin):
         '''
         schema = filepath_data['schema']
         table = filepath_data['table']
-        engine = DatasetStorage.metadata.bind
+        engine = DatasetStorageSqlalchemy.metadata.bind
         df = cls.load_sql(
             'select * from "{}"."{}"'.format(schema, table),
             engine
