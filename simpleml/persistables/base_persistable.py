@@ -103,7 +103,7 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
 
     def __init__(self, name=None, has_external_files=False,
                  author=None, project=None, version_description=None,
-                 save_method=None, **kwargs):
+                 save_methods=None, **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
@@ -113,9 +113,9 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         self.has_external_files = has_external_files
         self.version_description = version_description
 
-        if has_external_files and save_method is None:
+        if has_external_files and save_methods is None:
             LOGGER.warn('Persistable has external artifacts, but has not specified any save methods. Defaulting to local `disk_pickled`')
-            save_method = defaultdict(['disk_pickled'])
+            save_methods = defaultdict(['disk_pickled'])
 
         # Special place for SimpleML internal params
         # Think of as the config to initialize objects
@@ -127,7 +127,7 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
         self.unloaded_artifacts = []
         # Store save method in state metadata as an operational setting, otherwise
         # it could affect the hash and result in a different object per save location
-        self.state['save_method'] = save_method
+        self.state['save_methods'] = save_methods
 
     @property
     def config(self):
@@ -212,7 +212,10 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
             obj = self.get_artifact(artifact_name)
             # Iterate through list of save methods
             for save_method in save_methods:
-                self.save_external_file(obj=obj, **save_params)
+                self.save_external_file(
+                    artifact_name=artifact_name,
+                    save_method=save_method,
+                    obj=obj, **save_params)
 
     def load(self, load_externals=True):
         '''
