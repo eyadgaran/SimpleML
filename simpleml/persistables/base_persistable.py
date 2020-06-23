@@ -1,7 +1,7 @@
-from sqlalchemy import MetaData, Column, func, String, Boolean, Integer
+from sqlalchemy import Column, func, String, Boolean, Integer
 from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
 from simpleml.persistables.sqlalchemy_types import GUID, JSON
-from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
+from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.hashing import CustomHasherMixin
 from simpleml.utils.library_versions import INSTALLED_LIBRARIES
@@ -20,7 +20,7 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, CustomHasherMixin)):
+class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMixin, CustomHasherMixin)):
     '''
     Base class for all SimpleML database objects. Defaults to PostgreSQL
     but can be swapped out for any supported SQLAlchemy backend.
@@ -69,8 +69,6 @@ class Persistable(with_metaclass(MetaRegistry, BaseSQLAlchemy, AllSaveMixin, Cus
     '''
 
     __abstract__ = True
-    # Uses main (public) schema
-    metadata = MetaData()
 
     # Use random uuid for graceful distributed instantiation
     # also allows saved objects to include id in filename (before db persistence)

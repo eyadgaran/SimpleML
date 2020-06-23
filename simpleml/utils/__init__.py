@@ -8,7 +8,7 @@ __author__ = 'Elisha Yadgaran'
 from .errors import SimpleMLError, DatasetError, PipelineError, ModelError,\
     MetricError, TrainingError, ScoringError
 
-from .initialization import BaseDatabase, AlembicDatabase, Database
+from .initialization import BaseDatabase, AlembicDatabase, Database, DatasetDatabase, BinaryStorageDatabase
 
 from .configuration import CONFIG, SIMPLEML_DIRECTORY, FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLED_FILESTORE_DIRECTORY
