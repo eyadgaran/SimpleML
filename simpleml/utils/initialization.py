@@ -84,9 +84,12 @@ class BaseDatabase(URL):
         if self.use_ssh_tunnel:
             LOGGER.warning(
                 '''
-                SSH Tunnel is unreliable at the moment - connections time out randomly.
                 Usage: call Database.open_tunnel() before Database.initialize() and
                 end script with Database.close_tunnel()
+                Configure connection with supported parameters passed via
+                `sshtunnel_params={**configs}`. Binding and routing through local
+                port is automatically handled, but other parameters like `set_keepalive`
+                may be interesting. https://sshtunnel.readthedocs.io/en/latest/
                 '''
             )
             # Overwrite passed ports and hosts to route localhost port to the

@@ -255,6 +255,10 @@ class ExternalArtifactsMixin(object):
         filepath_data = getattr(self, method)(**save_params)
 
         # Update filepaths
+        if self.filepaths is None:
+            self.filepaths = {}
+        if self.filepaths.get(artifact_name, None) is None:
+            self.filepaths[artifact_name] = {}
         self.filepaths[artifact_name][save_method] = filepath_data
 
     def load_external_file(self, artifact_name: str, save_method: str) -> Any:
