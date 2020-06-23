@@ -437,6 +437,11 @@ class ExternalArtifactsMixin(object):
             str(join(HDF5_FILESTORE_DIRECTORY, filepath)),
             custom_objects=KERAS_REGISTRY.registry)
 
+    @staticmethod
+    def load_sql(query, connection, **kwargs):
+        '''Helper method to read in sql data'''
+        return pd.read_sql_query(query, connection, **kwargs)
+
 
 @ExternalArtifactsMixin.Decorators.register_save_pattern(
     save_method='_save_dataframe_to_table', load_method='_load_dataframe_from_table')
