@@ -275,9 +275,14 @@ class BinaryClassificationMetric(ClassificationMetric):
         '''
         Convenience property for the Matthews Correlation Coefficient (TP*TN-FP*FN/((FP+TP)*(TP+FN)*(TN+FP)*(TN+FN))^0.5)
         '''
-        return (self.confusion_matrix.tp * self.confusion_matrix.tn - self.confusion_matrix.fp * self.confusion_matrix.fn) /\
-            ((self.confusion_matrix.fp + self.confusion_matrix.tp) * (self.confusion_matrix.tp + self.confusion_matrix.fn) *
-             (self.confusion_matrix.tn + self.confusion_matrix.fp) * (self.confusion_matrix.tn + self.confusion_matrix.fn))**0.5
+        numerator = (self.confusion_matrix.tp * self.confusion_matrix.tn - self.confusion_matrix.fp * self.confusion_matrix.fn)
+        denominator = (
+            (self.confusion_matrix.fp + self.confusion_matrix.tp)
+            * (self.confusion_matrix.tp + self.confusion_matrix.fn)
+            * (self.confusion_matrix.tn + self.confusion_matrix.fp)
+            * (self.confusion_matrix.tn + self.confusion_matrix.fn)
+        )**0.5
+        return numerator / denominator
 
     @property
     def informedness(self):
