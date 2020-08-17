@@ -56,7 +56,7 @@ def load_tests(*args, **kwargs):
 
 def run_tests():
     runner = unittest.TextTestRunner(verbosity=3)
-    result = runner.run(load_tests())
+    runner.run(load_tests())
 
 
 if __name__ == '__main__':

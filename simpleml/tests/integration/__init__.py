@@ -50,6 +50,7 @@ class SqliteIntegrationTestSuite(IntegrationTestSuite):
     '''
     Integration tests with sqlite fixture
     '''
+
     def __init__(self):
         # Specify the fixture configuration
         database_name = 'SimpleML-TEST-{}'.format(random.randint(10000, 99999))
@@ -76,6 +77,7 @@ class PostgresIntegrationTestSuite(IntegrationTestSuite):
     '''
     Integration tests with Postgres fixture
     '''
+
     def __init__(self):
         # Specify the fixture configuration
         self.database_name = 'SimpleML-TEST-{}'.format(random.randint(10000, 99999))
@@ -111,7 +113,7 @@ def load_tests(*args, **kwargs):
 
 def run_tests():
     runner = unittest.TextTestRunner(verbosity=3)
-    result = runner.run(load_tests())
+    runner.run(load_tests())
 
 
 if __name__ == '__main__':
