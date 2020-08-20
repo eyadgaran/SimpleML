@@ -6,7 +6,6 @@ __author__ = 'Elisha Yadgaran'
 
 from simpleml.persistables.base_persistable import Persistable
 import unittest
-from random import randint
 
 
 class PersistableTests(unittest.TestCase):
@@ -32,23 +31,6 @@ class PersistableTests(unittest.TestCase):
         self.assertEqual(cl.__class__, TestClass)
         self.assertNotEqual(cl.__class__, Persistable)
 
-    def test_latest_version_retrieved(self):
-        # Original Class
-        class VersionTestClass(Persistable):
-            __tablename__ = 'version_tests'
-
-            def _hash(self):
-                return 132435465
-
-        VersionTestClass.__table__.create()
-
-        versions = randint(100, 200)
-        for i in range(versions):
-            VersionTestClass(name='version_test').save()
-
-        new_class = VersionTestClass(name='version_test')
-        self.assertEqual(new_class._get_latest_version(), versions + 1)
-
     def test_lazy_loading(self):
         '''
         Test that dependecy loads only when called
@@ -58,4 +40,4 @@ class PersistableTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
