@@ -13,6 +13,7 @@ class DefaultPipeline(OrderedDict):
     Use default dictionary behavior but add wrapper methods for
     extended functionality
     '''
+
     def add_transformer(self, name, transformer):
         '''
         Setter method for new transformer step
@@ -52,9 +53,11 @@ class DefaultPipeline(OrderedDict):
 
         return X
 
-    def get_params(self, **kwargs):
+    def get_params(self, params_only=None, **kwargs):
         '''
         Iterate through transformers and return parameters
+
+        :param params_only: Unused parameter to align signature with Sklearn version
         '''
         params = {}
         for step, transformer in self.items():
@@ -98,6 +101,7 @@ class SklearnPipeline(Pipeline):
     Use default sklearn behavior but add wrapper methods for
     extended functionality
     '''
+
     def add_transformer(self, name, transformer, index=None):
         '''
         Setter method for new transformer step
@@ -114,15 +118,20 @@ class SklearnPipeline(Pipeline):
         index = [i for i, j in enumerate(self.steps) if j[0] == name][0]
         self.steps.pop(index)
 
-    def get_params(self, **kwargs):
+    def get_params(self, params_only=False, **kwargs):
         '''
         Wrapper around sklearn implementation to drop non parameter returns
+        :param params_only: boolean to filter down to actual transformer parameters
         '''
         params = super(SklearnPipeline, self).get_params(**kwargs)
-        # actual params have k__v format
-        steps = params.pop('steps', [])
-        step_names = [step[0] for step in steps]
-        return {k: v for k, v in params.items() if k not in step_names}
+
+        if params_only:
+            # actual params have k__v format
+            steps = params.pop('steps', [])
+            step_names = [step[0] for step in steps]
+            return {k: v for k, v in params.items() if k not in step_names}
+        else:
+            return params
 
     def get_transformers(self):
         '''

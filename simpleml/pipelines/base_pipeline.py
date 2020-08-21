@@ -146,7 +146,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         '''
         dataset_hash = self.dataset.hash_ or self.dataset._hash()
         transformers = self.get_transformers()
-        transformer_params = self.get_params()
+        transformer_params = self.get_params(params_only=True)
         pipeline_config = self.config
 
         return self.custom_hasher((dataset_hash, transformers, transformer_params, pipeline_config))
@@ -162,7 +162,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         self.assert_dataset('Must set dataset before saving')
         self.assert_fitted('Must fit pipeline before saving')
 
-        self.params = self.get_params(**kwargs)
+        self.params = self.get_params(params_only=True, **kwargs)
         self.metadata_['transformers'] = self.get_transformers()
         self.metadata_['feature_names'] = self.get_feature_names()
 
