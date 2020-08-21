@@ -28,7 +28,6 @@ class RegistryTests(unittest.TestCase):
         self.assertIn(class_name, registry.registry)
         self.assertEqual(FakeClass, registry.get(class_name))
 
-
     def test_duplicate_class_error(self):
         registry = Registry()
 
@@ -36,17 +35,30 @@ class RegistryTests(unittest.TestCase):
         class FakeClass(object):
             pass
 
-        class_name = 'FakeClass'
-        self.assertNotIn(class_name, registry.registry)
+        # Register
+        registry.register(FakeClass)
+
+        # Different class, same name
+        class FakeClass(object):
+            pass
+        with self.assertRaises(ValueError):
+            registry.register(FakeClass)
+
+    def test_reloaded_class_registers(self):
+        '''
+        Test duplicating the same object in the registry doesnt break
+        '''
+        registry = Registry()
+        # Define Class
+
+        class FakeClass(object):
+            pass
 
         # Register
         registry.register(FakeClass)
-        self.assertIn(class_name, registry.registry)
-        self.assertEqual(FakeClass, registry.get(class_name))
+        # Try again - same instantiation
+        registry.register(FakeClass)
 
-        # Try again
-        with self.assertRaises(ValueError):
-            registry.register(FakeClass)
 
 class MetaRegistryTests(unittest.TestCase):
     def test_abstract_method_error(self):
