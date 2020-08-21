@@ -40,7 +40,6 @@ from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
 from simpleml.utils.errors import SimpleMLError
 from simpleml.persistables.meta_registry import KERAS_REGISTRY
 import cloudpickle as pickle
-import pandas as pd
 from os.path import join, isfile
 from typing import Optional, Any, Union, Callable, Dict, Type
 from io import StringIO

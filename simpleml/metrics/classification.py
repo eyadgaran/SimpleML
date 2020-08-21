@@ -148,7 +148,7 @@ class BinaryClassificationMetric(ClassificationMetric):
 
     def create_confusion_matrix(self):
         '''
-        Independent computation method (easier testing)
+        Iterate through each threshold and compute confusion matrix
         '''
         # Thresholds to compute confusion matrix at (default every 0.005 increment)
         thresholds = np.linspace(0, 1, 201)
