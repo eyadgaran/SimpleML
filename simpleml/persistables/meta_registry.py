@@ -14,11 +14,12 @@ class Registry(object):
     '''
     Importable class to maintain reference to the global registry
     '''
+
     def __init__(self):
         self.registry = {}
 
     def register(self, cls):
-        # Check for class duplication. Some workflows reload everything and 
+        # Check for class duplication. Some workflows reload everything and
         # that is ok. As long as the definitions are the same
         if cls.__name__ in self.registry and cls is not self.registry[cls.__name__]:
             raise ValueError('Cannot duplicate class in registry: {}'.format(cls.__name__))
@@ -67,11 +68,13 @@ class MetaRegistry(MetaBase, ABCMeta):
         return iter(cls.registry)
     '''
 
+
 # Instantiate specific persistable registries for easy lookup of object types
 DATASET_REGISTRY = Registry()
 PIPELINE_REGISTRY = Registry()
 MODEL_REGISTRY = Registry()
 METRIC_REGISTRY = Registry()
+
 
 class DatasetRegistry(MetaRegistry):
     def __new__(cls, clsname, bases, attrs):
@@ -79,17 +82,20 @@ class DatasetRegistry(MetaRegistry):
         DATASET_REGISTRY.register(newclass)
         return newclass
 
+
 class PipelineRegistry(MetaRegistry):
     def __new__(cls, clsname, bases, attrs):
         newclass = super(PipelineRegistry, cls).__new__(cls, clsname, bases, attrs)
         PIPELINE_REGISTRY.register(newclass)
         return newclass
 
+
 class ModelRegistry(MetaRegistry):
     def __new__(cls, clsname, bases, attrs):
         newclass = super(ModelRegistry, cls).__new__(cls, clsname, bases, attrs)
         MODEL_REGISTRY.register(newclass)
         return newclass
+
 
 class MetricRegistry(MetaRegistry):
     def __new__(cls, clsname, bases, attrs):
@@ -102,6 +108,7 @@ class MetricRegistry(MetaRegistry):
 # Keras has an annoying persistence pattern that only supports native class references
 # Custom class objects need to be passed in at load time
 KERAS_REGISTRY = Registry()
+
 
 class KerasRegistry(ABCMeta):
     def __new__(cls, clsname, bases, attrs):
