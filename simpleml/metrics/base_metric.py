@@ -26,6 +26,12 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
 
     object_type = 'METRIC'
 
+    def add_dataset(self, dataset):
+        '''
+        Setter method for dataset used
+        '''
+        self.dataset = dataset
+
     def add_model(self, model):
         '''
         Setter method for model used
@@ -36,14 +42,16 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
         '''
         Hash is the combination of the:
             1) Model
+            2) Dataset
             2) Metric
             3) Config
         '''
         model_hash = self.model.hash_ or self.model._hash()
+        dataset_hash = self.dataset.hash_ or self.dataset._hash()
         metric = self.__class__.__name__
         config = self.config
 
-        return self.custom_hasher((model_hash, metric, config))
+        return self.custom_hasher((model_hash, dataset_hash, metric, config))
 
     def _get_latest_version(self):
         '''
@@ -66,6 +74,9 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
         '''
         Extend parent function with a few additional save routines
         '''
+        if self.dataset is None:
+            raise MetricError('Must set dataset before saving')
+
         if self.model is None:
             raise MetricError('Must set model before saving')
 
@@ -109,9 +120,11 @@ class Metric(AbstractMetric):
     '''
     __tablename__ = 'metrics'
 
-    # Only dependency is the model (to score in production)
+    # Dependencies are model and dataset
     model_id = Column(GUID, ForeignKey("models.id"))
     model = relationship('Model', enable_typechecks=False)
+    dataset_id = Column(GUID, ForeignKey("datasets.id"))
+    dataset = relationship('Dataset', enable_typechecks=False)
 
     __table_args__ = (
         # Metrics don't have the notion of versions, values should be deterministic
