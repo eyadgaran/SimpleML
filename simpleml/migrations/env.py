@@ -3,7 +3,7 @@ from logging.config import fileConfig
 from alembic import context
 
 from simpleml.utils.initialization import BaseDatabase
-from simpleml.persistables.base_persistable import Persistable
+from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -17,12 +17,12 @@ fileConfig(config.config_file_name, disable_existing_loggers=False)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-if not Persistable.metadata.is_bound():
+if not SimplemlCoreSqlalchemy.metadata.is_bound():
     # Initialize a new session if one isn't already configured
     # Use BaseDatabase to avoid any cyclical errors on migration status
-    BaseDatabase().initialize(base_list=[Persistable])
+    BaseDatabase().initialize(base_list=[SimplemlCoreSqlalchemy])
 
-target_metadata = Persistable.metadata
+target_metadata = SimplemlCoreSqlalchemy.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -59,7 +59,13 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    connectable = target_metadata.bind
+    # Allow config object to have a connection already added
+    connectable = config.attributes.get('connection', None)
+
+    if connectable is None:
+        # only create Engine if we don't have a Connection
+        # from the outside
+        connectable = target_metadata.bind
 
     with connectable.connect() as connection:
         context.configure(
