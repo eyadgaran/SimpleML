@@ -260,26 +260,31 @@ class AlembicDatabase(BaseDatabase):
         '''
         command.downgrade(self.alembic_config, revision)
 
-    def validate_schema_version(self):
+    def validate_schema_version(self, base_list):
         '''
         Check that the newly initialized database is up-to-date
         Raises an error otherwise (ahead of any table model mismatches later)
         '''
-        # Establish a context to access db values
-        context = MigrationContext.configure(self.engine.connect())
-        current_revision = context.get_current_revision()
+        # Iterate base list and check schema against alembic config (if different
+        # bases use different configs, they need to be invoked in different classes)
+        for base in base_list:
+            # Establish a context to access db values - use the bound engine in case
+            # of ephemeral connection (in memory sqlite)
+            engine = base.metadata.bind
+            context = MigrationContext.configure(engine.connect())
+            current_revision = context.get_current_revision()
 
-        # Read local config file to find the current "head" revision
-        # config = Config()
-        # config.set_main_option("script_location",
-        #                        join(dirname(dirname(dirname(realpath(__file__)))), "migrations"))
-        script = ScriptDirectory.from_config(self.alembic_config)
-        head_revision = script.get_current_head()
+            # Read local config file to find the current "head" revision
+            # config = Config()
+            # config.set_main_option("script_location",
+            #                        join(dirname(dirname(dirname(realpath(__file__)))), "migrations"))
+            script = ScriptDirectory.from_config(self.alembic_config)
+            head_revision = script.get_current_head()
 
-        if current_revision != head_revision:
-            raise SimpleMLError('''Attempting to connect to an outdated schema.
-                                Set the parameter `upgrade=True` in the initialize method
-                                or manually execute `alembic upgrade head` in a shell''')
+            if current_revision != head_revision:
+                raise SimpleMLError('''Attempting to connect to an outdated schema.
+                                    Set the parameter `upgrade=True` in the initialize method
+                                    or manually execute `alembic upgrade head` in a shell''')
 
     def initialize(self, base_list, upgrade=False, **kwargs):
         '''
@@ -300,7 +305,7 @@ class AlembicDatabase(BaseDatabase):
             self.upgrade()
 
         # Assert current db schema is up-to-date
-        self.validate_schema_version()
+        self.validate_schema_version(base_list)
 
 
 class Database(AlembicDatabase):
