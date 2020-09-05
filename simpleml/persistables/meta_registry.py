@@ -35,6 +35,20 @@ class Registry(object):
         return self.get_from_registry(class_name)
 
 
+class NamedRegistry(Registry):
+    '''
+    Explicitly named version of the registry (not implicit on class names)
+    '''
+
+    def register(self, name, cls, allow_duplicates=True):
+        # Check for duplication
+        if name in self.registry and cls is not self.registry[name]:
+            LOGGER.warning(f'Attempting to overwrite class in registry: {name}')
+            if not allow_duplicates:
+                raise ValueError(f'Cannot overwrite class in registry: {name}')
+        self.registry[name] = cls
+
+
 # Importable registry
 # NEED to use consistent import pattern, otherwise will refer to different memory objects
 # from meta_register import SIMPLEML_REGISTRY as s1 != from simpleml.persistables.meta_register import SIMPLEML_REGISTRY as s2
