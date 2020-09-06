@@ -221,6 +221,25 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
                     save_method=save_method,
                     obj=obj, **save_params)
 
+    def save_external_file(self,
+                           artifact_name: str, save_method: str,
+                           **save_params) -> None:
+        '''
+        Abstracted pattern to save an artifact via one of the registered
+        methods and update the filepaths location
+        '''
+        method = self.SAVE_METHODS.get(save_method, None)
+        if method is None:
+            raise SimpleMLError(f'No registered save pattern for {save_method}')
+        filepath_data = getattr(self, method)(**save_params)
+
+        # Update filepaths
+        if self.filepaths is None:
+            self.filepaths = {}
+        if self.filepaths.get(artifact_name, None) is None:
+            self.filepaths[artifact_name] = {}
+        self.filepaths[artifact_name][save_method] = filepath_data
+
     def load(self, load_externals=True):
         '''
         Counter operation for save
@@ -272,6 +291,27 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
                 _load(artifact_name, save_methods)
         else:
             _load(artifact_name, self.filepaths.get(artifact_name, {}))
+
+    def load_external_file(self, artifact_name: str, save_method: str) -> Any:
+        '''
+        Define pattern for loading external files
+        returns the object for assignment
+        Inverted operation from saving. Registered functions should take in
+        the same data (in the same form) of what is saved in the filepath
+        '''
+        method = self.LOAD_METHODS.get(save_method, None)
+        if method is None:
+            raise SimpleMLError(f'No registered load pattern for {save_method}')
+
+        # Do some validation in case attempting to load unsaved artifact
+        artifact = self.filepaths.get(artifact_name, None)
+        if artifact is None:
+            raise SimpleMLError(f'No artifact saved for {artifact_name}')
+        if save_method not in artifact:
+            raise SimpleMLError(f'No artifact saved using save pattern {save_method} for {artifact_name}')
+
+        filepath_data = artifact[save_method]
+        return getattr(self, method)(filepath_data)
 
     def load_if_unloaded(self, artifact_name: str) -> None:
         '''
