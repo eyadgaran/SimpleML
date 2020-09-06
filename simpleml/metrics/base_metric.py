@@ -1,5 +1,5 @@
 from simpleml.persistables.base_persistable import Persistable, GUID, JSON
-from simpleml.persistables.meta_registry import MetricRegistry
+from simpleml.registries import MetricRegistry
 from simpleml.utils.errors import MetricError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
 from sqlalchemy.orm import relationship

@@ -1,5 +1,5 @@
 from simpleml.persistables.base_persistable import Persistable, GUID, JSON
-from simpleml.persistables.meta_registry import ModelRegistry
+from simpleml.registries import ModelRegistry
 from simpleml.persistables.saving import ExternalArtifactsMixin
 from simpleml.utils.errors import ModelError
 

@@ -33,16 +33,18 @@ __author__ = 'Elisha Yadgaran'
 
 
 import pandas as pd
+import cloudpickle as pickle
+from os.path import join, isfile
+from typing import Optional, Any, Union, Callable, Dict, Type
+from io import StringIO
+
+
 from simpleml.utils.binary_blob import BinaryBlob
 from simpleml.persistables.base_sqlalchemy import DatasetStorageSqlalchemy
 from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
 from simpleml.utils.errors import SimpleMLError
-from simpleml.persistables.meta_registry import KERAS_REGISTRY
-import cloudpickle as pickle
-from os.path import join, isfile
-from typing import Optional, Any, Union, Callable, Dict, Type
-from io import StringIO
+from simpleml.registries import KERAS_REGISTRY, SAVE_METHOD_REGISTRY, LOAD_METHOD_REGISTRY
 
 # Import optional dependencies
 from simpleml.imports import load_model, hickle, onedrivesdk

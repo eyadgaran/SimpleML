@@ -1,20 +1,26 @@
-from sqlalchemy import Column, func, String, Boolean, Integer
-from simpleml.persistables.meta_registry import MetaRegistry, SIMPLEML_REGISTRY
-from simpleml.persistables.sqlalchemy_types import GUID, JSON
-from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
-from simpleml.persistables.saving import AllSaveMixin
-from simpleml.persistables.hashing import CustomHasherMixin
-from simpleml.utils.library_versions import INSTALLED_LIBRARIES
-from simpleml.utils.errors import SimpleMLError
+'''
+Base class for all database tracked records, called "Persistables"
+'''
+
+__author__ = 'Elisha Yadgaran'
+
+
 import uuid
+import logging
+
 from abc import abstractmethod
 from future.utils import with_metaclass
 from collections import defaultdict
 from typing import Dict, Union, Optional, Any
-import logging
+from sqlalchemy import Column, func, String, Boolean, Integer
 
-
-__author__ = 'Elisha Yadgaran'
+from simpleml.persistables.sqlalchemy_types import GUID, JSON
+from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
+from simpleml.persistables.saving import AllSaveMixin
+from simpleml.persistables.hashing import CustomHasherMixin
+from simpleml.registries import MetaRegistry, SIMPLEML_REGISTRY
+from simpleml.utils.library_versions import INSTALLED_LIBRARIES
+from simpleml.utils.errors import SimpleMLError
 
 
 LOGGER = logging.getLogger(__name__)

@@ -14,8 +14,8 @@ __author__ = 'Elisha Yadgaran'
 
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import ExternalArtifactsMixin
-from simpleml.persistables.meta_registry import DatasetRegistry
 from simpleml.persistables.sqlalchemy_types import GUID
+from simpleml.registries import DatasetRegistry
 
 from future.utils import with_metaclass
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
