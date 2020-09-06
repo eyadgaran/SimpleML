@@ -6,7 +6,13 @@ __author__ = 'Elisha Yadgaran'
 
 
 import logging
-from simpleml.registries import *
+from simpleml.registries import Registry, \
+    KerasRegistry, KERAS_REGISTRY, \
+    MetaRegistry, SIMPLEML_REGISTRY, \
+    DatasetRegistry, DATASET_REGISTRY, \
+    PipelineRegistry, PIPELINE_REGISTRY, \
+    ModelRegistry, MODEL_REGISTRY, \
+    MetricRegistry, METRIC_REGISTRY
 
 
 LOGGER = logging.getLogger(__name__)
