@@ -2,7 +2,7 @@
 Module with helper classes to create new persistables
 '''
 from abc import ABCMeta, abstractmethod
-from simpleml.persistables.meta_registry import SIMPLEML_REGISTRY
+from simpleml.registries import SIMPLEML_REGISTRY
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.pipelines.base_pipeline import Pipeline
 from simpleml.models.base_model import Model

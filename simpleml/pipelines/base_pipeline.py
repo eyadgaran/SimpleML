@@ -9,7 +9,7 @@ from simpleml.constants import TRAIN_SPLIT
 from simpleml.imports import Sequence
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import ExternalArtifactsMixin
-from simpleml.persistables.meta_registry import PipelineRegistry
+from simpleml.registries import PipelineRegistry
 from simpleml.persistables.sqlalchemy_types import GUID, JSON
 
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline

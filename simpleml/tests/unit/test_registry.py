@@ -4,7 +4,7 @@ Registry related tests
 
 __author__ = 'Elisha Yadgaran'
 
-from simpleml.persistables.meta_registry import MetaRegistry, Registry, SIMPLEML_REGISTRY, NamedRegistry
+from simpleml.registries import MetaRegistry, Registry, SIMPLEML_REGISTRY, NamedRegistry
 import unittest
 from abc import abstractmethod
 from future.utils import with_metaclass
