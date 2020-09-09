@@ -70,6 +70,10 @@ def upgrade():
     filepaths:
         {save_pattern: [filename]}
     -> {artifact: {save_pattern: filename}}
+
+    metadata.state is no longer used so it does not need to be migrated. NOTE: this
+    means that calling self.save() on a migrated persistable will fail in the future
+    because the save patterns are not properly configured in self.state.save_patterns
     '''
     connection = op.get_bind()
     session = configure_session(connection)
