@@ -214,35 +214,6 @@ class ExternalArtifactsMixin(object):
                 return cls
             return deregister
 
-    def get_artifact(self, artifact_name: str) -> Any:
-        '''
-        Accessor method to lookup the artifact in the registry and return
-        the corresponding data value
-        '''
-        if not hasattr(self, 'ARTIFACTS'):
-            raise SimpleMLError('Cannot retrieve artifacts before registering. Make sure to decorate class with @ExternalArtifactsMixin.Decorators.register_artifact')
-        if artifact_name not in self.ARTIFACTS:
-            raise SimpleMLError(f'No registered artifact for {artifact_name}')
-        save_attribute = self.ARTIFACTS[artifact_name]['save']
-        return getattr(self, save_attribute)
-
-    def restore_artifact(self, artifact_name: str, obj: Any) -> None:
-        '''
-        Setter method to lookup the restore attribute and set to the passed object
-        '''
-        if not hasattr(self, 'ARTIFACTS'):
-            raise SimpleMLError('Cannot restore artifacts before registering. Make sure to decorate class with @ExternalArtifactsMixin.Decorators.register_artifact')
-        if artifact_name not in self.ARTIFACTS:
-            raise SimpleMLError(f'No registered artifact for {artifact_name}')
-        restore_attribute = self.ARTIFACTS[artifact_name]['restore']
-        setattr(self, restore_attribute, obj)
-
-        # Make note that the artifact was loaded
-        if hasattr(self, 'unloaded_artifacts'):
-            try:
-                self.unloaded_artifacts.remove(artifact_name)
-            except ValueError:
-                pass
 
     @staticmethod
     def df_to_sql(engine, df: pd.DataFrame, table: str,
