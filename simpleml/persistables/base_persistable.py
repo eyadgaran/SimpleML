@@ -11,7 +11,7 @@ import logging
 from abc import abstractmethod
 from future.utils import with_metaclass
 from collections import defaultdict
-from typing import Dict, Union, Optional, Any
+from typing import Dict, Union, Optional, Any, Type
 from sqlalchemy import Column, func, String, Boolean, Integer
 
 from simpleml.persistables.sqlalchemy_types import GUID, JSON
@@ -107,7 +107,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
 
     def __init__(self, name=None, has_external_files=False,
                  author=None, project=None, version_description=None,
-                 save_methods=None, **kwargs):
+                 save_patterns=None, **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name = self.__class__.__name__
         self.id = uuid.uuid4()
@@ -117,9 +117,9 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
         self.has_external_files = has_external_files
         self.version_description = version_description
 
-        if has_external_files and save_methods is None:
-            LOGGER.warn('Persistable has external artifacts, but has not specified any save methods. Defaulting to local `disk_pickled`')
-            save_methods = defaultdict(['disk_pickled'])
+        if has_external_files and save_patterns is None:
+            LOGGER.warn('Persistable has external artifacts, but has not specified any save patterns. Defaulting to local `disk_pickled`')
+            save_patterns = defaultdict(['disk_pickled'])
 
         # Special place for SimpleML internal params
         # Think of as the config to initialize objects
@@ -129,9 +129,9 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
 
         # For external loading - initialize to None
         self.unloaded_artifacts = []
-        # Store save method in state metadata as an operational setting, otherwise
+        # Store save pattern in state metadata as an operational setting, otherwise
         # it could affect the hash and result in a different object per save location
-        self.state['save_methods'] = save_methods
+        self.state['save_patterns'] = save_patterns
 
     @property
     def config(self):
@@ -197,11 +197,11 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
         is defined using the standard api for the save params defined here. If
         a pattern requires more imports, it needs to be added here
 
-        Uses a standardized nomenclature to reuse params regardless of save method
+        Uses a standardized nomenclature to reuse params regardless of save pattern
         {
             'persistable_id': the database id of the persistable. typically used as the root name of the saved object. implementations will pre/suffix,
             'persistable_type': the persistable type (DATASET/PIPELINE..),
-            'overwrite': boolean. shortcut in case save method redefines a serialization routine
+            'overwrite': boolean. shortcut in case save pattern redefines a serialization routine
         }
         '''
         save_params: Dict[str, Union[str, bool]]
@@ -211,34 +211,42 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
             'overwrite': False,
         }
         # Iterate through each artifact and save
-        for artifact_name, save_methods in self.state.get('save_methods', {}).items():
+        for artifact_name, save_patterns in self.state.get('save_patterns', {}).items():
             # Artifact has to be registered in self.ARTIFACTS
             obj = self.get_artifact(artifact_name)
             # Iterate through list of save methods
-            for save_method in save_methods:
+            for save_pattern in save_patterns:
                 self.save_external_file(
                     artifact_name=artifact_name,
-                    save_method=save_method,
+                    save_pattern=save_pattern,
                     obj=obj, **save_params)
 
     def save_external_file(self,
-                           artifact_name: str, save_method: str,
+                           artifact_name: str, save_pattern: str,
+                           cls: Optional[Type] = None,
                            **save_params) -> None:
         '''
         Abstracted pattern to save an artifact via one of the registered
-        methods and update the filepaths location
+        patterns and update the filepaths location
         '''
-        method = self.SAVE_METHODS.get(save_method, None)
-        if method is None:
-            raise SimpleMLError(f'No registered save pattern for {save_method}')
-        filepath_data = getattr(self, method)(**save_params)
+        if cls is None:
+            # Look up in registry
+            save_cls = self.SAVE_METHODS.get(save_pattern, None)
+        else:
+            LOGGER.info('Custom save class passed, skipping registry lookup')
+            save_cls = cls
+
+        if save_cls is None:
+            raise SimpleMLError(f'No registered save pattern for {save_pattern}')
+
+        filepath_data = save_cls.save(**save_params)
 
         # Update filepaths
         if self.filepaths is None:
             self.filepaths = {}
         if self.filepaths.get(artifact_name, None) is None:
             self.filepaths[artifact_name] = {}
-        self.filepaths[artifact_name][save_method] = filepath_data
+        self.filepaths[artifact_name][save_pattern] = filepath_data
 
     def load(self, load_externals=True):
         '''
@@ -273,45 +281,53 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
         through save patterns and break after the first successful restore
         (allows robustness in the event of unavailable resources)
         '''
-        def _load(artifact_name: str, save_methods: Dict[str, Any]):
+        def _load(artifact_name: str, save_patterns: Dict[str, Any]):
             # Iterate through dict of save methods and file data
-            for save_method in save_methods:
+            for save_pattern in save_patterns:
                 try:
-                    obj = self.load_external_file(artifact_name, save_method)
+                    obj = self.load_external_file(artifact_name, save_pattern)
                     self.restore_artifact(artifact_name, obj)
                     break
                 except Exception as e:
-                    LOGGER.error(f'Failed to restore {artifact_name} via {save_method} ({e}). Trying next save pattern...')
+                    LOGGER.error(f'Failed to restore {artifact_name} via {save_pattern} ({e}). Trying next save pattern...')
             else:
                 raise SimpleMLError(f'Unable to restore {artifact_name} via any registered pattern')
 
         # Iterate through each artifact and restore
+        # Dont use self.unloaded_artifacts list to force a full reload
         if artifact_name is None:
-            for artifact_name, save_methods in self.filepaths.items():
-                _load(artifact_name, save_methods)
+            for artifact_name, save_patterns in self.filepaths.items():
+                _load(artifact_name, save_patterns)
         else:
             _load(artifact_name, self.filepaths.get(artifact_name, {}))
 
-    def load_external_file(self, artifact_name: str, save_method: str) -> Any:
+    def load_external_file(self, artifact_name: str, save_pattern: str,
+                           cls: Optional[Type] = None) -> Any:
         '''
         Define pattern for loading external files
         returns the object for assignment
         Inverted operation from saving. Registered functions should take in
         the same data (in the same form) of what is saved in the filepath
         '''
-        method = self.LOAD_METHODS.get(save_method, None)
-        if method is None:
-            raise SimpleMLError(f'No registered load pattern for {save_method}')
+        if cls is None:
+            # Look up in registry
+            load_cls = self.LOAD_METHODS.get(save_pattern, None)
+        else:
+            LOGGER.info('Custom load class passed, skipping registry lookup')
+            load_cls = cls
+
+        if load_cls is None:
+            raise SimpleMLError(f'No registered load class for {save_pattern}')
 
         # Do some validation in case attempting to load unsaved artifact
         artifact = self.filepaths.get(artifact_name, None)
         if artifact is None:
             raise SimpleMLError(f'No artifact saved for {artifact_name}')
-        if save_method not in artifact:
-            raise SimpleMLError(f'No artifact saved using save pattern {save_method} for {artifact_name}')
+        if save_pattern not in artifact:
+            raise SimpleMLError(f'No artifact saved using save pattern {save_pattern} for {artifact_name}')
 
-        filepath_data = artifact[save_method]
-        return getattr(self, method)(filepath_data)
+        filepath_data = artifact[save_pattern]
+        return load_cls.load(filepath_data)
 
     def load_if_unloaded(self, artifact_name: str) -> None:
         '''
