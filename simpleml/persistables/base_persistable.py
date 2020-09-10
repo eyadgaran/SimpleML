@@ -14,7 +14,7 @@ from collections import defaultdict
 from typing import Dict, Union, Optional, Any
 from sqlalchemy import Column, func, String, Boolean, Integer
 
-from simpleml.persistables.sqlalchemy_types import GUID, JSON
+from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
 from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.hashing import CustomHasherMixin
@@ -95,10 +95,10 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
 
     # Persistence of fitted states
     has_external_files = Column(Boolean, default=False)
-    filepaths = Column(JSON, default={})
+    filepaths = Column(MutableJSON, default={})
 
     # Generic store and metadata for all child objects
-    metadata_ = Column('metadata', JSON, default={})
+    metadata_ = Column('metadata', MutableJSON, default={})
 
     # Internal Registry for all allowed external files
     # Does not need to be persisted because it gets populated on import

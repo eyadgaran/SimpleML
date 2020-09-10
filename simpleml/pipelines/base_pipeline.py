@@ -10,7 +10,7 @@ from simpleml.imports import Sequence
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.saving import ExternalArtifactsMixin
 from simpleml.registries import PipelineRegistry
-from simpleml.persistables.sqlalchemy_types import GUID, JSON
+from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
 from simpleml.pipelines.validation_split_mixins import Split
@@ -44,7 +44,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     __abstract__ = True
 
     # Additional pipeline specific metadata
-    params = Column(JSON, default={})
+    params = Column(MutableJSON, default={})
 
     object_type = 'PIPELINE'
 

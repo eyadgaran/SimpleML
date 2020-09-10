@@ -4,6 +4,7 @@ Platform independent sqlalchemy types
 
 from sqlalchemy.types import TypeDecorator, CHAR, JSON as SQLJSON, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy_json import mutable_json_type
 import uuid
 
 
@@ -57,3 +58,8 @@ class JSON(TypeDecorator):
             return dialect.type_descriptor(JSONB(astext_type=Text()))
         else:
             return dialect.type_descriptor(SQLJSON())
+
+
+# Mutable version of JSON field
+# https://docs.sqlalchemy.org/en/13/core/type_basics.html?highlight=json#sqlalchemy.types.JSON
+MutableJSON = mutable_json_type(dbtype=JSON, nested=True)
