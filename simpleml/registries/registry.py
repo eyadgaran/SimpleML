@@ -35,6 +35,12 @@ class Registry(object):
     def get(self, class_name):
         return self.get_from_registry(class_name)
 
+    def drop(self, key: str) -> None:
+        '''
+        Drop key from registry
+        '''
+        self.registry.pop(key, None)
+
 
 class NamedRegistry(Registry):
     '''
