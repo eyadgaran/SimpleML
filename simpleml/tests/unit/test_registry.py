@@ -59,6 +59,11 @@ class RegistryTests(unittest.TestCase):
         # Try again - same instantiation
         registry.register(FakeClass)
 
+    def test_getting_missing_key(self):
+        fake_key = 'blaldfakhfaljaf'
+        registry = Registry()
+        self.assertEqual(registry.get(fake_key), None)
+
 
 class NamedRegistryTests(unittest.TestCase):
     def test_registration(self):
