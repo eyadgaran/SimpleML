@@ -6,7 +6,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 import logging
-from typing import Type, Optional, Callable
+from typing import Type, Optional, Callable, Union
 
 from simpleml.utils.errors import SimpleMLError
 from simpleml.registries import SAVE_METHOD_REGISTRY, LOAD_METHOD_REGISTRY
@@ -22,7 +22,7 @@ class SavePatternDecorators(object):
     '''
     @staticmethod
     def register_save_pattern(
-        save_pattern: Optional[str] = None,
+        cls_or_save_pattern: Optional[Union[str, Type]] = None,
         save: Optional[bool] = True,
         load: Optional[bool] = True,
         overwrite: Optional[bool] = False
@@ -34,9 +34,11 @@ class SavePatternDecorators(object):
         IT IS ALLOWABLE TO HAVE DIFFERENT CLASSES HANDLE SAVING AND LOADING FOR
         THE SAME REGISTERED PATTERN
 
-        :param save_pattern: the optional string denoting the pattern this
+        :param cls_or_save_pattern: the optional string or class denoting the pattern this
             class implements (e.g. `disk_pickled`). Checks class attribute
             `cls.SAVE_PATTERN` if null
+            cls is automatically passed when calling decorator without parameters
+            (@SavePatternDecorators.register_save_pattern)
         :param save: optional bool; default true; whether to use the decorated
             class as the save method for the registered save pattern
         :param load: optional bool; default true; whether to use the decorated
@@ -45,6 +47,13 @@ class SavePatternDecorators(object):
             the registered class for the save pattern, if it exists. Otherwise throw
             an error
         '''
+        if isinstance(cls_or_save_pattern, str):
+            cls = None
+            save_pattern = cls_or_save_pattern
+        else:
+            cls = cls_or_save_pattern
+            save_pattern = None
+
         def register(cls: Type) -> Type:
             register_save_pattern(
                 cls=cls,
@@ -53,11 +62,15 @@ class SavePatternDecorators(object):
                 load=load
             )
             return cls
-        return register
+
+        if cls is None:
+            return register
+        else:
+            return register(cls)
 
     @staticmethod
     def deregister_save_pattern(
-        save_pattern: Optional[str] = None,
+        cls_or_save_pattern: Optional[str] = None,
         save: Optional[bool] = True,
         load: Optional[bool] = True
     ) -> Callable:
@@ -66,14 +79,23 @@ class SavePatternDecorators(object):
         actually make use of the class but included for completeness.
         Recommended to use importable `deregister_save_pattern` function directly
 
-        :param save_pattern: the optional string denoting the pattern this
+        :param cls_or_save_pattern: the optional string or class denoting the pattern this
             class implements (e.g. `disk_pickled`). Checks class attribute
             `cls.SAVE_PATTERN` if null
+            cls is automatically passed when calling decorator without parameters
+            (@SavePatternDecorators.deregister_save_pattern)
         :param save: optional bool; default true; whether to drop the decorated
             class as the save method for the registered save pattern
         :param load: optional bool; default true; whether to drop the decorated
             class as the load method for the registered save pattern
         '''
+        if isinstance(cls_or_save_pattern, str):
+            cls = None
+            save_pattern = cls_or_save_pattern
+        else:
+            cls = cls_or_save_pattern
+            save_pattern = None
+
         def deregister(cls: Type) -> Type:
             deregister_save_pattern(
                 cls=cls,
@@ -82,7 +104,11 @@ class SavePatternDecorators(object):
                 load=load
             )
             return cls
-        return deregister
+
+        if cls is None:
+            return deregister
+        else:
+            return deregister(cls)
 
 
 '''
@@ -157,7 +183,7 @@ def deregister_save_pattern(
             LOGGER.warning(f"Deregistering {save_pattern} as save pattern but passed class does not match registered class")
         SAVE_METHOD_REGISTRY.drop(save_pattern)
 
-    if load and save_pattern in LOAD_METHOD_REGISTRY.registrv:
+    if load and save_pattern in LOAD_METHOD_REGISTRY.registry:
         if cls is not None and LOAD_METHOD_REGISTRY.get(save_pattern) != cls:
             LOGGER.warning(f"Deregistering {save_pattern} as load pattern but passed class does not match registered class")
         LOAD_METHOD_REGISTRY.drop(save_pattern)
