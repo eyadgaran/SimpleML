@@ -41,6 +41,12 @@ class Registry(object):
         '''
         self.registry.pop(key, None)
 
+    def clear(self):
+        '''
+        Clear registry
+        '''
+        self.registry = {}
+
 
 class NamedRegistry(Registry):
     '''
