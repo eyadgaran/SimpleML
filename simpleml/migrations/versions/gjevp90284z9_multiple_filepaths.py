@@ -79,7 +79,7 @@ def upgrade():
             (DatasetModel, PipelineModel, ModelsModel, MetricsModel),
             ('dataset', 'pipeline', 'model', 'metric')
         ):
-            upgrade_data(table, artifact)
+            upgrade_data(session, table, artifact)
         session.commit()
     except Exception:
         session.rollback()
@@ -88,7 +88,7 @@ def upgrade():
         session.close()
 
 
-def upgrade_data(table, artifact):
+def upgrade_data(session, table, artifact):
     # get all nonnull records
     records = table.all()
     LOGGER.info(f'Modifying data for {len(records)} records')
@@ -102,7 +102,7 @@ def upgrade_data(table, artifact):
             upgrade_filepaths(record, artifact)
 
     if records:
-        table._session.add_all(records)
+        session.add_all(records)
 
 
 def upgrade_metadata(record, artifact):
@@ -146,7 +146,7 @@ def downgrade():
             (DatasetModel, PipelineModel, ModelsModel, MetricsModel),
             ('dataset', 'pipeline', 'model', 'metric')
         ):
-            downgrade_data(table, artifact)
+            downgrade_data(session, table, artifact)
         session.commit()
     except Exception:
         session.rollback()
@@ -155,7 +155,7 @@ def downgrade():
         session.close()
 
 
-def downgrade_data(table, artifact):
+def downgrade_data(session, table, artifact):
     # get all nonnull records
     records = table.all()
     LOGGER.info(f'Modifying data for {len(records)} records')
@@ -167,7 +167,7 @@ def downgrade_data(table, artifact):
         if record.filepaths:
             downgrade_filepaths(record, artifact)
     if records:
-        table._session.add_all(records)
+        session.add_all(records)
 
 
 def downgrade_metadata(record, artifact):
