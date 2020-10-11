@@ -136,37 +136,6 @@ def upgrade_filepaths(record, artifact):
     record.filepaths = filepath
 
 
-def upgrade_metadata(record, artifact):
-    '''
-    Upgrade metadata field for each record
-    '''
-    pattern = record.metadata_['state'].pop('save_method')
-    record.metadata_['state']['save_patterns'] = {artifact: [pattern]}
-
-
-def upgrade_filepaths(record, artifact):
-    '''
-    Upgrade filepaths field for each record
-    '''
-    # Nest under artifact
-    filepath = {artifact: record.filepaths}
-    # Format the filepath data according to the save pattern
-    for save_pattern, filepath_data in filepath[artifact].items():
-        if save_pattern == 'database_table':
-            # Format changed from [(schema, table)] to {schema: schema, table: table}
-            filepath[artifact][save_pattern] = {'schema': filepath_data[0][0], 'table': filepath_data[0][1]}
-        elif save_pattern == 'database_pickled':
-            # Format changed from [record_id] to record_id
-            filepath[artifact][save_pattern] = filepath_data[0]
-        elif save_pattern in ['disk_pickled', 'disk_hdf5', 'disk_keras_hdf5',
-                              'onedrive_pickled', 'onedrive_hdf5', 'onedrive_keras_hdf5',
-                              'cloud_pickled', 'cloud_hdf5', 'cloud_keras_hdf5']:
-            # Format changed from [filename] to filename
-            filepath[artifact][save_pattern] = filepath_data[0]
-        # Else leave as is, not a natively supported save pattern
-    record.filepaths = filepath
-
-
 def downgrade():
     LOGGER.warn('Running lossy downgrade. Data may be lost!')
     connection = op.get_bind()
