@@ -15,9 +15,9 @@ from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
 
 
-class CloudBase(BaseSavePattern):
+class CloudSavePatternMixin(object):
     '''
-    Base class to save/load objects via Apache Libcloud
+    Mixin class to save/load objects via Apache Libcloud
 
     Generic api for all cloud providers so naming convention is extremely important
     to follow in the config. Please reference libcloud documentation for supported
@@ -87,6 +87,14 @@ class CloudBase(BaseSavePattern):
             self.__class__.CLOUD_DRIVER = driver
         return self.__class__.CLOUD_DRIVER
 
+    @classmethod
+    def reset_driver(cls):
+        '''
+        Convenience method to set parsed driver back to None. Forces a config reread on
+        next invocation
+        '''
+        cls.CLOUD_DRIVER = None
+
     def upload_to_cloud(self,
                         folder: str,
                         filename: str) -> None:
@@ -141,6 +149,13 @@ class CloudBase(BaseSavePattern):
                                     destination_path=filepath,
                                     overwrite_existing=True,
                                     delete_on_failure=True)
+
+
+class CloudBase(BaseSavePattern, CloudSavePatternMixin):
+    '''
+    Implementation class for extended base save patterns
+    to/from the cloud via Apache Libcloud
+    '''
 
 
 @SavePatternDecorators.register_save_pattern
