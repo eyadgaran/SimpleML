@@ -8,7 +8,7 @@ __author__ = 'Elisha Yadgaran'
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.imports import Sequence
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.persistables.saving import ExternalArtifactsMixin
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.registries import PipelineRegistry
 from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 
@@ -27,7 +27,7 @@ import pandas as pd
 LOGGER = logging.getLogger(__name__)
 
 
-@ExternalArtifactsMixin.Decorators.register_artifact(
+@ExternalArtifactDecorators.register_artifact(
     artifact_name='pipeline', save_attribute='external_pipeline', restore_attribute='_external_file')
 class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     '''
