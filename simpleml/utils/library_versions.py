@@ -7,6 +7,7 @@ __author__ = 'Elisha Yadgaran'
 import pkg_resources
 import sys
 
+
 def safe_lookup(package):
     try:
         return pkg_resources.get_distribution(package).version
@@ -26,5 +27,7 @@ INSTALLED_LIBRARIES = {
     'scikit-learn': safe_lookup('scikit-learn'),
     'hickle': safe_lookup('hickle'),
     'keras': safe_lookup('keras'),
-    'tensorflow': safe_lookup('tensorflow')
+    'tensorflow': safe_lookup('tensorflow'),
+    'scipy': safe_lookup('scipy'),
+    'sqlalchemy_json': safe_lookup('sqlalchemy-json')
 }
