@@ -13,7 +13,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.persistables.saving import ExternalArtifactsMixin
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.persistables.sqlalchemy_types import GUID
 from simpleml.registries import DatasetRegistry
 
@@ -26,7 +26,7 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-@ExternalArtifactsMixin.Decorators.register_artifact(
+@ExternalArtifactDecorators.register_artifact(
     artifact_name='dataset', save_attribute='dataframe', restore_attribute='_external_file')
 class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
     '''

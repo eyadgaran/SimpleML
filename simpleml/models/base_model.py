@@ -1,6 +1,6 @@
 from simpleml.persistables.base_persistable import Persistable, GUID, MutableJSON
 from simpleml.registries import ModelRegistry
-from simpleml.persistables.saving import ExternalArtifactsMixin
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import ModelError
 
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
@@ -17,7 +17,7 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-@ExternalArtifactsMixin.Decorators.register_artifact(
+@ExternalArtifactDecorators.register_artifact(
     artifact_name='model', save_attribute='external_model', restore_attribute='_external_file')
 class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
     '''
