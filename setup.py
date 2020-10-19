@@ -70,7 +70,7 @@ setup(
     },
     zip_safe=False,
     test_suite='simpleml.tests.load_tests',
-    tests_require=['nose'],
+    tests_require=postgres_dependencies + deep_learning_dependencies + cloud_dependencies,
     entry_points={
         'console_scripts': [
             'simpleml-test=simpleml.tests:run_tests',

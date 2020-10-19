@@ -614,7 +614,7 @@ class SavePatternTests(unittest.TestCase, SavePatternMixin):
         deserialized = self.load_pickled_object(filepath, root_directory=TEMP_DIRECTORY)
         self.assertEqual(obj2, deserialized)
 
-    def test_hickling_to_disk(self):
+    def test_hickling_to_disk_with_overwrite(self):
         '''
         Asserts overwrite functionality for hickle
         '''
