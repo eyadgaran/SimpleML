@@ -68,6 +68,7 @@ setup(
         'postgres': postgres_dependencies,
         'deep-learning': deep_learning_dependencies,
         'cloud': cloud_dependencies,
+        'onedrive': onedrive_dependencies,
         'all': all_dependencies
     },
     zip_safe=False,
