@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class KerasModel(LibraryModel):
-    def __init__(self, save_method='disk_keras_hdf5',
+    def __init__(self,
                  use_training_generator=False, training_generator_params=None,
                  use_validation_generator=False, validation_generator_params=None,
                  use_sequence_object=False,
@@ -36,7 +36,14 @@ class KerasModel(LibraryModel):
         :param validation_generator_params: parameters to pass to the generator method for validation split -
             normal fit(_generator) params should be passed as params={}
         '''
-        super(KerasModel, self).__init__(save_method=save_method, **kwargs)
+        # Overwrite default model save pattern to keras specific (if not already passed)
+        if 'save_patterns' not in kwargs:
+            LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
+            kwargs['save_patterns'] = {'model': 'disk_keras_hdf5'}
+        elif 'model' not in kwargs['save_patterns']:
+            LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
+            kwargs['save_patterns']['model'] = 'disk_keras_hdf5'
+        super(KerasModel, self).__init__(**kwargs)
 
         # Keras supports training and validation with generators
         # Design choice to put this in config as opposed to state because while
