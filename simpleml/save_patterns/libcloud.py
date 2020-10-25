@@ -13,6 +13,8 @@ from simpleml.save_patterns.base import BaseSavePattern
 from simpleml.save_patterns.decorators import SavePatternDecorators
 from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
+from simpleml.imports import Provider
+from simpleml.imports import get_driver
 
 
 class CloudSavePatternMixin(object):
@@ -75,9 +77,6 @@ class CloudSavePatternMixin(object):
         "classproperty" to return and optionally globally set the cloud provider
         '''
         if self.__class__.CLOUD_DRIVER is None:
-            from libcloud.storage.types import Provider
-            from libcloud.storage.providers import get_driver
-
             cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
             connection_params = CONFIG.getlist(cloud_section, 'connection_params')
 
