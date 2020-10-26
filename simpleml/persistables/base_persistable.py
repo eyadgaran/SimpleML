@@ -119,8 +119,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
         self.version_description = version_description
 
         if has_external_files and save_patterns is None:
-            LOGGER.warn('Persistable has external artifacts, but has not specified any save patterns. Defaulting to local `disk_pickled`')
-            save_patterns = defaultdict(['disk_pickled'])
+            raise SimpleMLError('Persistable has external artifacts, but has not specified any save patterns.\nTry reinitializing persistable with `Persistable(save_patterns={artifact_name: [save_patterns]})`')
 
         # Special place for SimpleML internal params
         # Think of as the config to initialize objects
@@ -232,7 +231,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
         '''
         if cls is None:
             # Look up in registry
-            save_cls = SAVE_METHOD_REGISTRY.get(save_pattern, None)
+            save_cls = SAVE_METHOD_REGISTRY.get(save_pattern)
         else:
             LOGGER.info('Custom save class passed, skipping registry lookup')
             save_cls = cls
@@ -323,7 +322,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
         '''
         if cls is None:
             # Look up in registry
-            load_cls = LOAD_METHOD_REGISTRY.get(save_pattern, None)
+            load_cls = LOAD_METHOD_REGISTRY.get(save_pattern)
         else:
             LOGGER.info('Custom load class passed, skipping registry lookup')
             load_cls = cls
