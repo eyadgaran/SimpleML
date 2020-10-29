@@ -1,4 +1,4 @@
-from simpleml.persistables.base_persistable import Persistable, GUID, JSON
+from simpleml.persistables.base_persistable import Persistable, GUID, MutableJSON
 from simpleml.registries import ModelRegistry
 from simpleml.persistables.saving import ExternalArtifactsMixin
 from simpleml.utils.errors import ModelError
@@ -38,8 +38,8 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
     __abstract__ = True
 
     # Additional model specific metadata
-    params = Column(JSON, default={})
-    feature_metadata = Column(JSON, default={})
+    params = Column(MutableJSON, default={})
+    feature_metadata = Column(MutableJSON, default={})
 
     object_type = 'MODEL'
 

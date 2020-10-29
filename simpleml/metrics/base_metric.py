@@ -1,4 +1,4 @@
-from simpleml.persistables.base_persistable import Persistable, GUID, JSON
+from simpleml.persistables.base_persistable import Persistable, GUID, MutableJSON
 from simpleml.registries import MetricRegistry
 from simpleml.utils.errors import MetricError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
@@ -22,7 +22,7 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
     '''
     __abstract__ = True
 
-    values = Column(JSON, nullable=False)
+    values = Column(MutableJSON, nullable=False)
 
     object_type = 'METRIC'
 
@@ -123,4 +123,4 @@ class Metric(AbstractMetric):
         UniqueConstraint('name', 'model_id', 'version', name='metric_name_model_version_unique'),
         # Index for searching through friendly names
         Index('metric_name_index', 'name'),
-     )
+    )

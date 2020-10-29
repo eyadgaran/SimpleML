@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy import MetaData, Column
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from simpleml.persistables.sqlalchemy_types import GUID, JSON
+from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
 
 LOGGER = logging.getLogger(__name__)
@@ -33,8 +33,8 @@ class UpgradeTableModel(BaseSQLAlchemy):
     __abstract__ = True
     metadata = MetaData()
     id = Column(GUID, primary_key=True)
-    metadata_ = Column('metadata', JSON, default={})
-    filepaths = Column(JSON)
+    metadata_ = Column('metadata', MutableJSON, default={})
+    filepaths = Column(MutableJSON)
 
 
 class DatasetModel(UpgradeTableModel):
