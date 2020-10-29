@@ -18,7 +18,7 @@ if sys.version_info < (3, 5):  # Python < 3.5
 elif sys.version_info < (3, 6):  # Python 3.5
     version_based_dependencies = [
         'scikit-learn<0.23.0',
-        'scipy<1.5.0', # Scikit-learn dependency
+        'scipy<1.5.0',  # Scikit-learn dependency
         'pandas<1.0.0',
         'markupsafe<2.0.0',
     ]
@@ -54,6 +54,7 @@ setup(
     install_requires=[
         'sqlalchemy>=1.3.7',  # Unified json_serializer/deserializer for sqlite
         'sqlalchemy-mixins',
+        'sqlalchemy-json',
         'alembic',
         'numpy',
         'cloudpickle',
@@ -70,7 +71,7 @@ setup(
     zip_safe=False,
     test_suite='simpleml.tests.load_tests',
     tests_require=['nose'],
-    entry_points = {
+    entry_points={
         'console_scripts': [
             'simpleml-test=simpleml.tests:run_tests',
             'simpleml-unit-test=simpleml.tests.unit:run_tests',
