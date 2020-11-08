@@ -49,6 +49,9 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
         '''
+        # If no save patterns are set, specify a default for disk_pickled
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'model': ['disk_pickled']}
         super(AbstractModel, self).__init__(
             has_external_files=has_external_files, **kwargs)
 

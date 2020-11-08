@@ -57,6 +57,9 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
     object_type = 'DATASET'
 
     def __init__(self, has_external_files=True, label_columns=None, **kwargs):
+        # If no save patterns are set, specify a default for disk_pickled
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'dataset': ['disk_pickled']}
         super(AbstractDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
