@@ -39,10 +39,10 @@ class KerasModel(LibraryModel):
         # Overwrite default model save pattern to keras specific (if not already passed)
         if 'save_patterns' not in kwargs:
             LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
-            kwargs['save_patterns'] = {'model': 'disk_keras_hdf5'}
+            kwargs['save_patterns'] = {'model': ['disk_keras_hdf5']}
         elif 'model' not in kwargs['save_patterns']:
             LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
-            kwargs['save_patterns']['model'] = 'disk_keras_hdf5'
+            kwargs['save_patterns']['model'] = ['disk_keras_hdf5']
         super(KerasModel, self).__init__(**kwargs)
 
         # Keras supports training and validation with generators

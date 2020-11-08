@@ -51,6 +51,9 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     def __init__(self, has_external_files=True, transformers=None,
                  external_pipeline_class='default', fitted=False,
                  **kwargs):
+        # If no save patterns are set, specify a default for disk_pickled
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'pipeline': ['disk_pickled']}
         super(AbstractPipeline, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
