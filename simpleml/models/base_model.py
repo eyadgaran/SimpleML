@@ -279,7 +279,7 @@ class Model(AbstractModel):
     __tablename__ = 'models'
 
     # Only dependency is the pipeline (to score in production)
-    pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
+    pipeline_id = Column(GUID, ForeignKey("pipelines.id", name="models_pipeline_id_fkey"))
     pipeline = relationship("Pipeline", enable_typechecks=False)
 
     __table_args__ = (
