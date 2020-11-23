@@ -38,7 +38,7 @@ class ClassificationMetric(Metric):
     TODO: Figure out multiclass generalizations
     '''
 
-    def __init__(self, dataset_split, **kwargs):
+    def __init__(self, dataset_split=None, **kwargs):
         '''
         :param dataset_split: string denoting which dataset split to use
             can be one of: `TRAIN`, `VALIDATION`, Other. Other gets no prefix
@@ -47,29 +47,31 @@ class ClassificationMetric(Metric):
 
         '''
         name = kwargs.pop('name', '')
-        self.dataset_split = dataset_split
 
         # Explicitly call out in sample or validation metrics
+        # Only relevant if using a split dataset. No split pipelines will return
+        # all data by default on null input, while split ones will return empty splits
         if dataset_split == TRAIN_SPLIT:
             name = 'in_sample_' + name
         elif dataset_split == VALIDATION_SPLIT:
             name = 'validation_' + name
 
         super(ClassificationMetric, self).__init__(name=name, **kwargs)
+        self.config['dataset_split'] = dataset_split
 
     @property
     def labels(self):
-        return self.model.get_labels(dataset_split=self.dataset_split)
+        return self.model.get_labels(dataset_split=self.config.get('dataset_split'))
 
     @property
     def probabilities(self):
-        probabilities = self.model.predict_proba(X=None, dataset_split=self.dataset_split)
+        probabilities = self.model.predict_proba(X=None, dataset_split=self.config.get('dataset_split'))
         self.validate_predictions(probabilities)
         return probabilities
 
     @property
     def predictions(self):
-        preds = self.model.predict(X=None, dataset_split=self.dataset_split)
+        preds = self.model.predict(X=None, dataset_split=self.config.get('dataset_split'))
         self.validate_predictions(preds)
         return preds
 
