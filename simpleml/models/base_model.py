@@ -231,7 +231,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         '''
         Wrapper method to return labels from dataset
         '''
-        return self.pipeline.y(dataset_split)
+        return self.pipeline.y(split=dataset_split)
 
     '''
     Pass-through methods to external model

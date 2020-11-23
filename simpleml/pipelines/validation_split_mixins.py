@@ -24,6 +24,7 @@ class Split(dict):
     '''
     Container class for splits
     '''
+
     def __getattr__(self, attr):
         '''
         Default attribute processor
@@ -68,6 +69,7 @@ class SplitContainer(defaultdict):
     '''
     Explicit instantiation of a defaultdict returning split objects
     '''
+
     def __init__(self, default_factory=Split, **kwargs):
         super(SplitContainer, self).__init__(default_factory, **kwargs)
 
@@ -93,13 +95,10 @@ class SplitMixin(with_metaclass(ABCMeta, object)):
 class NoSplitMixin(SplitMixin):
     def split_dataset(self):
         '''
-        Method to split the dataframe into different sets. By default sets
-        everything to `TRAIN`, but can be overwritten to add validation, test...
-
-        TODO: Work in support for generators (k-fold)
+        Non-split mixin class. Returns full dataset for any split name
         '''
         self._dataset_splits = self.containerize_split({
-            TRAIN_SPLIT: Split(X=self.dataset.X, y=self.dataset.y).squeeze()
+            'default_factory': lambda: Split(X=self.dataset.X, y=self.dataset.y).squeeze()
         })
 
 
@@ -120,6 +119,7 @@ class RandomSplitMixin(SplitMixin):
     '''
     Class to randomly split dataset into different sets
     '''
+
     def __init__(self, train_size, test_size=None, validation_size=0.0,
                  random_state=123, shuffle=True, **kwargs):
         '''
@@ -180,7 +180,6 @@ class RandomSplitMixin(SplitMixin):
 class ChronologicalSplitMixin(SplitMixin):
     def __init__(self, **kwargs):
         super(ChronologicalSplitMixin, self).__init__(**kwargs)
-
 
 
 class KFoldSplitMixin(SplitMixin):
