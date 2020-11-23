@@ -31,6 +31,7 @@ class UpgradeTableModel(BaseSQLAlchemy):
     Minimal table model to conduct migrations
     '''
     __abstract__ = True
+    __table_args__ = {'extend_existing': True}
     metadata = MetaData()
     id = Column(GUID, primary_key=True)
     metadata_ = Column('metadata', MutableJSON, default={})

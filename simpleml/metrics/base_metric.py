@@ -121,9 +121,9 @@ class Metric(AbstractMetric):
     __tablename__ = 'metrics'
 
     # Dependencies are model and dataset
-    model_id = Column(GUID, ForeignKey("models.id"))
+    model_id = Column(GUID, ForeignKey("models.id", name="metrics_model_id_fkey"))
     model = relationship('Model', enable_typechecks=False)
-    dataset_id = Column(GUID, ForeignKey("datasets.id"))
+    dataset_id = Column(GUID, ForeignKey("datasets.id", name="metrics_dataset_id_fkey"))
     dataset = relationship('Dataset', enable_typechecks=False)
 
     __table_args__ = (
