@@ -97,8 +97,9 @@ class NoSplitMixin(SplitMixin):
         '''
         Non-split mixin class. Returns full dataset for any split name
         '''
+        default_split = Split(X=self.dataset.X, y=self.dataset.y).squeeze()
         self._dataset_splits = self.containerize_split({
-            'default_factory': lambda: Split(X=self.dataset.X, y=self.dataset.y).squeeze()
+            'default_factory': lambda: default_split
         })
 
 
