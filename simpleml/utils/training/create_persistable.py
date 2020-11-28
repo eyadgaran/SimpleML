@@ -52,12 +52,56 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
         Base method to query for dependency
         Raises TrainingError if dependency does not exist
         '''
+        if not dependency_kwargs:
+            raise TrainingError('Must pass at least one key:value to look up in database')
         dependency = dependency_cls.retrieve(
             *dependency_cls.determine_filters(**dependency_kwargs))
         if dependency is None:
             raise TrainingError('Expected dependency is missing')
         dependency.load()
         return dependency
+
+    @classmethod
+    def retrieve_dataset(cls,
+                         dataset=None,
+                         dataset_id: str = None,
+                         dataset_kwargs=None,
+                         **kwargs):
+        if dataset is not None:
+            return dataset
+        if dataset_id is not None:
+            return cls.retrieve_dependency(DatasetCreator, id=dataset_id)
+        if dataset_kwargs is not None:
+            # Use dependency reference to retrieve object
+            return cls.retrieve_dependency(DatasetCreator, **dataset_kwargs)
+
+    @classmethod
+    def retrieve_pipeline(cls,
+                          pipeline=None,
+                          pipeline_id: str = None,
+                          pipeline_kwargs=None,
+                          **kwargs):
+        if pipeline is not None:
+            return pipeline
+        if pipeline_id is not None:
+            return cls.retrieve_dependency(PipelineCreator, id=pipeline_id)
+        if pipeline_kwargs is not None:
+            # Use dependency reference to retrieve object
+            return cls.retrieve_dependency(PipelineCreator, **pipeline_kwargs)
+
+    @classmethod
+    def retrieve_model(cls,
+                       model=None,
+                       model_id: str = None,
+                       model_kwargs=None,
+                       **kwargs):
+        if model is not None:
+            return model
+        if model_id is not None:
+            return cls.retrieve_dependency(ModelCreator, id=model_id)
+        if model_kwargs is not None:
+            # Use dependency reference to retrieve object
+            return cls.retrieve_dependency(ModelCreator, **model_kwargs)
 
     @abstractmethod
     def determine_filters(cls, strict=False, **kwargs):
@@ -99,7 +143,7 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
 
 class DatasetCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, name='', version=None, strict=True, **kwargs):
+    def determine_filters(cls, strict=True, **kwargs):
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -110,41 +154,46 @@ class DatasetCreator(PersistableCreator):
         :param strict: whether to assume same class and name = same persistable,
         or, load the data and compare the hash
         '''
+        if ('id' not in kwargs) and ('name' not in kwargs or 'version' not in kwargs) \
+                and ('registered_name' not in kwargs):
+            raise TrainingError('Need to pass at least one of: `id`, `name, version`, `registered_name` to compare against existing persistables')
 
-        if version is not None:
+        if 'id' in kwargs:
             filters = {
-                'name': name,
-                'version': version
+                'id': kwargs['id']
+            }
+
+        elif 'name' in kwargs and 'version' in kwargs:
+            filters = {
+                'name': kwargs['name'],
+                'version': kwargs['version'],
             }
 
         else:
-            registered_name = kwargs.pop('registered_name')
+            registered_name = kwargs['registered_name']
             # Check if dependency object was passed
-            pipeline = kwargs.pop('pipeline', None)
-
-            if pipeline is None:
-                # Use dependency reference to retrieve object
-                pipeline = cls.retrieve_pipeline(**kwargs.pop('pipeline_kwargs', {}))
+            pipeline = cls.retrieve_pipeline(**kwargs)
 
             if strict:
                 # Build dummy object to retrieve hash to look for
-                new_dataset = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
+                new_dataset = cls.retrieve_from_registry(registered_name)(**kwargs)
                 new_dataset.add_pipeline(pipeline)
                 new_dataset.build_dataframe()
 
                 filters = {
-                    'name': name,
-                    'registered_name': registered_name,
+                    'name': new_dataset.name,
+                    'registered_name': new_dataset.registered_name,
                     'hash_': new_dataset._hash()
                 }
 
             else:
                 # Assume combo of name, class, and pipeline will be unique
                 filters = {
-                    'name': name,
                     'registered_name': registered_name,
                     'pipeline_id': pipeline.id if pipeline is not None else None
                 }
+                if 'name' in kwargs:
+                    filters['name'] = kwargs['name']
 
         return Dataset, filters
 
@@ -157,10 +206,7 @@ class DatasetCreator(PersistableCreator):
         :param registered_name: Class name registered in SimpleML
         :param dataset_pipeline: dataset pipeline object
         '''
-        if pipeline is None:
-            # Use dependency reference to retrieve object
-            pipeline = cls.retrieve_pipeline(**kwargs.pop('pipeline_kwargs', {}))
-
+        pipeline = cls.retrieve_pipeline(**kwargs)
         new_dataset = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_dataset.add_pipeline(pipeline)
         new_dataset.build_dataframe()
@@ -168,19 +214,10 @@ class DatasetCreator(PersistableCreator):
 
         return new_dataset
 
-    @classmethod
-    def retrieve_pipeline(cls, **pipeline_kwargs):
-        # Datasets do not require dataset pipelines so return None if it isn't passed
-        if not pipeline_kwargs:
-            LOGGER.warning('Dataset Pipeline parameters not passed, skipping dependencies. \
-                           Only use this if dataset is already in the right format!')
-            return None
-        return cls.retrieve_dependency(PipelineCreator, **pipeline_kwargs)
-
 
 class PipelineCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, name='', version=None, strict=False, **kwargs):
+    def determine_filters(cls, strict=False, **kwargs):
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -193,36 +230,40 @@ class PipelineCreator(PersistableCreator):
         be the same as well (up to random iter). So, you dont need to fit objects
         to be sure they are the same
         '''
-        if version is not None:
+        if ('id' not in kwargs) and ('name' not in kwargs or 'version' not in kwargs) \
+                and ('registered_name' not in kwargs or ('dataset' not in kwargs and 'dataset_kwargs' not in kwargs)):
+            raise TrainingError('Need to pass at least one of: `id`, `name, version`, `registered_name, dataset`, `registered_name, dataset_kwargs` to compare against existing persistables')
+
+        if 'id' in kwargs:
             filters = {
-                'name': name,
-                'version': version
+                'id': kwargs['id']
+            }
+
+        elif 'name' in kwargs and 'version' in kwargs:
+            filters = {
+                'name': kwargs['name'],
+                'version': kwargs['version'],
             }
 
         else:
-            # Check if dependency object was passed
-            dataset = kwargs.pop('dataset', None)
-            if dataset is None:
-                # Use dependency reference to retrieve object
-                dataset = cls.retrieve_dataset(**kwargs.pop('dataset_kwargs', {}))
-
+            dataset = cls.retrieve_dataset(**kwargs)
             # Build dummy object to retrieve hash to look for
-            registered_name = kwargs.pop('registered_name')
-            new_pipeline = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
+            registered_name = kwargs['registered_name']
+            new_pipeline = cls.retrieve_from_registry(registered_name)(**kwargs)
             new_pipeline.add_dataset(dataset)
             if strict:
                 new_pipeline.fit()
 
             filters = {
-                'name': name,
-                'registered_name': registered_name,
+                'name': new_pipeline.name,
+                'registered_name': new_pipeline.registered_name,
                 'hash_': new_pipeline._hash()
             }
 
         return Pipeline, filters
 
     @classmethod
-    def create(cls, registered_name, dataset=None, **kwargs):
+    def create(cls, registered_name, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -230,10 +271,7 @@ class PipelineCreator(PersistableCreator):
         :param registered_name: Class name registered in SimpleML
         :param dataset: dataset object
         '''
-        if dataset is None:
-            # Use dependency reference to retrieve object
-            dataset = cls.retrieve_dataset(**kwargs.pop('dataset_kwargs', {}))
-
+        dataset = cls.retrieve_dataset(**kwargs)
         new_pipeline = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_pipeline.add_dataset(dataset)
         new_pipeline.fit()
@@ -241,14 +279,10 @@ class PipelineCreator(PersistableCreator):
 
         return new_pipeline
 
-    @classmethod
-    def retrieve_dataset(cls, **dataset_kwargs):
-        return cls.retrieve_dependency(DatasetCreator, **dataset_kwargs)
-
 
 class ModelCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, name='', version=None, strict=False, **kwargs):
+    def determine_filters(cls, strict=False, **kwargs):
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -261,36 +295,40 @@ class ModelCreator(PersistableCreator):
         be the same as well (up to random iter). So, you dont need to fit objects
         to be sure they are the same
         '''
-        if version is not None:
+        if ('id' not in kwargs) and ('name' not in kwargs or 'version' not in kwargs) \
+                and ('registered_name' not in kwargs or ('pipeline' not in kwargs and 'pipeline_kwargs' not in kwargs)):
+            raise TrainingError('Need to pass at least one of: `id`, `name, version`, `registered_name, pipeline`, `registered_name, pipeline_kwargs` to compare against existing persistables')
+
+        if 'id' in kwargs:
             filters = {
-                'name': name,
-                'version': version
+                'id': kwargs['id']
+            }
+
+        elif 'name' in kwargs and 'version' in kwargs:
+            filters = {
+                'name': kwargs['name'],
+                'version': kwargs['version'],
             }
 
         else:
-            # Check if dependency object was passed
-            pipeline = kwargs.pop('pipeline', None)
-            if pipeline is None:
-                # Use dependency reference to retrieve object
-                pipeline = cls.retrieve_pipeline(**kwargs.pop('pipeline_kwargs', {}))
-
+            pipeline = cls.retrieve_pipeline(**kwargs)
             # Build dummy object to retrieve hash to look for
-            registered_name = kwargs.pop('registered_name')
-            new_model = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
+            registered_name = kwargs['registered_name']
+            new_model = cls.retrieve_from_registry(registered_name)(**kwargs)
             new_model.add_pipeline(pipeline)
             if strict:
                 new_model.fit()
 
             filters = {
-                'name': name,
-                'registered_name': registered_name,
+                'name': new_model.name,
+                'registered_name': new_model.registered_name,
                 'hash_': new_model._hash()
             }
 
         return Model, filters
 
     @classmethod
-    def create(cls, registered_name, pipeline=None, **kwargs):
+    def create(cls, registered_name, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -298,10 +336,7 @@ class ModelCreator(PersistableCreator):
         :param registered_name: Class name registered in SimpleML
         :param pipeline: pipeline object
         '''
-        if pipeline is None:
-            # Use dependency reference to retrieve object
-            pipeline = cls.retrieve_pipeline(**kwargs.pop('pipeline_kwargs', {}))
-
+        pipeline = cls.retrieve_pipeline(**kwargs)
         new_model = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_model.add_pipeline(pipeline)
         new_model.fit()
@@ -309,14 +344,10 @@ class ModelCreator(PersistableCreator):
 
         return new_model
 
-    @classmethod
-    def retrieve_pipeline(cls, **pipeline_kwargs):
-        return cls.retrieve_dependency(PipelineCreator, **pipeline_kwargs)
-
 
 class MetricCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, name=None, model_id=None, strict=False, **kwargs):
+    def determine_filters(cls, strict=False, **kwargs):
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -329,24 +360,32 @@ class MetricCreator(PersistableCreator):
         be the same as well (up to random iter). So, you dont need to fit objects
         to be sure they are the same
         '''
-        # Check if dependency object was passed
-        model = kwargs.pop('model', None)
-        if name is not None and (model_id is not None or model is not None):
-            # Can't use default name because metrics are hard coded to reflect dataset split + class
+        if ('id' not in kwargs) and \
+            ('name' not in kwargs or 'version' not in kwargs or ('model_id' not in kwargs and 'model' not in kwargs)) \
+                and ('registered_name' not in kwargs):
+            raise TrainingError('Need to pass at least one of: `id`, `name, version, model`, `name, version, model_id`, `registered_name` to compare against existing persistables')
+
+        model = cls.retrieve_model(**kwargs)
+        dataset = cls.retrieve_dataset(**kwargs)
+
+        if 'id' in kwargs:
             filters = {
-                'name': name,
-                'model_id': model_id if model_id is not None else model.id,
+                'id': kwargs['id']
+            }
+
+        elif 'name' in kwargs and 'version' in kwargs and model is not None:
+            filters = {
+                'name': kwargs['name'],
+                'version': kwargs['version'],
+                'model_id': model.id,
             }
 
         else:
-            if model is None:
-                # Use dependency reference to retrieve object
-                model = cls.retrieve_model(**kwargs.pop('model_kwargs', {}))
-
             # Build dummy object to retrieve hash to look for
-            registered_name = kwargs.pop('registered_name')
-            new_metric = cls.retrieve_from_registry(registered_name)(name=name, **kwargs)
+            registered_name = kwargs['registered_name']
+            new_metric = cls.retrieve_from_registry(registered_name)(**kwargs)
             new_metric.add_model(model)
+            new_metric.add_dataset(dataset)
             if strict:
                 new_metric.score()
 
@@ -359,7 +398,7 @@ class MetricCreator(PersistableCreator):
         return Metric, filters
 
     @classmethod
-    def create(cls, registered_name, model=None, **kwargs):
+    def create(cls, registered_name, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -367,17 +406,12 @@ class MetricCreator(PersistableCreator):
         :param registered_name: Class name registered in SimpleML
         :param model: model class
         '''
-        if model is None:
-            # Use dependency reference to retrieve object
-            model = cls.retrieve_model(**kwargs.pop('model_kwargs', {}))
-
+        model = cls.retrieve_model(**kwargs)
+        dataset = cls.retrieve_dataset(**kwargs)
         new_metric = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_metric.add_model(model)
+        new_metric.add_dataset(dataset)
         new_metric.score()
         new_metric.save()
 
         return new_metric
-
-    @classmethod
-    def retrieve_model(cls, **model_kwargs):
-        return cls.retrieve_dependency(ModelCreator, **model_kwargs)
