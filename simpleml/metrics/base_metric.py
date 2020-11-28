@@ -4,8 +4,12 @@ from simpleml.utils.errors import MetricError
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
 from sqlalchemy.orm import relationship
 from future.utils import with_metaclass
+import logging
 
 __author__ = 'Elisha Yadgaran'
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
@@ -42,12 +46,15 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
         '''
         Hash is the combination of the:
             1) Model
-            2) Dataset
-            2) Metric
-            3) Config
+            2) Dataset (optional)
+            3) Metric
+            4) Config
         '''
         model_hash = self.model.hash_ or self.model._hash()
-        dataset_hash = self.dataset.hash_ or self.dataset._hash()
+        if self.dataset is not None:
+            dataset_hash = self.dataset.hash_ or self.dataset._hash()
+        else:
+            dataset_hash = None
         metric = self.__class__.__name__
         config = self.config
 
@@ -70,13 +77,28 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
 
         return last_version + 1
 
+    def _get_pipeline_split(self, column: str, split: str, **kwargs):
+        '''
+        For special case where dataset is the same as the model's dataset, the
+        dataset splits can refer to the pipeline imposed splits, not the inherent
+        dataset's splits. Use the pipeline split then
+        ex: RandomSplitPipeline on NoSplitDataset evaluating "in_sample" performance
+        '''
+        return getattr(self.model.pipeline.get_dataset_split(split=split, **kwargs), column)
+
+    def _get_dataset_split(self, **kwargs):
+        '''
+        Default accessor for dataset data. REFERS TO RAW DATASETS
+        not the pipelines superimposed. That means that datasets that do not
+        define explicit splits will have no notion of downstream splits
+        (e.g. RandomSplitPipeline)
+        '''
+        return self.dataset.get(**kwargs)
+
     def save(self, **kwargs):
         '''
         Extend parent function with a few additional save routines
         '''
-        if self.dataset is None:
-            raise MetricError('Must set dataset before saving')
-
         if self.model is None:
             raise MetricError('Must set model before saving')
 
