@@ -65,6 +65,7 @@ class NumpyDataset(Dataset, NumpyDatasetMixin):
     WARNING: this class will fail if build_dataframe is not overwritten or a
     pipeline provided!
     '''
+
     def build_dataframe(self):
         '''
         Transform raw dataset via dataset pipeline for production ready dataset

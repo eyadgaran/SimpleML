@@ -1,6 +1,6 @@
-from simpleml.persistables.base_persistable import Persistable, GUID, JSON
-from simpleml.persistables.meta_registry import ModelRegistry
-from simpleml.persistables.saving import AllSaveMixin
+from simpleml.persistables.base_persistable import Persistable, GUID, MutableJSON
+from simpleml.registries import ModelRegistry
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import ModelError
 
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
@@ -17,7 +17,9 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
+@ExternalArtifactDecorators.register_artifact(
+    artifact_name='model', save_attribute='external_model', restore_attribute='_external_file')
+class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
     '''
     Abstract Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
@@ -36,23 +38,29 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
     __abstract__ = True
 
     # Additional model specific metadata
-    params = Column(JSON, default={})
-    feature_metadata = Column(JSON, default={})
+    params = Column(MutableJSON, default={})
+    feature_metadata = Column(MutableJSON, default={})
 
     object_type = 'MODEL'
 
-    def __init__(self, has_external_files=True, external_model_kwargs={}, params={},
+    def __init__(self, has_external_files=True, external_model_kwargs=None, params=None,
                  **kwargs):
         '''
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
         '''
+        # If no save patterns are set, specify a default for disk_pickled
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'model': ['disk_pickled']}
         super(AbstractModel, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # Instantiate model
+        if external_model_kwargs is None:
+            external_model_kwargs = {}
         self._external_file = self._create_external_model(**external_model_kwargs)
-        self.set_params(**params)
+        if params is not None:
+            self.set_params(**params)
 
         # Initialize as unfitted
         self.fitted = False
@@ -73,9 +81,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         Wrapper around whatever underlying class is desired
         (eg sklearn or keras)
         '''
-        if self.unloaded_externals:
-            self._load_external_files()
-
+        self.load_if_unloaded('model')
         return self._external_file
 
     def _create_external_model(self, **kwargs):
@@ -225,11 +231,12 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable, AllSaveMixin)):
         '''
         Wrapper method to return labels from dataset
         '''
-        return self.pipeline.y(dataset_split)
+        return self.pipeline.y(split=dataset_split)
 
     '''
     Pass-through methods to external model
     '''
+
     def get_params(self, **kwargs):
         '''
         Pass through method to external model
@@ -272,7 +279,7 @@ class Model(AbstractModel):
     __tablename__ = 'models'
 
     # Only dependency is the pipeline (to score in production)
-    pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
+    pipeline_id = Column(GUID, ForeignKey("pipelines.id", name="models_pipeline_id_fkey"))
     pipeline = relationship("Pipeline", enable_typechecks=False)
 
     __table_args__ = (
@@ -280,7 +287,7 @@ class Model(AbstractModel):
         UniqueConstraint('name', 'version', name='model_name_version_unique'),
         # Index for searching through friendly names
         Index('model_name_index', 'name'),
-     )
+    )
 
 
 class LibraryModel(Model):

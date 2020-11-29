@@ -6,7 +6,7 @@ need to overwrite other methods at the root
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.constants import VALIDATION_SPLIT
+from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
 from .base_model import LibraryModel
 
 import logging
@@ -17,9 +17,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class KerasModel(LibraryModel):
-    def __init__(self, save_method='disk_keras_hdf5',
-                 use_training_generator=False, training_generator_params={},
-                 use_validation_generator=False, validation_generator_params={},
+    def __init__(self,
+                 use_training_generator=False, training_generator_params=None,
+                 use_validation_generator=False, validation_generator_params=None,
                  use_sequence_object=False,
                  **kwargs):
         '''
@@ -36,13 +36,24 @@ class KerasModel(LibraryModel):
         :param validation_generator_params: parameters to pass to the generator method for validation split -
             normal fit(_generator) params should be passed as params={}
         '''
-        super(KerasModel, self).__init__(save_method=save_method, **kwargs)
+        # Overwrite default model save pattern to keras specific (if not already passed)
+        if 'save_patterns' not in kwargs:
+            LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
+            kwargs['save_patterns'] = {'model': ['disk_keras_hdf5']}
+        elif 'model' not in kwargs['save_patterns']:
+            LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
+            kwargs['save_patterns']['model'] = ['disk_keras_hdf5']
+        super(KerasModel, self).__init__(**kwargs)
 
         # Keras supports training and validation with generators
         # Design choice to put this in config as opposed to state because while
         # it is true that a specific combination of generator params will yield
         # the same model artifact as the traditional fit, it is very unlikely and
         # therefore assumed to be different (hashes will not be equal because of differing param structure)
+        if training_generator_params is None:
+            training_generator_params = {}
+        if validation_generator_params is None:
+            validation_generator_params = {}
         generator_params = {
             'use_training_generator': use_training_generator,
             'use_sequence_object': use_sequence_object,
@@ -88,7 +99,7 @@ class KerasModel(LibraryModel):
             self._fit_generator()
         else:
             # Explicitly fit only on default (train) split
-            split = self.transform(X=None, return_generator=False, return_sequence=False)
+            split = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_generator=False, return_sequence=False)
             # Hack for python <3.5 -- cant use fit(**split, **kwargs)
             temp_kwargs = self.get_params().copy()
             temp_kwargs.update(split)
@@ -102,7 +113,8 @@ class KerasModel(LibraryModel):
         use_keras_sequence = self.config.get('use_sequence_object', False)
 
         # Explicitly fit only on default (train) split
-        training_generator = self.transform(X=None, return_generator=True,
+        training_generator = self.transform(X=None, dataset_split=TRAIN_SPLIT,
+                                            return_generator=True,
                                             return_sequence=use_keras_sequence,
                                             **self.config.get('training_generator_params', {}))
         if self.config['use_validation_generator']:

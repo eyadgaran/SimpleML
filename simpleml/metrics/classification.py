@@ -23,11 +23,16 @@ from simpleml.metrics.base_metric import Metric
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 from simpleml.utils.errors import MetricError
 from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_score
+from abc import abstractmethod
 import numpy as np
 import pandas as pd
+import logging
 
 
 __author__ = 'Elisha Yadgaran'
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 ############################### BASE ###############################
@@ -36,7 +41,8 @@ class ClassificationMetric(Metric):
     '''
     TODO: Figure out multiclass generalizations
     '''
-    def __init__(self, dataset_split, **kwargs):
+
+    def __init__(self, dataset_split=None, **kwargs):
         '''
         :param dataset_split: string denoting which dataset split to use
             can be one of: `TRAIN`, `VALIDATION`, Other. Other gets no prefix
@@ -45,29 +51,49 @@ class ClassificationMetric(Metric):
 
         '''
         name = kwargs.pop('name', '')
-        self.dataset_split = dataset_split
 
         # Explicitly call out in sample or validation metrics
+        # Only relevant if using a split dataset. No split pipelines will return
+        # all data by default on null input, while split ones will return empty splits
         if dataset_split == TRAIN_SPLIT:
             name = 'in_sample_' + name
         elif dataset_split == VALIDATION_SPLIT:
             name = 'validation_' + name
 
         super(ClassificationMetric, self).__init__(name=name, **kwargs)
+        self.config['dataset_split'] = dataset_split
+
+    def _get_split(self, column):
+        if self.dataset.id == self.model.pipeline.dataset_id:
+            LOGGER.debug('Dataset is the same as model dataset, using pipeline dataset split instead of raw dataset one')
+            return self._get_pipeline_split(column=column, split=self.config.get('dataset_split'))
+        return self._get_dataset_split(column=column, split=self.config.get('dataset_split'))
 
     @property
     def labels(self):
-        return self.model.get_labels(dataset_split=self.dataset_split)
+        if self.dataset is None:
+            raise MetricError('Must set dataset before scoring classification metrics!')
+        return self._get_split(column='y')
 
     @property
     def probabilities(self):
-        probabilities = self.model.predict_proba(X=None, dataset_split=self.dataset_split)
+        if self.dataset is None:
+            raise MetricError('Must set dataset before scoring classification metrics!')
+        probabilities = self.model.predict_proba(
+            X=self._get_split(column='X'),
+            transform=True
+        )
         self.validate_predictions(probabilities)
         return probabilities
 
     @property
     def predictions(self):
-        preds = self.model.predict(X=None, dataset_split=self.dataset_split)
+        if self.dataset is None:
+            raise MetricError('Must set dataset before scoring classification metrics!')
+        preds = self.model.predict(
+            X=self._get_split(column='X'),
+            transform=True
+        )
         self.validate_predictions(preds)
         return preds
 
@@ -86,6 +112,24 @@ class ClassificationMetric(Metric):
 
 
 class BinaryClassificationMetric(ClassificationMetric):
+    @property
+    def labels(self):
+        # extends parent label retrieval with a validation step for binary values
+        labels = super(BinaryClassificationMetric, self).labels
+        self.validate_labels(labels)
+        return labels
+
+    @staticmethod
+    def validate_labels(labels):
+        invalid = None
+        if labels is None:
+            invalid = True
+        else:
+            invalid = (len(set(labels) - {0, 1}) > 0)
+
+        if invalid:
+            raise MetricError('Attempting to score a binary metric with labels outside of {0,1}')
+
     @property
     def probabilities(self):
         probabilities = super(BinaryClassificationMetric, self).probabilities
@@ -113,6 +157,19 @@ class BinaryClassificationMetric(ClassificationMetric):
 
         return self._confusion_matrix
 
+    @staticmethod
+    def _create_confusion_matrix(thresholds, probabilities, labels):
+        '''
+        Independent computation method (easier testing)
+        '''
+        results = []
+        for threshold in thresholds:
+            predictions = np.where(probabilities >= threshold, 1, 0)
+            tn, fp, fn, tp = confusion_matrix(labels, predictions, labels=[0, 1]).ravel()
+            results.append((threshold, tn, fp, fn, tp))
+
+        return pd.DataFrame(results, columns=['threshold', 'tn', 'fp', 'fn', 'tp'])
+
     def create_confusion_matrix(self):
         '''
         Iterate through each threshold and compute confusion matrix
@@ -122,13 +179,7 @@ class BinaryClassificationMetric(ClassificationMetric):
         probabilities = self.probabilities
         labels = self.labels
 
-        results = []
-        for threshold in thresholds:
-            predictions = np.where(probabilities >= threshold, 1, 0)
-            tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
-            results.append((threshold, tn, fp, fn, tp))
-
-        self._confusion_matrix = pd.DataFrame(results, columns=['threshold', 'tn', 'fp', 'fn', 'tp'])
+        self._confusion_matrix = self._create_confusion_matrix(thresholds, probabilities, labels)
 
     @staticmethod
     def dedupe_curve(keys, values, maximize=True, round_places=3):
@@ -248,9 +299,14 @@ class BinaryClassificationMetric(ClassificationMetric):
         '''
         Convenience property for the Matthews Correlation Coefficient (TP*TN-FP*FN/((FP+TP)*(TP+FN)*(TN+FP)*(TN+FN))^0.5)
         '''
-        return (self.confusion_matrix.tp * self.confusion_matrix.tn - self.confusion_matrix.fp * self.confusion_matrix.fn) /\
-            ((self.confusion_matrix.fp + self.confusion_matrix.tp) * (self.confusion_matrix.tp + self.confusion_matrix.fn) *\
-             (self.confusion_matrix.tn + self.confusion_matrix.fp) * (self.confusion_matrix.tn + self.confusion_matrix.fn))**0.5
+        numerator = (self.confusion_matrix.tp * self.confusion_matrix.tn - self.confusion_matrix.fp * self.confusion_matrix.fn)
+        denominator = (
+            (self.confusion_matrix.fp + self.confusion_matrix.tp)
+            * (self.confusion_matrix.tp + self.confusion_matrix.fn)
+            * (self.confusion_matrix.tn + self.confusion_matrix.fp)
+            * (self.confusion_matrix.tn + self.confusion_matrix.fn)
+        )**0.5
+        return numerator / denominator
 
     @property
     def informedness(self):
@@ -274,59 +330,73 @@ Pointwise metrics using only the predict scoring method
 (fixed operating point)
 '''
 
-class AccuracyMetric(BinaryClassificationMetric):
+
+class AggregateBinaryClassificationMetric(BinaryClassificationMetric):
+    @staticmethod
+    @abstractmethod
+    def _score(predictions, labels):
+        '''
+        Each aggregate needs to define a separate private method to actually
+        calculate the aggregate
+
+        Separated from the public score method to enable easier testing and
+        extension (values can be passed from non internal properties)
+        '''
+
+    def score(self):
+        '''
+        Main scoring method. Uses internal values and passes to class level
+        aggregation method
+        '''
+        predictions = self.predictions
+        labels = self.labels
+        self.values = {'agg': self._score(predictions, labels)}
+
+
+class AccuracyMetric(AggregateBinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'classification_accuracy'
         super(AccuracyMetric, self).__init__(**kwargs)
 
-    def score(self):
-        predictions = self.predictions
-        labels = self.labels
-        accuracy = accuracy_score(y_true=labels, y_pred=predictions)
+    @staticmethod
+    def _score(predictions, labels):
+        return accuracy_score(y_true=labels, y_pred=predictions)
 
-        self.values = {'agg': accuracy}
 
-class TprMetric(BinaryClassificationMetric):
+class TprMetric(AggregateBinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'tpr'
         super(TprMetric, self).__init__(**kwargs)
 
-    def score(self):
-        predictions = self.predictions
-        labels = self.labels
+    @staticmethod
+    def _score(predictions, labels):
         tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
-        tpr = float(tp) / (tp + fn)
+        return float(tp) / (tp + fn)
 
-        self.values = {'agg': tpr}
 
-class FprMetric(BinaryClassificationMetric):
+class FprMetric(AggregateBinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'fpr'
         super(FprMetric, self).__init__(**kwargs)
 
-    def score(self):
-        predictions = self.predictions
-        labels = self.labels
+    @staticmethod
+    def _score(predictions, labels):
         tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
-        fpr = float(fp) / (fp + tn)
+        return float(fp) / (fp + tn)
 
-        self.values = {'agg': fpr}
 
-class F1ScoreMetric(BinaryClassificationMetric):
+class F1ScoreMetric(AggregateBinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'f1_score'
         super(F1ScoreMetric, self).__init__(**kwargs)
 
-    def score(self):
-        predictions = self.predictions
-        labels = self.labels
-        f1_score_ = f1_score(y_true=labels, y_pred=predictions)
-
-        self.values = {'agg': f1_score_}
+    @staticmethod
+    def _score(predictions, labels):
+        return f1_score(y_true=labels, y_pred=predictions)
 
 
 '''
@@ -334,24 +404,29 @@ Aggregate metrics computed by evaluating over entire curves
 (Requires proba method)
 '''
 
+
 class RocAucMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
         kwargs['name'] = 'roc_auc'
         super(RocAucMetric, self).__init__(**kwargs)
 
+    @staticmethod
+    def _score(probabilities, labels):
+        return roc_auc_score(y_true=labels, y_score=probabilities)
+
     def score(self):
         probabilities = self.probabilities
         labels = self.labels
-        auc = roc_auc_score(y_true=labels, y_score=probabilities)
-
-        self.values = {'agg': auc}
+        self.values = {'agg': self._score(probabilities, labels)}
 
 ############################### CURVE METRICS ###############################
+
 
 '''
 Threshold Constrained Metrics
 '''
+
 
 class ThresholdTprMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -371,6 +446,7 @@ class ThresholdTnrMetric(BinaryClassificationMetric):
 
     def score(self):
         self.values = self.dedupe_curve(self.thresholds, self.true_negative_rate, maximize=True)
+
 
 class ThresholdFnrMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -505,6 +581,7 @@ class ThresholdMarkednessMetric(BinaryClassificationMetric):
 '''
 FPR Constrained Metrics
 '''
+
 
 class FprThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -660,6 +737,7 @@ class FprMarkednessMetric(BinaryClassificationMetric):
 TPR Constrained Metrics
 '''
 
+
 class TprThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -813,6 +891,7 @@ class TprMarkednessMetric(BinaryClassificationMetric):
 '''
 TNR Constrained Metrics
 '''
+
 
 class TnrThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -968,6 +1047,7 @@ class TnrMarkednessMetric(BinaryClassificationMetric):
 FNR Constrained Metrics
 '''
 
+
 class FnrThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -1118,10 +1198,10 @@ class FnrMarkednessMetric(BinaryClassificationMetric):
         self.values = self.dedupe_curve(self.false_negative_rate, self.markedness, maximize=True)
 
 
-
 '''
 FDR Constrained Metrics
 '''
+
 
 class FdrThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -1277,6 +1357,7 @@ class FdrMarkednessMetric(BinaryClassificationMetric):
 FOR Constrained Metrics
 '''
 
+
 class ForThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -1430,6 +1511,7 @@ class ForMarkednessMetric(BinaryClassificationMetric):
 '''
 PPV Constrained Metrics
 '''
+
 
 class PpvThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
@@ -1585,6 +1667,7 @@ class PpvMarkednessMetric(BinaryClassificationMetric):
 NPV Constrained Metrics
 '''
 
+
 class NpvThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -1739,6 +1822,7 @@ class NpvMarkednessMetric(BinaryClassificationMetric):
 Predicted Positive Rate Constrained Metrics
 '''
 
+
 class PredictedPositiveRateThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):
         # Drop whatever name was passed and explicitly rename
@@ -1892,6 +1976,7 @@ class PredictedPositiveRateMarkednessMetric(BinaryClassificationMetric):
 '''
 Predicted Negative Rate Constrained Metrics
 '''
+
 
 class PredictedNegativeRateThresholdMetric(BinaryClassificationMetric):
     def __init__(self, **kwargs):

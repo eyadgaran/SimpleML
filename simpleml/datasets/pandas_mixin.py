@@ -99,8 +99,3 @@ class PandasDatasetMixin(AbstractDatasetMixin):
     def load_csv(filename, **kwargs):
         '''Helper method to read in a csv file'''
         return pd.read_csv(filename, **kwargs)
-
-    @staticmethod
-    def load_sql(query, connection, **kwargs):
-        '''Helper method to read in sql data'''
-        return pd.read_sql_query(query, connection, **kwargs)

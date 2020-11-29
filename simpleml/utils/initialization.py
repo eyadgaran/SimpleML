@@ -7,7 +7,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 # Import table models to register in DeclaritiveBase
-from simpleml.persistables.base_persistable import Persistable
+from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy, DatasetStorageSqlalchemy, BinaryStorageSqlalchemy
 import simpleml.datasets.base_dataset
 import simpleml.pipelines.base_pipeline
 import simpleml.models.base_model
@@ -50,8 +50,9 @@ class BaseDatabase(URL):
     Base Database class to configure db connection
     Does not assume schema tracking or any other validation
     '''
+
     def __init__(self, config=None, configuration_section=None, uri=None,
-                 use_ssh_tunnel=False, sshtunnel_params={}, **credentials):
+                 use_ssh_tunnel=False, sshtunnel_params=None, **credentials):
         '''
         :param use_ssh_tunnel: boolean - default false. Whether to tunnel sqlalchemy connection
             through an ssh tunnel or not
@@ -83,13 +84,18 @@ class BaseDatabase(URL):
         if self.use_ssh_tunnel:
             LOGGER.warning(
                 '''
-                SSH Tunnel is unreliable at the moment - connections time out randomly.
-                Usage: call Database.start_tunnel() before Database.initialize() and
-                end script with Database.stop_tunnel()
+                Usage: call Database.open_tunnel() before Database.initialize() and
+                end script with Database.close_tunnel()
+                Configure connection with supported parameters passed via
+                `sshtunnel_params={**configs}`. Binding and routing through local
+                port is automatically handled, but other parameters like `set_keepalive`
+                may be interesting. https://sshtunnel.readthedocs.io/en/latest/
                 '''
             )
             # Overwrite passed ports and hosts to route localhost port to the
             # original destination via tunnel
+            if sshtunnel_params is None:
+                sshtunnel_params = {}
             credentials, self.ssh_config = self.configure_ssh_tunnel(credentials, sshtunnel_params)
 
         super(BaseDatabase, self).__init__(**credentials)
@@ -202,6 +208,7 @@ class AlembicDatabase(BaseDatabase):
     Base database class to manage dbs with schema tracking. Includes alembic
     config references
     '''
+
     def __init__(self, alembic_filepath, script_location='migrations', *args, **kwargs):
         self.alembic_filepath = alembic_filepath
         self.script_location = script_location
@@ -253,26 +260,31 @@ class AlembicDatabase(BaseDatabase):
         '''
         command.downgrade(self.alembic_config, revision)
 
-    def validate_schema_version(self):
+    def validate_schema_version(self, base_list):
         '''
         Check that the newly initialized database is up-to-date
         Raises an error otherwise (ahead of any table model mismatches later)
         '''
-        # Establish a context to access db values
-        context = MigrationContext.configure(self.engine.connect())
-        current_revision = context.get_current_revision()
+        # Iterate base list and check schema against alembic config (if different
+        # bases use different configs, they need to be invoked in different classes)
+        for base in base_list:
+            # Establish a context to access db values - use the bound engine in case
+            # of ephemeral connection (in memory sqlite)
+            engine = base.metadata.bind
+            context = MigrationContext.configure(engine.connect())
+            current_revision = context.get_current_revision()
 
-        # Read local config file to find the current "head" revision
-        # config = Config()
-        # config.set_main_option("script_location",
-        #                        join(dirname(dirname(dirname(realpath(__file__)))), "migrations"))
-        script = ScriptDirectory.from_config(self.alembic_config)
-        head_revision = script.get_current_head()
+            # Read local config file to find the current "head" revision
+            # config = Config()
+            # config.set_main_option("script_location",
+            #                        join(dirname(dirname(dirname(realpath(__file__)))), "migrations"))
+            script = ScriptDirectory.from_config(self.alembic_config)
+            head_revision = script.get_current_head()
 
-        if current_revision != head_revision:
-            raise SimpleMLError('''Attempting to connect to an outdated schema.
-                                Set the parameter `upgrade=True` in the initialize method
-                                or manually execute `alembic upgrade head` in a shell''')
+            if current_revision != head_revision:
+                raise SimpleMLError('''Attempting to connect to an outdated schema.
+                                    Set the parameter `upgrade=True` in the initialize method
+                                    or manually execute `alembic upgrade head` in a shell''')
 
     def initialize(self, base_list, upgrade=False, **kwargs):
         '''
@@ -293,7 +305,7 @@ class AlembicDatabase(BaseDatabase):
             self.upgrade()
 
         # Assert current db schema is up-to-date
-        self.validate_schema_version()
+        self.validate_schema_version(base_list)
 
 
 class Database(AlembicDatabase):
@@ -301,6 +313,7 @@ class Database(AlembicDatabase):
     SimpleML specific configuration to interact with the database
     Defaults to sqlite db in filestore directory
     '''
+
     def __init__(self,
                  configuration_section=None,
                  uri=None,
@@ -354,6 +367,50 @@ class Database(AlembicDatabase):
         :return: None
         '''
         if base_list is None:  # Use defaults in project
-            base_list = [Persistable]
+            base_list = [SimplemlCoreSqlalchemy]
 
         super(Database, self).initialize(base_list, **kwargs)
+
+
+class DatasetDatabase(BaseDatabase):
+    '''
+    Hardcoded database mapped to dataset storage metadata
+    '''
+
+    def initialize(self, base_list=None, **kwargs):
+        '''
+        Initialization method to set up database connection and inject
+        session manager
+
+        Raises a SimpleML error if database schema is not up to date
+
+        :param drop_tables: Bool, whether to drop existing tables in database
+        :param upgrade: Bool, whether to run an upgrade migration after establishing a connection
+        :return: None
+        '''
+        if base_list is None:  # Use defaults in project
+            base_list = [DatasetStorageSqlalchemy]
+
+        super(DatasetDatabase, self).initialize(base_list, **kwargs)
+
+
+class BinaryStorageDatabase(BaseDatabase):
+    '''
+    Hardcoded database mapped to binary storage metadata
+    '''
+
+    def initialize(self, base_list=None, **kwargs):
+        '''
+        Initialization method to set up database connection and inject
+        session manager
+
+        Raises a SimpleML error if database schema is not up to date
+
+        :param drop_tables: Bool, whether to drop existing tables in database
+        :param upgrade: Bool, whether to run an upgrade migration after establishing a connection
+        :return: None
+        '''
+        if base_list is None:  # Use defaults in project
+            base_list = [BinaryStorageSqlalchemy]
+
+        super(BinaryStorageDatabase, self).initialize(base_list, **kwargs)

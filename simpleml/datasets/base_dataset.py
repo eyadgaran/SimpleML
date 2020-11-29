@@ -13,9 +13,9 @@ __author__ = 'Elisha Yadgaran'
 
 
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.persistables.saving import AllSaveMixin
-from simpleml.persistables.meta_registry import DatasetRegistry
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.persistables.sqlalchemy_types import GUID
+from simpleml.registries import DatasetRegistry
 
 from future.utils import with_metaclass
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
@@ -26,7 +26,9 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-class AbstractDataset(with_metaclass(DatasetRegistry, Persistable, AllSaveMixin)):
+@ExternalArtifactDecorators.register_artifact(
+    artifact_name='dataset', save_attribute='dataframe', restore_attribute='_external_file')
+class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
     '''
     Abstract Base class for all Dataset objects.
 
@@ -54,18 +56,22 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable, AllSaveMixin)
 
     object_type = 'DATASET'
 
-    def __init__(self, has_external_files=True, label_columns=[], **kwargs):
+    def __init__(self, has_external_files=True, label_columns=None, **kwargs):
+        # If no save patterns are set, specify a default for disk_pickled
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'dataset': ['disk_pickled']}
         super(AbstractDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
         # By default assume unsupervised so no targets
+        if label_columns is None:
+            label_columns = []
         self.config['label_columns'] = label_columns
 
     @property
     def dataframe(self):
         # Return dataframe if generated, otherwise generate first
-        if self.unloaded_externals:
-            self._load_external_files()
+        self.load_if_unloaded('dataset')
 
         if not hasattr(self, '_external_file') or self._external_file is None:
             self.build_dataframe()
@@ -164,4 +170,4 @@ class Dataset(AbstractDataset):
         UniqueConstraint('name', 'version', name='dataset_name_version_unique'),
         # Index for searching through friendly names
         Index('dataset_name_index', 'name'),
-     )
+    )
