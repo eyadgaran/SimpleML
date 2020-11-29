@@ -8,7 +8,7 @@ __author__ = 'Elisha Yadgaran'
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.imports import Sequence
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.persistables.saving import ExternalArtifactsMixin
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.registries import PipelineRegistry
 from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 
@@ -27,7 +27,7 @@ import pandas as pd
 LOGGER = logging.getLogger(__name__)
 
 
-@ExternalArtifactsMixin.Decorators.register_artifact(
+@ExternalArtifactDecorators.register_artifact(
     artifact_name='pipeline', save_attribute='external_pipeline', restore_attribute='_external_file')
 class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     '''
@@ -51,6 +51,9 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     def __init__(self, has_external_files=True, transformers=None,
                  external_pipeline_class='default', fitted=False,
                  **kwargs):
+        # If no save patterns are set, specify a default for disk_pickled
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'pipeline': ['disk_pickled']}
         super(AbstractPipeline, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
@@ -198,9 +201,6 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         Uses internal `self._dataset_splits` as the split container - assumes
         dictionary like itemgetter
         '''
-        if split is None:
-            split = TRAIN_SPLIT
-
         if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
             self.split_dataset()
 
@@ -270,13 +270,13 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         '''
         Get X for specific dataset split
         '''
-        return self.get_dataset_split(split).X
+        return self.get_dataset_split(split=split).X
 
     def y(self, split=None):
         '''
         Get labels for specific dataset split
         '''
-        return self.get_dataset_split(split).y
+        return self.get_dataset_split(split=split).y
 
     def fit(self):
         '''
@@ -292,7 +292,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         # No constraint on split -- can be a dataframe, ndarray, or generator
         # but must be encased in a Split object
         # Explicitly prevent generator fit for pipelines
-        split = self.get_dataset_split(return_generator=False)
+        split = self.get_dataset_split(split=TRAIN_SPLIT, return_generator=False)
 
         self.external_pipeline.fit(**split)
         self.fitted = True
@@ -327,7 +327,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
             return of input X
         '''
         if X is None:  # Retrieve dataset split
-            split = self.get_dataset_split(dataset_split)
+            split = self.get_dataset_split(split=dataset_split)
             if split.X is None or (isinstance(split.X, pd.DataFrame) and split.X.empty):
                 output = None  # Skip transformations on empty dataset
             else:
@@ -349,7 +349,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         X, y, other... not a Split object, so an ordered tuple will be returned
         '''
         if X is None:
-            generator_split = self.get_dataset_split(dataset_split, return_generator=True, **kwargs)
+            generator_split = self.get_dataset_split(split=dataset_split, return_generator=True, **kwargs)
             for batch in generator_split:  # Return is a generator of Split objects
                 output = self.external_pipeline.transform(batch.X)
 
@@ -377,7 +377,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         X, y, other... not a Split object, so an ordered tuple will be returned
         '''
         if X is None:
-            dataset_sequence = self.get_dataset_split(dataset_split, return_sequence=True, **kwargs)
+            dataset_sequence = self.get_dataset_split(split=dataset_split, return_sequence=True, **kwargs)
             return TransformedSequence(self, dataset_sequence)
 
         else:

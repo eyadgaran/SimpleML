@@ -6,7 +6,7 @@ need to overwrite other methods at the root
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.constants import VALIDATION_SPLIT
+from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
 from .base_model import LibraryModel
 
 import logging
@@ -39,10 +39,10 @@ class KerasModel(LibraryModel):
         # Overwrite default model save pattern to keras specific (if not already passed)
         if 'save_patterns' not in kwargs:
             LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
-            kwargs['save_patterns'] = {'model': 'disk_keras_hdf5'}
+            kwargs['save_patterns'] = {'model': ['disk_keras_hdf5']}
         elif 'model' not in kwargs['save_patterns']:
             LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
-            kwargs['save_patterns']['model'] = 'disk_keras_hdf5'
+            kwargs['save_patterns']['model'] = ['disk_keras_hdf5']
         super(KerasModel, self).__init__(**kwargs)
 
         # Keras supports training and validation with generators
@@ -99,7 +99,7 @@ class KerasModel(LibraryModel):
             self._fit_generator()
         else:
             # Explicitly fit only on default (train) split
-            split = self.transform(X=None, return_generator=False, return_sequence=False)
+            split = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_generator=False, return_sequence=False)
             # Hack for python <3.5 -- cant use fit(**split, **kwargs)
             temp_kwargs = self.get_params().copy()
             temp_kwargs.update(split)
@@ -113,7 +113,8 @@ class KerasModel(LibraryModel):
         use_keras_sequence = self.config.get('use_sequence_object', False)
 
         # Explicitly fit only on default (train) split
-        training_generator = self.transform(X=None, return_generator=True,
+        training_generator = self.transform(X=None, dataset_split=TRAIN_SPLIT,
+                                            return_generator=True,
                                             return_sequence=use_keras_sequence,
                                             **self.config.get('training_generator_params', {}))
         if self.config['use_validation_generator']:
