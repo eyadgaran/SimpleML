@@ -26,7 +26,6 @@ INSTALLED_LIBRARIES = {
     'psycopg2': safe_lookup('psycopg2'),
     'scikit-learn': safe_lookup('scikit-learn'),
     'hickle': safe_lookup('hickle'),
-    'keras': safe_lookup('keras'),
     'tensorflow': safe_lookup('tensorflow'),
     'scipy': safe_lookup('scipy'),
     'sqlalchemy_json': safe_lookup('sqlalchemy-json')

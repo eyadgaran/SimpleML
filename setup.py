@@ -35,7 +35,7 @@ else:
 
 # Different extras
 postgres_dependencies = ["psycopg2"]
-deep_learning_dependencies = ["keras", "tensorflow", "hickle<4"]  # Hickle regression > 4 for scalar values
+deep_learning_dependencies = ["tensorflow>=2", "hickle<4"]  # Hickle regression > 4 for scalar values
 cloud_dependencies = ["apache-libcloud", "pycrypto", "sshtunnel"]
 onedrive_dependencies = ["onedrivesdk<2"]  # Python support EOL >2
 all_dependencies = list(set(postgres_dependencies + deep_learning_dependencies + cloud_dependencies + onedrive_dependencies))

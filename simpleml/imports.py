@@ -53,21 +53,17 @@ except ImportError:
     psycopg2 = MissingImportFactory('psycopg2', 'psycopg2', 'postgres')
 
 try:
-    import keras
-    from keras.models import Sequential, Model, load_model
-    from keras.utils import Sequence
+    import tensorflow as tf
+    import tf.keras as keras
+    from tf.keras.models import Sequential, Model, load_model
+    from tf.keras.utils import Sequence
 except ImportError:
-    keras = MissingImportFactory('keras', 'keras', 'deep-learning')
-    load_model = MissingImportFactory('keras.models.load_model', 'keras', 'deep-learning')
-    Sequential = MissingImportFactory('keras.models.Sequential', 'keras', 'deep-learning')
-    Model = MissingImportFactory('keras.models.Model', 'keras', 'deep-learning')
-    Sequence = MissingImportFactory('keras.utils.Sequence', 'keras', 'deep-learning')
-
-try:
-    import tensorflow
-except ImportError:
-    tensorflow = MissingImportFactory('tensorflow', 'tensorflow', 'deep-learning')
-
+    tf = MissingImportFactory('tensorflow', 'tensorflow', 'deep-learning')
+    keras = MissingImportFactory('tensorflow.keras', 'tensorflow', 'deep-learning')
+    load_model = MissingImportFactory('tensorflow.keras.models.load_model', 'tensorflow', 'deep-learning')
+    Sequential = MissingImportFactory('tensorflow.keras.models.Sequential', 'tensorflow', 'deep-learning')
+    Model = MissingImportFactory('tensorflow.keras.models.Model', 'tensorflow', 'deep-learning')
+    Sequence = MissingImportFactory('tensorflow.keras.utils.Sequence', 'tensorflow', 'deep-learning')
 
 try:
     import hickle
@@ -83,13 +79,6 @@ try:
     from sshtunnel import SSHTunnelForwarder
 except ImportError:
     SSHTunnelForwarder = MissingImportFactory('sshtunnel.SSHTunnelForwarder', 'sshtunnel', 'cloud')
-
-
-try:
-    from sshtunnel import SSHTunnelForwarder
-except ImportError:
-    SSHTunnelForwarder = MissingImportFactory('sshtunnel.SSHTunnelForwarder', 'sshtunnel', 'cloud')
-
 
 try:
     from libcloud.storage.types import Provider
