@@ -26,9 +26,13 @@ from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_
 from abc import abstractmethod
 import numpy as np
 import pandas as pd
+import logging
 
 
 __author__ = 'Elisha Yadgaran'
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 ############################### BASE ###############################
@@ -38,7 +42,7 @@ class ClassificationMetric(Metric):
     TODO: Figure out multiclass generalizations
     '''
 
-    def __init__(self, dataset_split, **kwargs):
+    def __init__(self, dataset_split=None, **kwargs):
         '''
         :param dataset_split: string denoting which dataset split to use
             can be one of: `TRAIN`, `VALIDATION`, Other. Other gets no prefix
@@ -47,29 +51,49 @@ class ClassificationMetric(Metric):
 
         '''
         name = kwargs.pop('name', '')
-        self.dataset_split = dataset_split
 
         # Explicitly call out in sample or validation metrics
+        # Only relevant if using a split dataset. No split pipelines will return
+        # all data by default on null input, while split ones will return empty splits
         if dataset_split == TRAIN_SPLIT:
             name = 'in_sample_' + name
         elif dataset_split == VALIDATION_SPLIT:
             name = 'validation_' + name
 
         super(ClassificationMetric, self).__init__(name=name, **kwargs)
+        self.config['dataset_split'] = dataset_split
+
+    def _get_split(self, column):
+        if self.dataset.id == self.model.pipeline.dataset_id:
+            LOGGER.debug('Dataset is the same as model dataset, using pipeline dataset split instead of raw dataset one')
+            return self._get_pipeline_split(column=column, split=self.config.get('dataset_split'))
+        return self._get_dataset_split(column=column, split=self.config.get('dataset_split'))
 
     @property
     def labels(self):
-        return self.model.get_labels(dataset_split=self.dataset_split)
+        if self.dataset is None:
+            raise MetricError('Must set dataset before scoring classification metrics!')
+        return self._get_split(column='y')
 
     @property
     def probabilities(self):
-        probabilities = self.model.predict_proba(X=None, dataset_split=self.dataset_split)
+        if self.dataset is None:
+            raise MetricError('Must set dataset before scoring classification metrics!')
+        probabilities = self.model.predict_proba(
+            X=self._get_split(column='X'),
+            transform=True
+        )
         self.validate_predictions(probabilities)
         return probabilities
 
     @property
     def predictions(self):
-        preds = self.model.predict(X=None, dataset_split=self.dataset_split)
+        if self.dataset is None:
+            raise MetricError('Must set dataset before scoring classification metrics!')
+        preds = self.model.predict(
+            X=self._get_split(column='X'),
+            transform=True
+        )
         self.validate_predictions(preds)
         return preds
 

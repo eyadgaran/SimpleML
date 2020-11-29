@@ -13,9 +13,9 @@ __author__ = 'Elisha Yadgaran'
 
 
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.persistables.saving import ExternalArtifactsMixin
-from simpleml.persistables.meta_registry import DatasetRegistry
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.persistables.sqlalchemy_types import GUID
+from simpleml.registries import DatasetRegistry
 
 from future.utils import with_metaclass
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
@@ -26,7 +26,7 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-@ExternalArtifactsMixin.Decorators.register_artifact(
+@ExternalArtifactDecorators.register_artifact(
     artifact_name='dataset', save_attribute='dataframe', restore_attribute='_external_file')
 class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
     '''
@@ -57,6 +57,9 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
     object_type = 'DATASET'
 
     def __init__(self, has_external_files=True, label_columns=None, **kwargs):
+        # If no save patterns are set, specify a default for disk_pickled
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'dataset': ['disk_pickled']}
         super(AbstractDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)
 

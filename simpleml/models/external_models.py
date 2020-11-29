@@ -7,7 +7,7 @@ Inherit and extend for particular models
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.persistables.meta_registry import KerasRegistry
+from simpleml.registries import KerasRegistry
 from future.utils import with_metaclass
 
 

@@ -4,7 +4,7 @@ Registry related tests
 
 __author__ = 'Elisha Yadgaran'
 
-from simpleml.persistables.meta_registry import MetaRegistry, Registry, SIMPLEML_REGISTRY
+from simpleml.registries import MetaRegistry, Registry, SIMPLEML_REGISTRY, NamedRegistry
 import unittest
 from abc import abstractmethod
 from future.utils import with_metaclass
@@ -58,6 +58,107 @@ class RegistryTests(unittest.TestCase):
         registry.register(FakeClass)
         # Try again - same instantiation
         registry.register(FakeClass)
+
+    def test_getting_missing_key(self):
+        fake_key = 'blaldfakhfaljaf'
+        registry = Registry()
+        self.assertEqual(registry.get(fake_key), None)
+
+
+class NamedRegistryTests(unittest.TestCase):
+    def test_registration(self):
+        registry = NamedRegistry()
+
+        # Define Class
+        class FakeClass(object):
+            pass
+
+        name = 'test'
+        self.assertNotIn(name, registry.registry)
+
+        # Register
+        registry.register(name, FakeClass)
+
+        # Test
+        self.assertIn(name, registry.registry)
+        self.assertEqual(FakeClass, registry.get(name))
+
+    def test_different_key_registration(self):
+        '''
+        Same class, different names
+        '''
+        registry = NamedRegistry()
+
+        # Define Class
+        class FakeClass(object):
+            pass
+
+        name1 = 'test'
+        name2 = 'test2'
+        self.assertNotIn(name1, registry.registry)
+        self.assertNotIn(name2, registry.registry)
+
+        # Register
+        registry.register(name1, FakeClass)
+        registry.register(name2, FakeClass)
+
+        # Test
+        self.assertIn(name1, registry.registry)
+        self.assertIn(name2, registry.registry)
+        self.assertEqual(FakeClass, registry.get(name1))
+        self.assertEqual(FakeClass, registry.get(name2))
+
+    def test_same_class_duplication(self):
+        '''
+        Test duplicate handling for the same class
+        '''
+        registry = NamedRegistry()
+
+        # Define Class
+        class FakeClass(object):
+            pass
+
+        name = 'test'
+        self.assertNotIn(name, registry.registry)
+
+        # Register
+        registry.register(name, FakeClass)
+        self.assertIn(name, registry.registry)
+        self.assertEqual(FakeClass, registry.get(name))
+
+        # Test re-registering - should not fail
+        registry.register(name, FakeClass, allow_duplicates=True)
+        registry.register(name, FakeClass, allow_duplicates=False)
+
+    def test_different_class_duplication(self):
+        '''
+        Test overwrite handling for different classes
+        '''
+        registry = NamedRegistry()
+
+        # Define Class
+        class FakeClass(object):
+            pass
+        # Different class
+
+        class FakeClass2(object):
+            pass
+
+        name = 'test'
+        self.assertNotIn(name, registry.registry)
+
+        # Register
+        registry.register(name, FakeClass)
+        self.assertIn(name, registry.registry)
+        self.assertEqual(FakeClass, registry.get(name))
+
+        # Test re-registering
+        with self.assertRaises(ValueError):
+            registry.register(name, FakeClass2, allow_duplicates=False)
+        self.assertEqual(FakeClass, registry.get(name))
+
+        registry.register(name, FakeClass2, allow_duplicates=True)
+        self.assertEqual(FakeClass2, registry.get(name))
 
 
 class MetaRegistryTests(unittest.TestCase):
