@@ -187,3 +187,84 @@ def deregister_save_pattern(
         if cls is not None and LOAD_METHOD_REGISTRY.get(save_pattern) != cls:
             LOGGER.warning(f"Deregistering {save_pattern} as load pattern but passed class does not match registered class")
         LOAD_METHOD_REGISTRY.drop(save_pattern)
+
+
+class ExternalArtifactDecorators(object):
+    '''
+    Decorators for artifact de/registration
+    Expected to be applied at the class level to add class attributes indicating
+    registered artifacts
+    '''
+    @staticmethod
+    def register_artifact(
+        artifact_name: str,
+        save_attribute: str,
+        restore_attribute: str
+    ) -> Callable:
+        '''
+        Class level decorator to define artifacts produced. Expects each class to
+        implement as many as needed to accomodate.
+
+        Format:
+        ```
+        @register_artifact(artifact_name='model', save_attribute='wrapper_attribute', restore_attribute='_internal_attribute')
+        class NewPersistable(Persistable):
+            @property
+            def wrapper_attribute(self):
+                if not hasattr(self, _internal_attribute):
+                    self._internal_attribute = self.create_attribute()
+                return self._internal_attribute
+        ```
+        Intentionally specify different attributes for saving and restoring
+        to allow developer to wrap attribute in property decorator for
+        lazy caching
+        '''
+        def register(cls: Type) -> Type:
+            register_artifact(cls, artifact_name, save_attribute, restore_attribute)
+            return cls
+        return register
+
+    @staticmethod
+    def deregister_artifact(artifact_name: str) -> Callable:
+        '''
+        Class level decorator to deregister artifacts produced. Expects each class to
+        implement as many as needed to accomodate.
+        Expected to be used by subclasses that redefine artifacts but dont
+        want to expose the possibility of a developer accessing them.
+        (By default registering artifacts only exposes them to be persisted if
+        declared in save_methods)
+        '''
+        def deregister(cls: Type) -> Type:
+            deregister_artifact(cls, artifact_name)
+            return cls
+        return deregister
+
+
+'''
+Function form for explicit registration
+'''
+
+
+def register_artifact(
+    cls: Type,
+    artifact_name: str,
+    save_attribute: str,
+    restore_attribute: str
+) -> None:
+    '''
+    Register the artifact for potential persistence by a save pattern
+    '''
+    registered_attribute = f'_ARTIFACT_{artifact_name}'
+    setattr(cls, registered_attribute, {'save': save_attribute, 'restore': restore_attribute})
+
+
+def deregister_artifact(
+    cls: Type,
+    artifact_name: str
+) -> None:
+    '''
+    Deregister the artifact from being able to be persisted for this class
+    '''
+    registered_attribute = f'_ARTIFACT_{artifact_name}'
+    if hasattr(cls, registered_attribute):
+        delattr(cls, registered_attribute)

@@ -1,6 +1,6 @@
-from simpleml.persistables.base_persistable import Persistable, GUID, JSON
+from simpleml.persistables.base_persistable import Persistable, GUID, MutableJSON
 from simpleml.registries import ModelRegistry
-from simpleml.persistables.saving import ExternalArtifactsMixin
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import ModelError
 
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
@@ -17,7 +17,7 @@ __author__ = 'Elisha Yadgaran'
 LOGGER = logging.getLogger(__name__)
 
 
-@ExternalArtifactsMixin.Decorators.register_artifact(
+@ExternalArtifactDecorators.register_artifact(
     artifact_name='model', save_attribute='external_model', restore_attribute='_external_file')
 class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
     '''
@@ -38,8 +38,8 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
     __abstract__ = True
 
     # Additional model specific metadata
-    params = Column(JSON, default={})
-    feature_metadata = Column(JSON, default={})
+    params = Column(MutableJSON, default={})
+    feature_metadata = Column(MutableJSON, default={})
 
     object_type = 'MODEL'
 
@@ -49,6 +49,9 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
         '''
+        # If no save patterns are set, specify a default for disk_pickled
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'model': ['disk_pickled']}
         super(AbstractModel, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
@@ -228,7 +231,7 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         '''
         Wrapper method to return labels from dataset
         '''
-        return self.pipeline.y(dataset_split)
+        return self.pipeline.y(split=dataset_split)
 
     '''
     Pass-through methods to external model
@@ -276,7 +279,7 @@ class Model(AbstractModel):
     __tablename__ = 'models'
 
     # Only dependency is the pipeline (to score in production)
-    pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
+    pipeline_id = Column(GUID, ForeignKey("pipelines.id", name="models_pipeline_id_fkey"))
     pipeline = relationship("Pipeline", enable_typechecks=False)
 
     __table_args__ = (

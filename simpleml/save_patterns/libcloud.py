@@ -13,11 +13,13 @@ from simpleml.save_patterns.base import BaseSavePattern
 from simpleml.save_patterns.decorators import SavePatternDecorators
 from simpleml.utils.configuration import PICKLED_FILESTORE_DIRECTORY,\
     HDF5_FILESTORE_DIRECTORY, PICKLE_DIRECTORY, HDF5_DIRECTORY, CONFIG, CLOUD_SECTION
+from simpleml.imports import Provider
+from simpleml.imports import get_driver
 
 
-class CloudBase(BaseSavePattern):
+class CloudSavePatternMixin(object):
     '''
-    Base class to save/load objects via Apache Libcloud
+    Mixin class to save/load objects via Apache Libcloud
 
     Generic api for all cloud providers so naming convention is extremely important
     to follow in the config. Please reference libcloud documentation for supported
@@ -75,9 +77,6 @@ class CloudBase(BaseSavePattern):
         "classproperty" to return and optionally globally set the cloud provider
         '''
         if self.__class__.CLOUD_DRIVER is None:
-            from libcloud.storage.types import Provider
-            from libcloud.storage.providers import get_driver
-
             cloud_section = CONFIG.get(CLOUD_SECTION, 'section')
             connection_params = CONFIG.getlist(cloud_section, 'connection_params')
 
@@ -86,6 +85,14 @@ class CloudBase(BaseSavePattern):
 
             self.__class__.CLOUD_DRIVER = driver
         return self.__class__.CLOUD_DRIVER
+
+    @classmethod
+    def reset_driver(cls):
+        '''
+        Convenience method to set parsed driver back to None. Forces a config reread on
+        next invocation
+        '''
+        cls.CLOUD_DRIVER = None
 
     def upload_to_cloud(self,
                         folder: str,
@@ -141,6 +148,13 @@ class CloudBase(BaseSavePattern):
                                     destination_path=filepath,
                                     overwrite_existing=True,
                                     delete_on_failure=True)
+
+
+class CloudBase(BaseSavePattern, CloudSavePatternMixin):
+    '''
+    Implementation class for extended base save patterns
+    to/from the cloud via Apache Libcloud
+    '''
 
 
 @SavePatternDecorators.register_save_pattern

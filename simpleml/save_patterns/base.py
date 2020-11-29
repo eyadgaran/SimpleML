@@ -78,7 +78,8 @@ class SavePatternMixin(object):
     @staticmethod
     def pickle_object(obj: Any,
                       filepath: Optional[str] = None,
-                      overwrite: bool = True) -> Union[str, None]:
+                      overwrite: bool = True,
+                      root_directory: str = PICKLED_FILESTORE_DIRECTORY) -> Union[str, None]:
         '''
         Pickles an object to a string or to the filesystem. Assumes that a NULL
         filepath expects a serialized string returned
@@ -95,7 +96,7 @@ class SavePatternMixin(object):
             return pickle.dumps(obj)  # , protocol=pickle.HIGHEST_PROTOCOL)
 
         # Append the filepath to the pickle storage directory
-        filepath = join(PICKLED_FILESTORE_DIRECTORY, filepath)
+        filepath = join(root_directory, filepath)
 
         if not overwrite:
             # Check if file was already serialized
@@ -107,7 +108,8 @@ class SavePatternMixin(object):
 
     @staticmethod
     def load_pickled_object(filepath: str,
-                            stream: bool = False) -> Any:
+                            stream: bool = False,
+                            root_directory: str = PICKLED_FILESTORE_DIRECTORY) -> Any:
         '''
         Loads an object from a serialized string or filesystem. When stream is
         True, it tries to load the file directly from the string.
@@ -118,13 +120,14 @@ class SavePatternMixin(object):
         if stream:
             return pickle.loads(filepath)
 
-        with open(join(PICKLED_FILESTORE_DIRECTORY, filepath), 'rb') as pickled_file:
+        with open(join(root_directory, filepath), 'rb') as pickled_file:
             return pickle.load(pickled_file)
 
     @staticmethod
     def hickle_object(obj: Any,
                       filepath: str,
-                      overwrite: bool = True) -> None:
+                      overwrite: bool = True,
+                      root_directory: str = HDF5_FILESTORE_DIRECTORY) -> None:
         '''
         Serializes an object to the filesystem in HDF5 format.
 
@@ -137,7 +140,7 @@ class SavePatternMixin(object):
             places
         '''
         # Append the filepath to the HDF5 storage directory
-        hickle_file = join(HDF5_FILESTORE_DIRECTORY, filepath)
+        hickle_file = join(root_directory, filepath)
         if not overwrite:
             # Check if file was already serialized
             if isfile(hickle_file):
@@ -145,20 +148,22 @@ class SavePatternMixin(object):
         hickle.dump(obj, hickle_file, compression='gzip', compression_opts=9)
 
     @staticmethod
-    def load_hickled_object(filepath: str) -> Any:
+    def load_hickled_object(filepath: str,
+                            root_directory: str = HDF5_FILESTORE_DIRECTORY) -> Any:
         '''
         Loads an object from the filesystem.
 
         Prepends path to SimpleML HDF5 directory before loading. ONLY pass in
         a relative filepath from that location
         '''
-        hickle_file = join(HDF5_FILESTORE_DIRECTORY, filepath)
-        return hickle.load(hickle_file)
+       hickle_file = join(root_directory, filepath)
+       return hickle.load(hickle_file)
 
     @staticmethod
     def save_keras_object(obj: Any,
                           filepath: str,
-                          overwrite: bool = True) -> None:
+                          overwrite: bool = True,
+                          root_directory: str = HDF5_FILESTORE_DIRECTORY) -> None:
         '''
         Serializes an object to the filesystem in Keras HDF5 format.
 
@@ -171,7 +176,7 @@ class SavePatternMixin(object):
             places
         '''
         # Append the filepath to the HDF5 storage directory
-        hdf5_file = join(HDF5_FILESTORE_DIRECTORY, filepath)
+        hdf5_file = join(root_directory, filepath)
         if not overwrite:
             # Check if file was already serialized
             if isfile(hdf5_file):
@@ -179,7 +184,8 @@ class SavePatternMixin(object):
         obj.save(hdf5_file)
 
     @staticmethod
-    def load_keras_object(filepath: str) -> Any:
+    def load_keras_object(filepath: str,
+                          root_directory: str = HDF5_FILESTORE_DIRECTORY) -> Any:
         '''
         Loads a Keras object from the filesystem.
 
@@ -187,7 +193,7 @@ class SavePatternMixin(object):
         a relative filepath from that location
         '''
         return load_model(
-            str(join(HDF5_FILESTORE_DIRECTORY, filepath)),
+            str(join(root_directory, filepath)),
             custom_objects=KERAS_REGISTRY.registry)
 
     @staticmethod

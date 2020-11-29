@@ -6,6 +6,10 @@ __author__ = 'Elisha Yadgaran'
 
 
 import unittest
+import tempfile
+import random
+
+from os.path import isfile, join
 
 from simpleml.registries import SAVE_METHOD_REGISTRY, LOAD_METHOD_REGISTRY
 from simpleml.save_patterns.decorators import SavePatternDecorators, register_save_pattern, deregister_save_pattern
@@ -14,6 +18,30 @@ from simpleml.save_patterns.database import DatabaseTableSavePattern, DatabasePi
 from simpleml.save_patterns.libcloud import CloudBase, CloudPickleSavePattern, CloudHDF5SavePattern, CloudKerasHDF5SavePattern
 from simpleml.save_patterns.local import DiskPickleSavePattern, DiskHDF5SavePattern
 from simpleml.save_patterns.onedrive import OnedriveBase, OnedrivePickleSavePattern, OnedriveHDF5SavePattern, OnedriveKerasHDF5SavePattern
+
+
+TEMP_DIRECTORY = tempfile.gettempdir()
+RANDOM_RUN = random.randint(10000, 99999)
+
+
+class TestSerializationClass(object):
+    '''
+    Fake test class with all complex datatypes to test pickling
+    '''
+    cls_attribute = 'blah'
+
+    def __init__(self, a, *args, **kwargs):
+        self.a = a
+        self.args = args
+        self.kwargs = kwargs
+
+    def __eq__(self, other):
+        return all((
+            self.cls_attribute == other.cls_attribute,
+            self.a == other.a,
+            self.args == other.args,
+            self.kwargs == other.kwargs
+        ))
 
 
 class SavePatternRegistrationTests(unittest.TestCase):
@@ -521,6 +549,100 @@ class SavePatternRegistrationTests(unittest.TestCase):
         self.assertNotIn(save_pattern, SAVE_METHOD_REGISTRY.registry)
         self.assertNotIn(save_pattern, LOAD_METHOD_REGISTRY.registry)
 
+
+class SavePatternTests(unittest.TestCase, SavePatternMixin):
+    '''
+    Unit tests for save pattern behavior
+    '''
+
+    def test_pickling_in_memory(self):
+        '''
+        Asserts pickle stream unpickles to the same object
+        '''
+        obj = TestSerializationClass('pickle')
+        stream = self.pickle_object(obj)
+        self.assertTrue(isinstance(stream, bytes))
+        deserialized = self.load_pickled_object(stream, stream=True)
+        self.assertEqual(obj, deserialized)
+
+    def test_pickling_to_disk(self):
+        '''
+        Asserts pickling and unpickling are the same object and that
+        the expected filepath is written to
+        '''
+        obj = TestSerializationClass('pickle')
+        filepath = f'pickle_unit_test-{RANDOM_RUN}'
+        self.assertFalse(isfile(join(TEMP_DIRECTORY, filepath)))
+        self.pickle_object(obj, filepath=filepath, root_directory=TEMP_DIRECTORY)
+        self.assertTrue(isfile(join(TEMP_DIRECTORY, filepath)))
+        deserialized = self.load_pickled_object(filepath, root_directory=TEMP_DIRECTORY)
+        self.assertEqual(obj, deserialized)
+
+    def test_hickling_to_disk(self):
+        '''
+        Asserts pickling and unpickling are the same object and that
+        the expected filepath is written to
+        '''
+        obj = TestSerializationClass('hickle')
+        filepath = f'hickle_unit_test-{RANDOM_RUN}'
+        self.assertFalse(isfile(join(TEMP_DIRECTORY, filepath)))
+        self.hickle_object(obj, filepath=filepath, root_directory=TEMP_DIRECTORY)
+        self.assertTrue(isfile(join(TEMP_DIRECTORY, filepath)))
+        deserialized = self.load_hickled_object(filepath, root_directory=TEMP_DIRECTORY)
+        self.assertEqual(obj, deserialized)
+
+    def test_pickling_to_disk_with_overwrite(self):
+        '''
+        Asserts overwrite functionality for pickle
+        '''
+        obj = TestSerializationClass('pickle_dummy_original')
+        obj2 = TestSerializationClass('pickle_dummy_overwritten')
+        self.assertNotEqual(obj, obj2)
+        filepath = f'pickle_unit_test_overwrite-{RANDOM_RUN}'
+        self.assertFalse(isfile(join(TEMP_DIRECTORY, filepath)))
+        self.pickle_object(obj, filepath=filepath, root_directory=TEMP_DIRECTORY)
+        self.assertTrue(isfile(join(TEMP_DIRECTORY, filepath)))
+
+        # Attempt to overwrite
+        self.pickle_object(obj2, filepath=filepath, root_directory=TEMP_DIRECTORY, overwrite=False)
+        self.assertTrue(isfile(join(TEMP_DIRECTORY, filepath)))
+        deserialized = self.load_pickled_object(filepath, root_directory=TEMP_DIRECTORY)
+        self.assertEqual(obj, deserialized)
+
+        self.pickle_object(obj2, filepath=filepath, root_directory=TEMP_DIRECTORY, overwrite=True)
+        self.assertTrue(isfile(join(TEMP_DIRECTORY, filepath)))
+        deserialized = self.load_pickled_object(filepath, root_directory=TEMP_DIRECTORY)
+        self.assertEqual(obj2, deserialized)
+
+    def test_hickling_to_disk_with_overwrite(self):
+        '''
+        Asserts overwrite functionality for hickle
+        '''
+        obj = TestSerializationClass('hickle_dummy_original')
+        obj2 = TestSerializationClass('hickle_dummy_overwritten')
+        self.assertNotEqual(obj, obj2)
+        filepath = f'hickle_unit_test_overwrite-{RANDOM_RUN}'
+        self.assertFalse(isfile(join(TEMP_DIRECTORY, filepath)))
+        self.hickle_object(obj, filepath=filepath, root_directory=TEMP_DIRECTORY)
+        self.assertTrue(isfile(join(TEMP_DIRECTORY, filepath)))
+
+        # Attempt to overwrite
+        self.hickle_object(obj2, filepath=filepath, root_directory=TEMP_DIRECTORY, overwrite=False)
+        self.assertTrue(isfile(join(TEMP_DIRECTORY, filepath)))
+        deserialized = self.load_hickled_object(filepath, root_directory=TEMP_DIRECTORY)
+        self.assertEqual(obj, deserialized)
+
+        self.hickle_object(obj2, filepath=filepath, root_directory=TEMP_DIRECTORY, overwrite=True)
+        self.assertTrue(isfile(join(TEMP_DIRECTORY, filepath)))
+        deserialized = self.load_hickled_object(filepath, root_directory=TEMP_DIRECTORY)
+        self.assertEqual(obj2, deserialized)
+
+    @unittest.skip('Requires active postgres connection')
+    def test_inserting_dataframe_into_database(self):
+        '''
+        Test inserting dataframe into a postgres database.
+        Assumes postgres connection available and configured
+        '''
 
 
 if __name__ == '__main__':

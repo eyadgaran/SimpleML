@@ -14,11 +14,10 @@ from collections import defaultdict
 from typing import Dict, Union, Optional, Any, Type
 from sqlalchemy import Column, func, String, Boolean, Integer
 
-from simpleml.persistables.sqlalchemy_types import GUID, JSON
+from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
-from simpleml.persistables.saving import AllSaveMixin
 from simpleml.persistables.hashing import CustomHasherMixin
-from simpleml.registries import MetaRegistry, SIMPLEML_REGISTRY
+from simpleml.registries import MetaRegistry, SIMPLEML_REGISTRY, SAVE_METHOD_REGISTRY, LOAD_METHOD_REGISTRY
 from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 from simpleml.utils.errors import SimpleMLError
 
@@ -26,13 +25,18 @@ from simpleml.utils.errors import SimpleMLError
 LOGGER = logging.getLogger(__name__)
 
 
-class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMixin, CustomHasherMixin)):
+class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHasherMixin)):
     '''
     Base class for all SimpleML database objects. Defaults to PostgreSQL
     but can be swapped out for any supported SQLAlchemy backend.
 
     Takes advantage of sqlalchemy-mixins to enable active record operations
     (TableModel.save(), create(), where(), destroy())
+
+    Uses private class attributes for internal artifact registry
+    Does not need to be persisted because it gets populated on import
+    (and can therefore be changed between versions)
+    cls._ARTIFACT_{artifact_name} = {'save': save_attribute, 'restore': restore_attribute}
 
     -------
     Schema
@@ -55,21 +59,23 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
     # Persistence of fitted states
     has_external_files = boolean field to signify presence of saved files not in (main) db
     filepaths = JSON object with external file details
+        The nested notation is because any persistable can implement multiple save
+        options (with arbitrary priority) and arbitrary inputs. Simple serialization
+        could have only a single string location whereas complex artifacts might have
+        a list or map of filepaths
+
         Structure:
         {
-            "disk": [
-                path to file, relative to base simpleml folder (default ~/.simpleml),
+            artifact_name: {
+                'save_pattern': filepath_data
+            },
+            "example": {
+                "disk_pickled": path to file, relative to base simpleml folder (default ~/.simpleml),
+                "database": {"schema": schema, "table": table_name}, # (for files extractable with `select * from`)
                 ...
-            ],
-            "database": [
-                (schema, table_name), (for files extractable with `select * from`)
-                ....
-            ],
-            "pickled": [
-                guid, (for files in binary blobs)
-                ...
-            ]
+            }
         }
+
 
     metadata: Generic JSON store for random attributes
     '''
@@ -95,15 +101,10 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
 
     # Persistence of fitted states
     has_external_files = Column(Boolean, default=False)
-    filepaths = Column(JSON, default={})
+    filepaths = Column(MutableJSON, default={})
 
     # Generic store and metadata for all child objects
-    metadata_ = Column('metadata', JSON, default={})
-
-    # Internal Registry for all allowed external files
-    # Does not need to be persisted because it gets populated on import
-    # (and can therefore be changed between versions)
-    ARTIFACTS = {}
+    metadata_ = Column('metadata', MutableJSON, default={})
 
     def __init__(self, name=None, has_external_files=False,
                  author=None, project=None, version_description=None,
@@ -118,8 +119,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
         self.version_description = version_description
 
         if has_external_files and save_patterns is None:
-            LOGGER.warn('Persistable has external artifacts, but has not specified any save patterns. Defaulting to local `disk_pickled`')
-            save_patterns = defaultdict(['disk_pickled'])
+            raise SimpleMLError('Persistable has external artifacts, but has not specified any save patterns.\nTry reinitializing persistable with `Persistable(save_patterns={artifact_name: [save_patterns]})`')
 
         # Special place for SimpleML internal params
         # Think of as the config to initialize objects
@@ -231,7 +231,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
         '''
         if cls is None:
             # Look up in registry
-            save_cls = self.SAVE_METHODS.get(save_pattern, None)
+            save_cls = SAVE_METHOD_REGISTRY.get(save_pattern)
         else:
             LOGGER.info('Custom save class passed, skipping registry lookup')
             save_cls = cls
@@ -253,11 +253,10 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
         Accessor method to lookup the artifact in the registry and return
         the corresponding data value
         '''
-        if not hasattr(self, 'ARTIFACTS'):
+        registered_attribute = f'_ARTIFACT_{artifact_name}'
+        if not hasattr(self, registered_attribute):
             raise SimpleMLError('Cannot retrieve artifacts before registering. Make sure to decorate class with @ExternalArtifactDecorators.register_artifact')
-        if artifact_name not in self.ARTIFACTS:
-            raise SimpleMLError(f'No registered artifact for {artifact_name}')
-        save_attribute = self.ARTIFACTS[artifact_name]['save']
+        save_attribute = getattr(self, registered_attribute)['save']
         return getattr(self, save_attribute)
 
     def load(self, load_externals=True):
@@ -323,7 +322,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
         '''
         if cls is None:
             # Look up in registry
-            load_cls = self.LOAD_METHODS.get(save_pattern, None)
+            load_cls = LOAD_METHOD_REGISTRY.get(save_pattern)
         else:
             LOGGER.info('Custom load class passed, skipping registry lookup')
             load_cls = cls
@@ -345,11 +344,10 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, AllSaveMi
         '''
         Setter method to lookup the restore attribute and set to the passed object
         '''
-        if not hasattr(self, 'ARTIFACTS'):
+        registered_attribute = f'_ARTIFACT_{artifact_name}'
+        if not hasattr(self, registered_attribute):
             raise SimpleMLError('Cannot restore artifacts before registering. Make sure to decorate class with @ExternalArtifactDecorators.register_artifact')
-        if artifact_name not in self.ARTIFACTS:
-            raise SimpleMLError(f'No registered artifact for {artifact_name}')
-        restore_attribute = self.ARTIFACTS[artifact_name]['restore']
+        restore_attribute = getattr(self, registered_attribute)['restore']
         setattr(self, restore_attribute, obj)
 
         # Make note that the artifact was loaded
