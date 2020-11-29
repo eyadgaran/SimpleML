@@ -2,28 +2,38 @@ Configuration
 =============
 
 SimpleML contains a series of fallback locations for defining configuration
-parameters.
+parameters. That means: no configuration is necessary to get started with the
+default implementation. For most users starting out that is good enough, but
+for advanced users and production workloads, it is recommended to configure a
+production-grade stack.
 
-By default, it will start with the ``simpleml.conf`` file in the
-library folder (with the exception of the folder path, since it can't read that
-before knowing where to look...).
+The first configuration that is looked for is the environment variable indicating
+the location of the main configuration file, ``SIMPLEML_CONFIGURATION_FILE``.
+This variable, when set, should include a filepath to the configuration file (configparser
+compatible format). If that is not set, the default location is used,
+``~/.simpleml/simpleml.conf``.
 
-The next location, if the config file does not
-contain a value, is through an environment variable.
+If the configuration file is found, the next configuration looked for is the
+home directory to store all SimpleML related files. This includes the default
+database as well as any binaries of trained persistables. If the configuration
+file is not found, or the path is not specified inside it, the default location
+will be used: `~/.simpleml`
 
-Finally, it will default
-to hard-coded values configured as default class parameters.
 
 To recap::
 
-    1) Configuration File (`simpleml.conf`)
-    2) Environment Variable (`SIMPLEML_{parameter}`)
-    3) Code Defaults (Check class definitions)
+    1) `SIMPLEML_CONFIGURATION_FILE` or default of `~/.simpleml/simpleml.conf`
+    2) `[PATH]` section in configuration file or default of `~/.simpleml`
 
 
 Configuration File
 ------------------
-The configuration file is designed as follows::
+The configuration file can be used to house a lot more that just the basic
+configuration detailed already. The design is meant to extend to an arbitrary
+number of sections that can be parsed out for different uses by different classes.
+The below example highlights the expected primary sections as well as a number
+of optional ones that different modules access to streamline credentials and
+configuration. The base design is as follows::
 
     [path]
     home_directory = ~/.simpleml
@@ -73,13 +83,19 @@ The configuration file is designed as follows::
 Add a second, like `%%` to escape the literal value***
 
 
-Only the sections that are used are necessary. Don't include unnecessary sections in your
+Only the sections that are used are necessary. Don't include unnecessary sections in a
 config to minimize security exposure if they leak! This entire file would be unnecessary if
 cloud storage is not being used, default filepaths are used, and the database connections are initialized by a different
 means than `configuration_section`. Breaking down this particular example::
 
+    [path]
+    home_directory = ~/.simpleml  <-- This details where all binaries are stored on the local disk. Only necessary if different than the default
+
     [cloud]  <-- This section is used for any persistable that specifies a cloud persistence location
-    section = gcp-read-only  <-- The name of the heading for the cloud credentials
+    section = gcp-read-only  <-- The name of the heading for the cloud credentials.
+                                 In this example this line is the only value that needs to be changed to move
+                                 from saving in GCP to, say, S3. No code would have to change whatsoever because
+                                 the save location is "cloud" which does a lookup in the config
 
     [onedrive]  <--- This section outlines an example authorization scheme with onedrive personal
     client_secret = aaaaaabbbbbbbbbcccccc  <--- Put your client secret here
@@ -95,14 +111,16 @@ means than `configuration_section`. Breaking down this particular example::
     secret = ./gcp-read-write.json  <--- The token for that gcp account
     container = simpleml  <--- The gcp container (or "bucket") that houses the files
 
-    [gcp-read-only]  <--- Duplicate example with a read only IAM -- recommended practice to train with the cloud section = gcp-read-write and deploy in production with read only access
+    [gcp-read-only]  <--- Duplicate example with a read only IAM -- recommended practice to train with the
+                          cloud section = gcp-read-write and deploy in production with read only access
     driver = GOOGLE_STORAGE
     connection_params = key,secret
     key = read-only@iam.gserviceaccount.com
     secret = ./gcp-read-only.json
     container = simpleml
 
-    [simpleml-database]  <--- Database credentials for the simpleml models (used by specifying Database(configuration_section='simpleml-database'))
+    [simpleml-database]  <--- Database credentials for the simpleml models
+                              (used by specifying Database(configuration_section='simpleml-database'))
     database=SimpleML
     username=simpleml
     password=simpleml
@@ -110,7 +128,8 @@ means than `configuration_section`. Breaking down this particular example::
     host=localhost
     port=5432
 
-    [app-database]  <--- Database credentials for application logs (used by specifying Database(configuration_section='app-database'))
+    [app-database]  <--- Database credentials for application logs (used by
+                         specifying Database(configuration_section='app-database'))
     database=APPLICATION_DB
     username=simpleml
     password=simpleml
@@ -119,37 +138,16 @@ means than `configuration_section`. Breaking down this particular example::
     port=5432
 
 
-Environment Variables
----------------------
-The full list of variables that can be referenced are::
+Directory Structure
+-------------------
+The folder structure inside the home directory will look as follows::
 
-    - SIMPLEML_CONFIGURATION_FILE
-    - SIMPLEML_DATABASE_NAME
-    - SIMPLEML_DATABASE_USERNAME
-    - SIMPLEML_DATABASE_PASSWORD
-    - SIMPLEML_DATABASE_HOST
-    - SIMPLEML_DATABASE_PORT
-    - SIMPLEML_DATABASE_DRIVERNAME
-    - SIMPLEML_DATABASE_QUERY
-    - SIMPLEML_DATABASE_CONF
-    - SIMPLEML_DATABASE_URI
+  .simpleml/
+  ├── SimpleML.db
+  ├── simpleml.conf
+  ├── filestore
+  │   ├── HDF5
+  │   └── pickle
 
-Code Defaults
--------------
-Defaults are specified for expected database parameters::
-
-    - SIMPLEML_CONFIGURATION_FILE = ~/.simpleml/simpleml.conf
-    - SIMPLEML_DATABASE_NAME = None
-    - SIMPLEML_DATABASE_USERNAME = None
-    - SIMPLEML_DATABASE_PASSWORD = None
-    - SIMPLEML_DATABASE_HOST = None
-    - SIMPLEML_DATABASE_PORT = None
-    - SIMPLEML_DATABASE_DRIVERNAME = None
-    - SIMPLEML_DATABASE_QUERY = None
-    - SIMPLEML_DATABASE_CONF = None
-    - SIMPLEML_DATABASE_URI = 'sqlite:///{}'.format(join(FILESTORE_DIRECTORY, 'SimpleML.db'))
-
-
-The first is the location of the configuration file. The remainder are database
-initialization defaults -- used only if a database class is initialized without
-the particular parameters.
+  Where HDF5 and pickle refer to the protocols of the binaries stored within
+  them.

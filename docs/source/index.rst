@@ -10,7 +10,7 @@ Machine learning that just works, for effortless production applications.
 It was inspired by common patterns I found myself developing over and over again
 for new modeling projects. At the core, it is designed to be minimally intrusive
 and provide a clean abstraction for the most common workflows. Each supported
-framework details methods to save, version, and subsequently load objects to easily
+framework details methods to save, version, and subsequently load artifacts to easily
 move from training to production.
 
 SimpleML is designed for data scientists comfortable writing code. Please refer
@@ -23,7 +23,7 @@ learning product workflow.
 What It Is
 ----------
 SimpleML is a framework that manages the persistence and tracking of machine
-learning objects.
+learning artifacts.
 
 
 What It Is NOT
@@ -32,7 +32,7 @@ As an abstracted persistence layer, SimpleML does not define any native predicti
 algorithms. It wraps existing ones with convenience methods to save, load, and
 otherwise manage modeling work.
 
-Prototypical Use Cases:
+Typical Use Cases:
 
 - deploy locally trained models to remote servers
 - define model configs to be trained on a remote server
@@ -42,7 +42,7 @@ Why use SimpleML over a SAS cloud solution?
 
 - Avoid vendor lockin - fully open source codebase, compatible with any cloud infrastructure and algorithm backend.
 - Drop in replacement for most workflows
-- Can still deploy your models on-prem without changing your application
+- Can still deploy models on-prem without changing the application
 
 
 Supported Frameworks
@@ -75,7 +75,7 @@ are the ones that have been developed already:
 
 Source
 -----------
-You can access the source code at: https://github.com/eyadgaran/SimpleML
+Source code can be accessed on GitHub: https://github.com/eyadgaran/SimpleML
 
 
 Contributing
@@ -85,7 +85,7 @@ See guidelines here: Contributing_
 
 Support
 -------
-SimpleML core is open source and is powered by generous donations. Please donate
+SimpleML core is open source and powered by generous donations. Please donate
 if you find it contributing to your projects. Technical support and contract
 opportunities are also available - contact the author, `Elisha Yadgaran`_, for details.
 
@@ -102,11 +102,14 @@ Index
    Installation <installation.rst>
    Configuration <configuration.rst>
    Quickstart <quickstart.rst>
+   Database <database.rst>
    Persistables <persistables.rst>
    Datasets <datasets.rst>
    Pipelines <pipelines.rst>
    Models <models.rst>
    Metrics <metrics.rst>
+   Structs <structs.rst>
+   CLI <cli.rst>
    Utilities <utilities.rst>
    API <api.rst>
    Changelog <https://github.com/eyadgaran/SimpleML/blob/master/CHANGELOG.md>
