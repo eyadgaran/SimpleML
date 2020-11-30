@@ -13,7 +13,7 @@ Documentation: [simpleml.readthedocs.io](https://simpleml.readthedocs.io)
 Installation:  `pip install simpleml`
 
 # Inspiration
-I built SimpleML to simplify some of the most common pain points in new modeling projects. At the heart, SimpleML acts as an abstraction layer to implicitly version, persist, and load training iterations. It is compatible out of the box with popular modeling libraries (Scikit-Learn, Keras, etc) so it shouldn't interfere with normal workflows.
+I built SimpleML to simplify some of the most common pain points in new modeling projects. At the heart, SimpleML acts as an abstraction layer to implicitly version, persist, and load training iterations. It is compatible out of the box with popular modeling libraries (Scikit-Learn, Tensorflow/Keras, etc) so it shouldn't interfere with normal workflows.
 
 # Architecture
 Architecturally, SimpleML should flow modularly and mimic a true data science workflow. The steps, in sequence, start with data management, move through transformation, model creation, and finally evaluation. These are further broken down in the following ways:
@@ -30,7 +30,7 @@ Modeling
 - Models: The machine learning models
 
 Evaluation
-- Metrics: Evaluation objects computed over the models and the respective dataset
+- Metrics: Evaluation objects computed over the models and datasets
 
 
 # Usage
@@ -38,7 +38,7 @@ There are a few workflows for using SimpleML.
 
 At the core SimpleML defines few constraints allowing for developer flexibility - see extensions SimpleML-Service and SimpleML-Server for blueprints of ready made microservices (just inherit and extend for project specific nuances).
 
-Starting a project is as simple as defining the raw data and guiding the transformations. An example using the kaggle Titanic dataset is demonstrated below:
+Starting a project is as simple as defining the raw data and guiding the transformations. An minimal example using the kaggle Titanic dataset is demonstrated below:
 
 ```python
 from simpleml.utils import Database
@@ -47,11 +47,12 @@ from simpleml.pipelines import RandomSplitPipeline
 from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
 from simpleml.models import SklearnLogisticRegression
 from simpleml.metrics AccuracyMetric
-from simpleml import TEST_SPLIT
+from simpleml.constants import TEST_SPLIT
 
 
-# Initialize Database Connection
-db = Database().initialize()
+# Initialize Database Connection and upgrade the schema to the latest
+# By default this will create a new local sqlite database
+db = Database().initialize(upgrade=True)
 
 # Define Dataset and point to loading file
 class TitanicDataset(PandasDataset):
@@ -86,6 +87,7 @@ model.save()
 # Create Metric and save it
 metric = AccuracyMetric(dataset_split=TEST_SPLIT)
 metric.add_model(model)
+metric.add_dataset(dataset)
 metric.score()
 metric.save()
 ```
@@ -110,7 +112,7 @@ metric_kwargs = {'registered_name': 'AccuracyMetric', 'dataset_split': TEST_SPLI
 dataset = DatasetCreator.retrieve_or_create(**dataset_kwargs)
 pipeline = PipelineCreator.retrieve_or_create(dataset=dataset, **pipeline_kwargs)
 model = ModelCreator.retrieve_or_create(pipeline=pipeline, **model_kwargs)
-metric = MetricCreator.retrieve_or_create(model=model, **metric_kwargs)     
+metric = MetricCreator.retrieve_or_create(model=model, dataset=dataset, **metric_kwargs)     
 
 # ---------------------------------------------------------------------------- #
 # Option 2: Implicit object creation (pass in dependency references - nested)
@@ -124,7 +126,7 @@ metric_kwargs['model_kwargs'] = model_kwargs
 dataset = DatasetCreator.retrieve_or_create(**dataset_kwargs)
 pipeline = PipelineCreator.retrieve_or_create(dataset_kwargs=dataset_kwargs, **pipeline_kwargs)
 model = ModelCreator.retrieve_or_create(pipeline_kwargs=pipeline_kwargs, **model_kwargs)
-metric = MetricCreator.retrieve_or_create(model_kwargs=model_kwargs, **metric_kwargs)     
+metric = MetricCreator.retrieve_or_create(model_kwargs=model_kwargs, dataset_kwargs=dataset_kwargs, **metric_kwargs)     
 ```
 
 Once objects have been created, they can be retrieved at whim by their name attribute (with the exception of metrics - which also need reference to the model). By default the latest version for a name will be returned, but this can be overridden by explicitly passing a version number.
@@ -159,9 +161,7 @@ Future features I would like to make:
 
 
 # Support
-Help support further development by making a donation to the author
-
-[Donate Now](https://donorbox.org/embed/simpleml?amount=30&show_content=true)
+SimpleML is a hobby project, developed on the side, to address a lot of the pain points I have felt creating ML applications. If you find it helpful and would like to support further development, please consider becoming a [Sponsor :heart:](https://github.com/sponsors/eyadgaran)
 
 
 # Contract & Technical Support
