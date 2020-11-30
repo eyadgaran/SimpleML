@@ -1,5 +1,14 @@
 ## Change Log
 
+### 0.9.0 (2020-11-29)
+- Refactored save patterns. Supports multiple concurrent save locations and arbitrary artifact declaration
+- Registry centric model for easier extension and third party contrib
+- Support for in-memory sqlite db
+- Changed database JSON mapping class and dependency to support mutability tracking
+- New import wrapper class to manage optional dependencies
+- Added dataset_id as a Metric reference. Breaking workflow change! Will raise an error if a dataset is not added and the metric depends on it
+- Dropped default Train pipeline split. Will return an empty split for split pipelines and a singleton full dataset split for NoSplitPipelines
+- Explicitly migrated to tensorflow 2 and tf.keras 
 
 ### 0.8.1 (2020-05-11)
 - Python 3.5 Dependencies
