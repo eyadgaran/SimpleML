@@ -68,7 +68,7 @@ the titanic dataset from kaggle_::
     from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
     from simpleml.models import SklearnLogisticRegression
     from simpleml.metrics AccuracyMetric
-    from simpleml import TEST_SPLIT
+    from simpleml.constants import TEST_SPLIT
 
 
     # Initialize Database Connection - Uses Sqlite Default
@@ -107,6 +107,7 @@ the titanic dataset from kaggle_::
     # Create Metric and save it
     metric = AccuracyMetric(dataset_split=TEST_SPLIT)
     metric.add_model(model)
+    metric.add_dataset(dataset)
     metric.score()
     metric.save()
 
