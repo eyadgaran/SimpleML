@@ -251,12 +251,14 @@ class AlembicDatabase(BaseDatabase):
     def upgrade(self, revision='head'):
         '''
         Proxy Method to invoke alembic upgrade command to specified revision
+        Indirectly runs the alembic env.py code
         '''
         command.upgrade(self.alembic_config, revision)
 
     def downgrade(self, revision):
         '''
         Proxy Method to invoke alembic downgrade command to specified revision
+        Indirectly runs the alembic env.py code
         '''
         command.downgrade(self.alembic_config, revision)
 
@@ -267,6 +269,8 @@ class AlembicDatabase(BaseDatabase):
         '''
         # Iterate base list and check schema against alembic config (if different
         # bases use different configs, they need to be invoked in different classes)
+        # Does not actually trigger any migrations so have to configure the script
+        # wrapper and migration context manually
         for base in base_list:
             # Establish a context to access db values - use the bound engine in case
             # of ephemeral connection (in memory sqlite)
@@ -275,18 +279,15 @@ class AlembicDatabase(BaseDatabase):
             current_revision = context.get_current_revision()
 
             # Read local config file to find the current "head" revision
-            # config = Config()
-            # config.set_main_option("script_location",
-            #                        join(dirname(dirname(dirname(realpath(__file__)))), "migrations"))
             script = ScriptDirectory.from_config(self.alembic_config)
             head_revision = script.get_current_head()
 
             if current_revision != head_revision:
                 raise SimpleMLError('''Attempting to connect to an outdated schema.
                                     Set the parameter `upgrade=True` in the initialize method
-                                    or manually execute `alembic upgrade head` in a shell''')
+                                    or manually execute `simpleml db upgrade` in a shell''')
 
-    def initialize(self, base_list, upgrade=False, **kwargs):
+    def initialize(self, base_list, upgrade=False, validate=True, **kwargs):
         '''
         Initialization method to set up database connection and inject
         session manager
@@ -305,7 +306,8 @@ class AlembicDatabase(BaseDatabase):
             self.upgrade()
 
         # Assert current db schema is up-to-date
-        self.validate_schema_version(base_list)
+        if validate:
+            self.validate_schema_version(base_list)
 
 
 class Database(AlembicDatabase):
