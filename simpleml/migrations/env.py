@@ -1,8 +1,15 @@
+'''
+Central place to actually run any migrations. Can be invoked in a few ways:
+    1) simpleml upgrade/downgrade/etc
+    2) alembic upgrade/downgrade/etc WITH env.ALEMBIC_CONFIG pointing to here OR called from this directory
+    3) in a python session via `db.upgrade/downgrade`
+'''
+
 from __future__ import with_statement
 from logging.config import fileConfig
 from alembic import context
 
-from simpleml.utils.initialization import BaseDatabase
+from simpleml.utils.initialization import Database
 from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
 
 # this is the Alembic Config object, which provides
@@ -19,8 +26,8 @@ fileConfig(config.config_file_name, disable_existing_loggers=False)
 # target_metadata = mymodel.Base.metadata
 if not SimplemlCoreSqlalchemy.metadata.is_bound():
     # Initialize a new session if one isn't already configured
-    # Use BaseDatabase to avoid any cyclical errors on migration status
-    BaseDatabase().initialize(base_list=[SimplemlCoreSqlalchemy])
+    # Do not validate schema since it will be out of sync
+    Database().initialize(base_list=[SimplemlCoreSqlalchemy], validate=False)
 
 target_metadata = SimplemlCoreSqlalchemy.metadata
 
@@ -44,7 +51,9 @@ def run_migrations_offline():
     """
     url = 'postgresql://user:pass@localhost/dbname'
     context.configure(
-        url=url, target_metadata=target_metadata, literal_binds=True,
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
         compare_type=True
     )
 
@@ -69,7 +78,8 @@ def run_migrations_online():
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata,
+            connection=connection,
+            target_metadata=target_metadata,
             compare_type=True,
             transaction_per_migration=True,
             render_as_batch=True  # for SQLite support: https://alembic.sqlalchemy.org/en/latest/batch.html
@@ -79,7 +89,10 @@ def run_migrations_online():
             context.run_migrations()
 
 
-if context.is_offline_mode():
-    run_migrations_offline()
-else:
-    run_migrations_online()
+if __name__ == 'env_py':
+    # alembic entrypoint is env_py
+    # regular import would be env
+    if context.is_offline_mode():
+        run_migrations_offline()
+    else:
+        run_migrations_online()

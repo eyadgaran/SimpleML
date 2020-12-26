@@ -63,6 +63,7 @@ setup(
         'future',
         'configparser',
         'simplejson',
+        'click',
     ] + version_based_dependencies,
     extras_require={
         'postgres': postgres_dependencies,
@@ -76,6 +77,7 @@ setup(
     tests_require=all_dependencies,
     entry_points={
         'console_scripts': [
+            'simpleml=simpleml.cli.main:cli',
             'simpleml-test=simpleml.tests:run_tests',
             'simpleml-unit-test=simpleml.tests.unit:run_tests',
             'simpleml-integration-test=simpleml.tests.integration:run_tests',
