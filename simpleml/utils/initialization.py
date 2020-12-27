@@ -29,6 +29,7 @@ from os.path import realpath, dirname, join
 import os
 import logging
 import random
+import atexit
 
 LOGGER = logging.getLogger(__name__)
 
@@ -122,6 +123,7 @@ class BaseDatabase(URL):
         return credentials, ssh_config
 
     def open_tunnel(self):
+        atexit.register(self.close_tunnel)
         self.ssh_tunnel.start()
 
     def close_tunnel(self):
