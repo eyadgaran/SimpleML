@@ -1,6 +1,9 @@
 ## Change Log
 
-### 0.9.0 (2020-12-26)
+### 0.9.2 (2021-01-26)
+- Bugfix for dataset creator
+
+### 0.9.1 (2020-12-26)
 - CLI with alembic support
 - atexit hook for ssh tunnel closing
 
