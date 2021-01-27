@@ -198,7 +198,7 @@ class DatasetCreator(PersistableCreator):
         return Dataset, filters
 
     @classmethod
-    def create(cls, registered_name, pipeline=None, **kwargs):
+    def create(cls, registered_name, **kwargs):
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
