@@ -12,10 +12,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from simpleml import __version__
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
-from simpleml import __version__
 
 # -- Project information -----------------------------------------------------
 
@@ -45,6 +45,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosummary',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -163,6 +164,9 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+autodoc_default_flags = ['members']
+autodoc_typehints = 'description'
+autosummary_generate = True
 
 # -- Options for intersphinx extension ---------------------------------------
 
@@ -181,11 +185,11 @@ def run_apidoc(_):
     ignore_paths = []
 
     argv = [
-        "-f", # Force, overwrite existing
-        "-e", # --separate Put documentation for each module on its own page.
-        "-M", # --module-first Put module documentation before submodule documentation
-        "-o", ".", # Directory to place the output files. If it does not exist, it is created.
-        "../../simpleml/" # <MODULE_PATH>
+        "-f",  # Force, overwrite existing
+        "-e",  # --separate Put documentation for each module on its own page.
+        "-M",  # --module-first Put module documentation before submodule documentation
+        "-o", ".",  # Directory to place the output files. If it does not exist, it is created.
+        "../../simpleml/"  # <MODULE_PATH>
     ] + ignore_paths
 
     try:
@@ -197,6 +201,7 @@ def run_apidoc(_):
         from sphinx import apidoc
         argv.insert(0, apidoc.__file__)
         apidoc.main(argv)
+
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
