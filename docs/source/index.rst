@@ -74,7 +74,7 @@ from SimpleML:
 big data centric ones, but the defaults are targeting small-medium sized data.
 
 - Distributed environments
-Running highly distributed code and data processing requires expensive infrastructure and 
+Running highly distributed code and data processing requires expensive infrastructure and
 support. Projects at that scale will likely already have the resources and appetite
 to invest in and manage other enterprise solutions.
 
@@ -142,7 +142,7 @@ Index
    Structs <structs.rst>
    CLI <cli.rst>
    Utilities <utilities.rst>
-   API <api.rst>
+   API Reference <api/index.rst>
    Changelog <https://github.com/eyadgaran/SimpleML/blob/master/CHANGELOG.md>
 
 
