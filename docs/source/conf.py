@@ -12,10 +12,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from simpleml import __version__
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
-from simpleml import __version__
 
 # -- Project information -----------------------------------------------------
 
@@ -45,6 +45,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
+    'autoapi.extension',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -163,6 +164,15 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+autodoc_default_flags = ['members']
+autodoc_typehints = 'description'
+autosummary_generate = True
+autoapi_type = 'python'
+autoapi_dirs = ['../../simpleml']
+autoapi_root = 'api'
+autoapi_ignore = ['*simpleml/migrations*', '*simpleml/tests*']
+autoapi_python_class_content = 'both'
+autoapi_member_order = 'groupwise'
 
 # -- Options for intersphinx extension ---------------------------------------
 
@@ -173,30 +183,3 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
-
-
-# Dynamic doc generation on commits
-# https://github.com/rtfd/readthedocs.org/issues/1139
-def run_apidoc(_):
-    ignore_paths = []
-
-    argv = [
-        "-f", # Force, overwrite existing
-        "-e", # --separate Put documentation for each module on its own page.
-        "-M", # --module-first Put module documentation before submodule documentation
-        "-o", ".", # Directory to place the output files. If it does not exist, it is created.
-        "../../simpleml/" # <MODULE_PATH>
-    ] + ignore_paths
-
-    try:
-        # Sphinx 1.7+
-        from sphinx.ext import apidoc
-        apidoc.main(argv)
-    except ImportError:
-        # Sphinx 1.6 (and earlier)
-        from sphinx import apidoc
-        argv.insert(0, apidoc.__file__)
-        apidoc.main(argv)
-
-def setup(app):
-    app.connect('builder-inited', run_apidoc)
