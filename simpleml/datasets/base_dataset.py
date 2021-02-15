@@ -13,6 +13,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 from simpleml.persistables.base_persistable import Persistable
+from simpleml.pipelines.base_pipeline import Pipeline
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.persistables.sqlalchemy_types import GUID
 from simpleml.registries import DatasetRegistry
@@ -20,6 +21,7 @@ from simpleml.registries import DatasetRegistry
 from future.utils import with_metaclass
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
+from typing import List, Optional, Any
 import logging
 
 
@@ -54,9 +56,12 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
 
     __abstract__ = True
 
-    object_type = 'DATASET'
+    object_type: str = 'DATASET'
 
-    def __init__(self, has_external_files=True, label_columns=None, **kwargs):
+    def __init__(self,
+                 has_external_files: bool = True,
+                 label_columns: Optional[List[str]] = None,
+                 **kwargs):
         # If no save patterns are set, specify a default for disk_pickled
         if 'save_patterns' not in kwargs:
             kwargs['save_patterns'] = {'dataset': ['disk_pickled']}
@@ -69,7 +74,7 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         self.config['label_columns'] = label_columns
 
     @property
-    def dataframe(self):
+    def dataframe(self) -> Any:
         # Return dataframe if generated, otherwise generate first
         self.load_if_unloaded('dataset')
 
@@ -79,7 +84,7 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         return self._external_file
 
     @property
-    def label_columns(self):
+    def label_columns(self) -> List[str]:
         '''
         Keep column list for labels in metadata to persist through saving
         '''
@@ -92,13 +97,13 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         '''
         raise NotImplementedError
 
-    def add_pipeline(self, pipeline):
+    def add_pipeline(self, pipeline: Pipeline) -> None:
         '''
         Setter method for dataset pipeline used
         '''
         self.pipeline = pipeline
 
-    def _hash(self):
+    def _hash(self) -> str:
         '''
         Datasets rely on external data so instead of hashing only the config,
         hash the actual resulting dataframe
@@ -127,7 +132,7 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
 
         return self.custom_hasher((dataframe, config, pipeline_hash))
 
-    def save(self, **kwargs):
+    def save(self, **kwargs) -> None:
         '''
         Extend parent function with a few additional save routines
         '''
@@ -140,7 +145,7 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         if self.pipeline:
             self.pipeline.load(load_externals=False)
 
-    def load(self, **kwargs):
+    def load(self, **kwargs) -> None:
         '''
         Extend main load routine to load relationship class
         '''

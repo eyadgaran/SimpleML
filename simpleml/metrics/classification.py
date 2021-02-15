@@ -19,17 +19,21 @@ This module is organized by metric and prediction dependencies:
         3b) confusion matrix metrics: threshold or other metrics
 '''
 
-from simpleml.metrics.base_metric import Metric
-from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
-from simpleml.utils.errors import MetricError
-from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_score
-from abc import abstractmethod
+
+__author__ = 'Elisha Yadgaran'
+
+
 import numpy as np
 import pandas as pd
 import logging
 
+from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_score
+from abc import abstractmethod
+from typing import Optional, Any
 
-__author__ = 'Elisha Yadgaran'
+from simpleml.metrics.base_metric import Metric
+from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
+from simpleml.utils.errors import MetricError
 
 
 LOGGER = logging.getLogger(__name__)
@@ -42,7 +46,7 @@ class ClassificationMetric(Metric):
     TODO: Figure out multiclass generalizations
     '''
 
-    def __init__(self, dataset_split=None, **kwargs):
+    def __init__(self, dataset_split: Optional[str] = None, **kwargs):
         '''
         :param dataset_split: string denoting which dataset split to use
             can be one of: `TRAIN`, `VALIDATION`, Other. Other gets no prefix
@@ -63,20 +67,20 @@ class ClassificationMetric(Metric):
         super(ClassificationMetric, self).__init__(name=name, **kwargs)
         self.config['dataset_split'] = dataset_split
 
-    def _get_split(self, column):
+    def _get_split(self, column: str) -> Any:
         if self.dataset.id == self.model.pipeline.dataset_id:
             LOGGER.debug('Dataset is the same as model dataset, using pipeline dataset split instead of raw dataset one')
             return self._get_pipeline_split(column=column, split=self.config.get('dataset_split'))
         return self._get_dataset_split(column=column, split=self.config.get('dataset_split'))
 
     @property
-    def labels(self):
+    def labels(self) -> Any:
         if self.dataset is None:
             raise MetricError('Must set dataset before scoring classification metrics!')
         return self._get_split(column='y')
 
     @property
-    def probabilities(self):
+    def probabilities(self) -> Any:
         if self.dataset is None:
             raise MetricError('Must set dataset before scoring classification metrics!')
         probabilities = self.model.predict_proba(
@@ -87,7 +91,7 @@ class ClassificationMetric(Metric):
         return probabilities
 
     @property
-    def predictions(self):
+    def predictions(self) -> Any:
         if self.dataset is None:
             raise MetricError('Must set dataset before scoring classification metrics!')
         preds = self.model.predict(
@@ -98,7 +102,7 @@ class ClassificationMetric(Metric):
         return preds
 
     @staticmethod
-    def validate_predictions(predictions):
+    def validate_predictions(predictions: Any) -> None:
         invalid = None
         if predictions is None:
             invalid = True

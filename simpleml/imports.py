@@ -8,6 +8,8 @@ __author__ = 'Elisha Yadgaran'
 
 import logging
 
+from typing import Union
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,7 +19,10 @@ class MissingImportFactory(object):
     Wrapper class and callable generator to be used instead of unavailable dependencies
     Errors on reference when not available instead of on import
     '''
-    def __new__(cls, name, pypi_name, simpleml_extra_group):
+    def __new__(cls,
+                name: str,
+                pypi_name: str,
+                simpleml_extra_group: str):
         LOGGER.debug(f'Wrapping missing dependency: {name}')
 
         class MissingImportWrapper(object):
@@ -50,7 +55,7 @@ class MissingImportFactory(object):
 try:
     import psycopg2
 except ImportError:
-    psycopg2 = MissingImportFactory('psycopg2', 'psycopg2', 'postgres')
+    psycopg2: Union['MissingImportWrapper', 'psycopg2'] = MissingImportFactory('psycopg2', 'psycopg2', 'postgres')
 
 try:
     import tensorflow as tf

@@ -9,6 +9,8 @@ means unique to pandas.
 __author__ = 'Elisha Yadgaran'
 
 
+from typing import Any, List
+
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 
 
@@ -17,20 +19,20 @@ class NumpyDatasetMixin(AbstractDatasetMixin):
     Assumes _external_file is a dictionary of numpy ndarrays
     '''
     @property
-    def X(self):
+    def X(self) -> Any:
         '''
         Return the subset that isn't in the target labels
         '''
         return self.get(column='X', split=None)
 
     @property
-    def y(self):
+    def y(self) -> Any:
         '''
         Return the target label columns
         '''
         return self.get(column='y', split=None)
 
-    def get(self, column, split):
+    def get(self, column: str, split: str) -> Any:
         '''
         Explicitly split validation splits
         Assumes self.dataframe has a get method to return a dictionary of {'X': X, 'y': y}
@@ -55,7 +57,7 @@ class NumpyDatasetMixin(AbstractDatasetMixin):
         else:
             return split_dict.get('X', None)
 
-    def get_feature_names(self):
+    def get_feature_names(self) -> List[str]:
         '''
         Should return a list of the features in the dataset
         '''

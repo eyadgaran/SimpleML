@@ -2,10 +2,12 @@
 Wrapper class for a pickleable pipeline of a series of transformers
 '''
 
+__author__ = 'Elisha Yadgaran'
+
+
 from collections import OrderedDict
 from sklearn.pipeline import Pipeline
-
-__author__ = 'Elisha Yadgaran'
+from typing import Any, Optional, Dict, List, Tuple
 
 
 class DefaultPipeline(OrderedDict):
@@ -14,19 +16,19 @@ class DefaultPipeline(OrderedDict):
     extended functionality
     '''
 
-    def add_transformer(self, name, transformer):
+    def add_transformer(self, name: str, transformer: Any) -> None:
         '''
         Setter method for new transformer step
         '''
         self[name] = transformer
 
-    def remove_transformer(self, name):
+    def remove_transformer(self, name: str) -> None:
         '''
         Delete method for transformer step
         '''
         del self[name]
 
-    def fit(self, X, y=None, **kwargs):
+    def fit(self, X: Any, y: Optional[Any] = None, **kwargs):
         '''
         Iterate through each transformation step and apply fit
         '''
@@ -35,7 +37,7 @@ class DefaultPipeline(OrderedDict):
 
         return self
 
-    def transform(self, X, **kwargs):
+    def transform(self, X: Any, **kwargs) -> Any:
         '''
         Iterate through each transformation step and apply transform
         '''
@@ -44,7 +46,7 @@ class DefaultPipeline(OrderedDict):
 
         return X
 
-    def fit_transform(self, X, y=None, **kwargs):
+    def fit_transform(self, X: Any, y: Optional[Any] = None, **kwargs) -> Any:
         '''
         Iterate through each transformation step and apply fit and transform
         '''
@@ -53,7 +55,7 @@ class DefaultPipeline(OrderedDict):
 
         return X
 
-    def get_params(self, params_only=None, **kwargs):
+    def get_params(self, params_only: Optional[bool] = None, **kwargs) -> Dict[str, Any]:
         '''
         Iterate through transformers and return parameters
 
@@ -65,7 +67,7 @@ class DefaultPipeline(OrderedDict):
 
         return params
 
-    def set_params(self, **params):
+    def set_params(self, **params) -> None:
         '''
         Set params for transformers. Input is expected to be dict of dict
 
@@ -75,13 +77,13 @@ class DefaultPipeline(OrderedDict):
         for step, param in params.items():
             self[step].set_params(**param)
 
-    def get_transformers(self):
+    def get_transformers(self) -> List[Tuple[str, str]]:
         '''
         Get list of (step, transformer) tuples
         '''
         return [(i, j.__class__.__name__) for i, j in self.items()]
 
-    def get_feature_names(self, feature_names):
+    def get_feature_names(self, feature_names: List[str]) -> List[str]:
         '''
         Iterate through each transformer and return list of resulting features
         starts with empty list by default but can pass in dataset as starting
@@ -102,7 +104,7 @@ class SklearnPipeline(Pipeline):
     extended functionality
     '''
 
-    def add_transformer(self, name, transformer, index=None):
+    def add_transformer(self, name: str, transformer: Any, index: Optional[int] = None) -> None:
         '''
         Setter method for new transformer step
         '''
@@ -111,14 +113,14 @@ class SklearnPipeline(Pipeline):
         else:
             self.steps.append((name, transformer))
 
-    def remove_transformer(self, name):
+    def remove_transformer(self, name: str) -> None:
         '''
         Delete method for transformer step
         '''
         index = [i for i, j in enumerate(self.steps) if j[0] == name][0]
         self.steps.pop(index)
 
-    def get_params(self, params_only=False, **kwargs):
+    def get_params(self, params_only: bool = False, **kwargs) -> Dict[str, Any]:
         '''
         Wrapper around sklearn implementation to drop non parameter returns
         :param params_only: boolean to filter down to actual transformer parameters
@@ -133,13 +135,13 @@ class SklearnPipeline(Pipeline):
         else:
             return params
 
-    def get_transformers(self):
+    def get_transformers(self) -> List[Tuple[str, str]]:
         '''
         Get list of (step, transformer) tuples
         '''
         return [(i, j.__class__.__name__) for i, j in self.steps]
 
-    def get_feature_names(self, feature_names):
+    def get_feature_names(self, feature_names: List[str]) -> List[str]:
         '''
         Iterate through each transformer and return list of resulting features
         starts with empty list by default but can pass in dataset as starting

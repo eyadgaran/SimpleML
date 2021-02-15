@@ -1,12 +1,18 @@
-from simpleml.persistables.base_persistable import Persistable, GUID, MutableJSON
-from simpleml.registries import MetricRegistry
-from simpleml.utils.errors import MetricError
-from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
-from sqlalchemy.orm import relationship
-from future.utils import with_metaclass
+__author__ = 'Elisha Yadgaran'
+
+
 import logging
 
-__author__ = 'Elisha Yadgaran'
+from future.utils import with_metaclass
+from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
+from sqlalchemy.orm import relationship
+from typing import Any
+
+from simpleml.persistables.base_persistable import Persistable, GUID, MutableJSON
+from simpleml.datasets.base_dataset import Dataset
+from simpleml.models.base_model import Model
+from simpleml.registries import MetricRegistry
+from simpleml.utils.errors import MetricError
 
 
 LOGGER = logging.getLogger(__name__)
@@ -28,21 +34,21 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
 
     values = Column(MutableJSON, nullable=False)
 
-    object_type = 'METRIC'
+    object_type: str = 'METRIC'
 
-    def add_dataset(self, dataset):
+    def add_dataset(self, dataset: Dataset) -> None:
         '''
         Setter method for dataset used
         '''
         self.dataset = dataset
 
-    def add_model(self, model):
+    def add_model(self, model: Model) -> None:
         '''
         Setter method for model used
         '''
         self.model = model
 
-    def _hash(self):
+    def _hash(self) -> str:
         '''
         Hash is the combination of the:
             1) Model
@@ -60,7 +66,7 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
 
         return self.custom_hasher((model_hash, dataset_hash, metric, config))
 
-    def _get_latest_version(self):
+    def _get_latest_version(self) -> int:
         '''
         Versions should be autoincrementing for each object (constrained over
         friendly name and model). Executes a database lookup and increments..
@@ -77,7 +83,7 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
 
         return last_version + 1
 
-    def _get_pipeline_split(self, column: str, split: str, **kwargs):
+    def _get_pipeline_split(self, column: str, split: str, **kwargs) -> Any:
         '''
         For special case where dataset is the same as the model's dataset, the
         dataset splits can refer to the pipeline imposed splits, not the inherent
@@ -86,7 +92,7 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
         '''
         return getattr(self.model.pipeline.get_dataset_split(split=split, **kwargs), column)
 
-    def _get_dataset_split(self, **kwargs):
+    def _get_dataset_split(self, **kwargs) -> Any:
         '''
         Default accessor for dataset data. REFERS TO RAW DATASETS
         not the pipelines superimposed. That means that datasets that do not
@@ -95,7 +101,7 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
         '''
         return self.dataset.get(**kwargs)
 
-    def save(self, **kwargs):
+    def save(self, **kwargs) -> None:
         '''
         Extend parent function with a few additional save routines
         '''
@@ -110,7 +116,7 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
         # Sqlalchemy updates relationship references after save so reload class
         self.model.load(load_externals=False)
 
-    def load(self, **kwargs):
+    def load(self, **kwargs) -> None:
         '''
         Extend main load routine to load relationship class
         '''

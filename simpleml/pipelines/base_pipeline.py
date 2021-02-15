@@ -4,6 +4,14 @@ Base Module for Pipelines
 
 __author__ = 'Elisha Yadgaran'
 
+import logging
+import numpy as np
+import pandas as pd
+
+from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
+from sqlalchemy.orm import relationship
+from future.utils import with_metaclass
+from typing import Optional, List, Dict, Any, Union, Generator
 
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.imports import Sequence
@@ -11,17 +19,10 @@ from simpleml.persistables.base_persistable import Persistable
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.registries import PipelineRegistry
 from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
-
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
 from simpleml.pipelines.validation_split_mixins import Split
 from simpleml.utils.errors import PipelineError
-
-from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
-from sqlalchemy.orm import relationship
-from future.utils import with_metaclass
-import logging
-import numpy as np
-import pandas as pd
+from simpleml.datasets.base_dataset import Dataset
 
 
 LOGGER = logging.getLogger(__name__)
@@ -46,10 +47,13 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     # Additional pipeline specific metadata
     params = Column(MutableJSON, default={})
 
-    object_type = 'PIPELINE'
+    object_type: str = 'PIPELINE'
 
-    def __init__(self, has_external_files=True, transformers=None,
-                 external_pipeline_class='default', fitted=False,
+    def __init__(self,
+                 has_external_files: bool = True,
+                 transformers: Optional[List[Any]] = None,
+                 external_pipeline_class: str = 'default',
+                 fitted: bool = False,
                  **kwargs):
         # If no save patterns are set, specify a default for disk_pickled
         if 'save_patterns' not in kwargs:
@@ -59,7 +63,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
 
         # Instantiate pipeline
         if transformers is None:
-            transformers = []
+            transformers: List[Any] = []
         self.config['external_pipeline_class'] = external_pipeline_class
         self._external_file = self._create_external_pipeline(
             external_pipeline_class, transformers, **kwargs)
@@ -67,15 +71,15 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         self.fitted = fitted
 
     @property
-    def fitted(self):
+    def fitted(self) -> bool:
         return self.state.get('fitted')
 
     @fitted.setter
-    def fitted(self, value):
+    def fitted(self, value: bool) -> None:
         self.state['fitted'] = value
 
     @property
-    def external_pipeline(self):
+    def external_pipeline(self) -> Any:
         '''
         All pipeline objects are going to require some filebase persisted object
 
@@ -85,8 +89,10 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         self.load_if_unloaded('pipeline')
         return self._external_file
 
-    def _create_external_pipeline(self, external_pipeline_class, transformers,
-                                  **kwargs):
+    def _create_external_pipeline(self,
+                                  external_pipeline_class: str,
+                                  transformers: List[Any],
+                                  **kwargs) -> Union[DefaultPipeline, SklearnPipeline]:
         '''
         should return the desired pipeline object
 
@@ -103,27 +109,27 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         else:
             raise NotImplementedError('Only default or sklearn pipelines supported')
 
-    def add_dataset(self, dataset):
+    def add_dataset(self, dataset: Dataset) -> None:
         '''
         Setter method for dataset used
         '''
         self.dataset = dataset
 
-    def assert_dataset(self, msg=''):
+    def assert_dataset(self, msg: str = '') -> None:
         '''
         Helper method to raise an error if dataset isn't present
         '''
         if self.dataset is None:
             raise PipelineError(msg)
 
-    def assert_fitted(self, msg=''):
+    def assert_fitted(self, msg: str = '') -> None:
         '''
         Helper method to raise an error if pipeline isn't fit
         '''
         if not self.fitted:
             raise PipelineError(msg)
 
-    def add_transformer(self, name, transformer):
+    def add_transformer(self, name: str, transformer: Any) -> None:
         '''
         Setter method for new transformer step
         '''
@@ -131,7 +137,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         # Need to refit now
         self.fitted = False
 
-    def remove_transformer(self, name):
+    def remove_transformer(self, name: str) -> None:
         '''
         Delete method for transformer step
         '''
@@ -139,7 +145,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         # Need to refit now
         self.fitted = False
 
-    def _hash(self):
+    def _hash(self) -> str:
         '''
         Hash is the combination of the:
             1) Dataset
@@ -154,7 +160,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
 
         return self.custom_hasher((dataset_hash, transformers, transformer_params, pipeline_config))
 
-    def save(self, **kwargs):
+    def save(self, **kwargs) -> None:
         '''
         Extend parent function with a few additional save routines
 
@@ -178,7 +184,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         # Sqlalchemy updates relationship references after save so reload class
         self.dataset.load(load_externals=False)
 
-    def load(self, **kwargs):
+    def load(self, **kwargs) -> None:
         '''
         Extend main load routine to load relationship class
         '''
@@ -192,7 +198,10 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         # By default dont load data unless it actually gets used
         self.dataset.load(load_externals=False)
 
-    def get_dataset_split(self, split=None, return_generator=False, return_sequence=False, **kwargs):
+    def get_dataset_split(self,
+                          split: Optional[str] = None,
+                          return_generator: bool = False,
+                          return_sequence: bool = False, **kwargs) -> Split:
         '''
         Get specific dataset split
         Assumes a Split object (`simpleml.pipelines.validation_split_mixins.Split`)
@@ -210,7 +219,11 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
             return self._iterate_split(self._dataset_splits[split], **kwargs)
         return self._dataset_splits[split]
 
-    def _iterate_split(self, split, infinite_loop=False, batch_size=32, shuffle=True, **kwargs):
+    def _iterate_split(self,
+                       split: Split,
+                       infinite_loop: bool = False,
+                       batch_size: int = 32,
+                       shuffle: bool = True, **kwargs) -> Generator[Split, None, None]:
         '''
         Turn a dataset split into a generator
         '''
@@ -259,20 +272,23 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
                 else:
                     break
 
-    def _iterate_split_using_sequence(self, split, batch_size=32, shuffle=True, **kwargs):
+    def _iterate_split_using_sequence(self,
+                                      split: Split,
+                                      batch_size: int = 32,
+                                      shuffle: bool = True, **kwargs) -> 'DatasetSequence':
         '''
         Different version of iterate split that uses a keras.utils.sequence object
         to play nice with keras and enable thread safe generation.
         '''
         return DatasetSequence(split, batch_size, shuffle, **kwargs)
 
-    def X(self, split=None):
+    def X(self, split: Optional[str] = None) -> Any:
         '''
         Get X for specific dataset split
         '''
         return self.get_dataset_split(split=split).X
 
-    def y(self, split=None):
+    def y(self, split: Optional[str] = None) -> Any:
         '''
         Get labels for specific dataset split
         '''
@@ -299,7 +315,10 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
 
         return self
 
-    def transform(self, X, return_generator=False, return_sequence=False, **kwargs):
+    def transform(self,
+                  X: Any,
+                  return_generator: bool = False,
+                  return_sequence: bool = False, **kwargs) -> Any:
         '''
         Main transform routine - routes to generator or regular method depending
         on the flag
@@ -318,7 +337,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         else:
             return self._transform(X, **kwargs)
 
-    def _transform(self, X, dataset_split=None):
+    def _transform(self, X: Any, dataset_split: Optional[str] = None) -> Any:
         '''
         Pass through method to external pipeline
 
@@ -339,7 +358,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
 
         return self.external_pipeline.transform(X)
 
-    def _generator_transform(self, X, dataset_split=None, **kwargs):
+    def _generator_transform(self, X: Any, dataset_split: Optional[str] = None, **kwargs) -> Any:
         '''
         Pass through method to external pipeline
 
@@ -367,7 +386,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         else:
             yield self.external_pipeline.transform(X, **kwargs)
 
-    def _sequence_transform(self, X, dataset_split=None, **kwargs):
+    def _sequence_transform(self, X: Any, dataset_split: Optional[str] = None, **kwargs) -> Any:
         '''
         Pass through method to external pipeline
 
@@ -383,7 +402,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         else:
             return self.external_pipeline.transform(X, **kwargs)
 
-    def fit_transform(self, **kwargs):
+    def fit_transform(self, **kwargs) -> Any:
         '''
         Wrapper for fit and transform methods
         ASSUMES only applies to default (train) split
@@ -413,7 +432,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         '''
         return self.external_pipeline.get_transformers()
 
-    def get_feature_names(self):
+    def get_feature_names(self) -> List[str]:
         '''
         Pass through method to external pipeline
         Should return a list of the final features generated by this pipeline
@@ -451,11 +470,11 @@ class DatasetSequence(Sequence):
     conform with external input types (keras tuples)
     '''
 
-    def __init__(self, split, batch_size, shuffle):
+    def __init__(self, split: Split, batch_size: int, shuffle: bool):
         self.X = self.validated_split(split.X)
         self.y = self.validated_split(split.y)
 
-        self.dataset_size = self.X.shape[0]
+        self.dataset_size: int = self.X.shape[0]
         if self.dataset_size == 0:  # Return None
             raise ValueError('Attempting to create sequence with no data')
 
@@ -471,7 +490,7 @@ class DatasetSequence(Sequence):
         self.shuffle = shuffle
 
     @staticmethod
-    def validated_split(split):
+    def validated_split(split: Any) -> Any:
         '''
         Confirms data is valid, otherwise returns None (makes downstream checking
         simpler)
@@ -523,7 +542,7 @@ class TransformedSequence(Sequence):
     through as the next batch
     '''
 
-    def __init__(self, pipeline, dataset_sequence):
+    def __init__(self, pipeline: Pipeline, dataset_sequence: DatasetSequence):
         self.pipeline = pipeline
         self.dataset_sequence = dataset_sequence
 

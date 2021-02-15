@@ -6,14 +6,14 @@ Define convenience classes composed of different mixins
 
 __author__ = 'Elisha Yadgaran'
 
+import pandas as pd
 
 from .base_dataset import Dataset
 from .pandas_mixin import PandasDatasetMixin
 from .numpy_mixin import NumpyDatasetMixin
 
+from simpleml.pipelines.validation_split_mixins import Split
 from simpleml.utils.errors import DatasetError
-
-import pandas as pd
 
 
 # Mixin implementations for convenience
@@ -26,7 +26,7 @@ class PandasDataset(Dataset, PandasDatasetMixin):
     pipeline provided!
     '''
     @staticmethod
-    def merge_split(split):
+    def merge_split(split: Split) -> pd.DataFrame:
         '''
         Helper method to merge all dataframes in a split object into a single df
         does a column-wise join
@@ -35,7 +35,7 @@ class PandasDataset(Dataset, PandasDatasetMixin):
         '''
         return pd.concat(list(split.values()), axis=1)
 
-    def build_dataframe(self):
+    def build_dataframe(self) -> None:
         '''
         Transform raw dataset via dataset pipeline for production ready dataset
         Overwrite this method to disable raw dataset requirement
@@ -66,7 +66,7 @@ class NumpyDataset(Dataset, NumpyDatasetMixin):
     pipeline provided!
     '''
 
-    def build_dataframe(self):
+    def build_dataframe(self) -> None:
         '''
         Transform raw dataset via dataset pipeline for production ready dataset
         Overwrite this method to disable raw dataset requirement

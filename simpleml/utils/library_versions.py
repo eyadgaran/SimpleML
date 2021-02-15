@@ -7,6 +7,8 @@ __author__ = 'Elisha Yadgaran'
 import pkg_resources
 import sys
 
+from typing import Dict
+
 
 def safe_lookup(package):
     try:
@@ -15,7 +17,7 @@ def safe_lookup(package):
         return None
 
 
-INSTALLED_LIBRARIES = {
+INSTALLED_LIBRARIES: Dict[str, str] = {
     'python': '{}.{}.{}'.format(*sys.version_info[:3]),
     'simpleml': safe_lookup('simpleml'),
     'sqlalchemy': safe_lookup('sqlalchemy'),

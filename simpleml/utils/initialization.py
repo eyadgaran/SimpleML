@@ -5,6 +5,21 @@ database management
 
 __author__ = 'Elisha Yadgaran'
 
+import os
+import logging
+import random
+import atexit
+
+from sqlalchemy import create_engine
+from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.engine.url import URL, make_url
+from alembic import command
+from alembic.config import Config
+from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
+from os.path import realpath, dirname, join
+from typing import Optional, Dict, Any, Tuple
 
 # Import table models to register in DeclaritiveBase
 from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy, DatasetStorageSqlalchemy, BinaryStorageSqlalchemy
@@ -17,19 +32,6 @@ from simpleml.utils.errors import SimpleMLError
 from simpleml.utils.configuration import CONFIG, FILESTORE_DIRECTORY
 from simpleml.imports import SSHTunnelForwarder
 
-from sqlalchemy import create_engine
-from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.engine.url import URL, make_url
-from alembic import command
-from alembic.config import Config
-from alembic.migration import MigrationContext
-from alembic.script import ScriptDirectory
-from os.path import realpath, dirname, join
-import os
-import logging
-import random
-import atexit
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,8 +57,13 @@ class BaseDatabase(object):
     has changed to an immutable object without an __init__
     '''
 
-    def __init__(self, config=None, configuration_section=None, uri=None,
-                 use_ssh_tunnel=False, sshtunnel_params=None, **credentials):
+    def __init__(self,
+                 config: Optional[Dict[str, Any]] = None,
+                 configuration_section: Optional[str] = None,
+                 uri: Optional[str] = None,
+                 use_ssh_tunnel: bool = False,
+                 sshtunnel_params: Optional[Dict[str, Any]] = None,
+                 **credentials):
         '''
         :param use_ssh_tunnel: boolean - default false. Whether to tunnel sqlalchemy connection
             through an ssh tunnel or not
@@ -109,7 +116,7 @@ class BaseDatabase(object):
             # Old syntax
             self.url = URL(**credentials)
 
-    def configure_ssh_tunnel(self, credentials, ssh_config):
+    def configure_ssh_tunnel(self, credentials: Dict[str, Any], ssh_config: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         # Actual DB location
         target_host = credentials.pop('host')
         target_port = int(credentials.pop('port'))
@@ -130,15 +137,15 @@ class BaseDatabase(object):
 
         return credentials, ssh_config
 
-    def open_tunnel(self):
+    def open_tunnel(self) -> None:
         atexit.register(self.close_tunnel)
         self.ssh_tunnel.start()
 
-    def close_tunnel(self):
+    def close_tunnel(self) -> None:
         self.ssh_tunnel.stop()
 
     @property
-    def engine(self):
+    def engine(self) -> Any:
         # Custom serializer/deserializer not supported by all drivers
         # Definitely works for:
         # - Postgres
@@ -149,7 +156,7 @@ class BaseDatabase(object):
                              pool_recycle=300)
 
     @property
-    def ssh_tunnel(self):
+    def ssh_tunnel(self) -> SSHTunnelForwarder:
         if SSHTunnelForwarder is None:  # Not installed
             raise SimpleMLError('SSHTunnel is not installed, install with `pip install sshtunnel`')
 
@@ -157,7 +164,7 @@ class BaseDatabase(object):
             self._sshtunnel = SSHTunnelForwarder(**self.ssh_config)
         return self._sshtunnel
 
-    def create_tables(self, base, drop_tables=False, ignore_errors=False):
+    def create_tables(self, base, drop_tables: bool = False, ignore_errors: bool = False) -> None:
         '''
         Creates database tables (and potentially drops existing ones).
         Assumes to be running under a sufficiently privileged user

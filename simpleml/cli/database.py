@@ -22,7 +22,7 @@ def db():
     '''
 
 
-def _init_connection():
+def _init_connection() -> Database:
     '''
     Binds the db engine and initializes a connection
     '''
