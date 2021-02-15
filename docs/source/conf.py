@@ -171,6 +171,8 @@ autoapi_type = 'python'
 autoapi_dirs = ['../../simpleml']
 autoapi_root = 'api'
 autoapi_ignore = ['*simpleml/migrations*', '*simpleml/tests*']
+autoapi_python_class_content = 'both'
+autoapi_member_order = 'groupwise'
 
 # -- Options for intersphinx extension ---------------------------------------
 
