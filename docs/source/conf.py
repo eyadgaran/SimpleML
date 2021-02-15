@@ -45,7 +45,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
-    'sphinx.ext.autosummary',
+    'autoapi.extension',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -167,6 +167,9 @@ texinfo_documents = [
 autodoc_default_flags = ['members']
 autodoc_typehints = 'description'
 autosummary_generate = True
+autoapi_type = 'python'
+autoapi_dirs = ['../../sipmleml']
+autoapi_root = 'api'
 
 # -- Options for intersphinx extension ---------------------------------------
 
