@@ -168,7 +168,7 @@ autodoc_default_flags = ['members']
 autodoc_typehints = 'description'
 autosummary_generate = True
 autoapi_type = 'python'
-autoapi_dirs = ['simpleml']
+autoapi_dirs = ['../../simpleml']
 autoapi_root = 'api'
 
 # -- Options for intersphinx extension ---------------------------------------
