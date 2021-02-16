@@ -12,17 +12,21 @@ to transform it into the processed form.
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.persistables.base_persistable import Persistable
-from simpleml.pipelines.base_pipeline import Pipeline
-from simpleml.save_patterns.decorators import ExternalArtifactDecorators
-from simpleml.persistables.sqlalchemy_types import GUID
-from simpleml.registries import DatasetRegistry
+import logging
 
 from future.utils import with_metaclass
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
-from typing import List, Optional, Any
-import logging
+from typing import List, Optional, Any, TYPE_CHECKING
+
+from simpleml.persistables.base_persistable import Persistable
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
+from simpleml.persistables.sqlalchemy_types import GUID
+from simpleml.registries import DatasetRegistry
+
+if TYPE_CHECKING:
+    # Cyclical import hack for type hints
+    from simpleml.pipelines.base_pipeline import Pipeline
 
 
 LOGGER = logging.getLogger(__name__)
@@ -97,7 +101,7 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         '''
         raise NotImplementedError
 
-    def add_pipeline(self, pipeline: Pipeline) -> None:
+    def add_pipeline(self, pipeline: 'Pipeline') -> None:
         '''
         Setter method for dataset pipeline used
         '''

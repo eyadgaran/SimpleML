@@ -11,7 +11,7 @@ import pandas as pd
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from future.utils import with_metaclass
-from typing import Optional, List, Dict, Any, Union, Generator
+from typing import Optional, List, Any, Union, Generator, TYPE_CHECKING
 
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.imports import Sequence
@@ -22,7 +22,10 @@ from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
 from simpleml.pipelines.validation_split_mixins import Split
 from simpleml.utils.errors import PipelineError
-from simpleml.datasets.base_dataset import Dataset
+
+if TYPE_CHECKING:
+    # Cyclical import hack for type hints
+    from simpleml.datasets.base_dataset import Dataset
 
 
 LOGGER = logging.getLogger(__name__)
@@ -109,7 +112,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         else:
             raise NotImplementedError('Only default or sklearn pipelines supported')
 
-    def add_dataset(self, dataset: Dataset) -> None:
+    def add_dataset(self, dataset: 'Dataset') -> None:
         '''
         Setter method for dataset used
         '''
