@@ -105,7 +105,7 @@ class BaseDatabase(object):
         try:
             # New syntax (1.4.2+)
             self.url = URL.create(**credentials)
-        except:
+        except AttributeError:
             # Old syntax
             self.url = URL(**credentials)
 
