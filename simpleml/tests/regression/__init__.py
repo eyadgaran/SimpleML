@@ -43,7 +43,12 @@ def load_tests(*args, **kwargs):
 
 def run_tests():
     runner = unittest.TextTestRunner(verbosity=2)
-    runner.run(load_tests())
+    result = runner.run(load_tests())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)
 
 
 if __name__ == '__main__':

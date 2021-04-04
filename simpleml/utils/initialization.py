@@ -46,10 +46,13 @@ DATABASE_CONF = os.getenv('SIMPLEML_DATABASE_CONF', None)
 DATABASE_URI = os.getenv('SIMPLEML_DATABASE_URI', None)
 
 
-class BaseDatabase(URL):
+class BaseDatabase(object):
     '''
     Base Database class to configure db connection
     Does not assume schema tracking or any other validation
+
+    Starting in sqlalchemy 1.4.2, the signature of `sqlalchemy.engine.url.URL`
+    has changed to an immutable object without an __init__
     '''
 
     def __init__(self, config=None, configuration_section=None, uri=None,
@@ -99,7 +102,12 @@ class BaseDatabase(URL):
                 sshtunnel_params = {}
             credentials, self.ssh_config = self.configure_ssh_tunnel(credentials, sshtunnel_params)
 
-        super(BaseDatabase, self).__init__(**credentials)
+        try:
+            # New syntax (1.4.2+)
+            self.url = URL.create(**credentials)
+        except AttributeError:
+            # Old syntax
+            self.url = URL(**credentials)
 
     def configure_ssh_tunnel(self, credentials, ssh_config):
         # Actual DB location
@@ -135,7 +143,7 @@ class BaseDatabase(URL):
         # Definitely works for:
         # - Postgres
         # - SQLite >= 1.3.7 -- Use _json_serializer for below
-        return create_engine(self,
+        return create_engine(self.url,
                              json_serializer=custom_dumps,
                              json_deserializer=custom_loads,
                              pool_recycle=300)
@@ -203,6 +211,13 @@ class BaseDatabase(URL):
         '''
         for base in base_list:
             self._initialize(base, **kwargs)
+
+    # delegate representation to URL
+    def __str__(self):
+        return self.url.__str__()
+
+    def __repr__(self):
+        return self.url.__repr__()
 
 
 class AlembicDatabase(BaseDatabase):
