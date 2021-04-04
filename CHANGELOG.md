@@ -1,5 +1,8 @@
 ## Change Log
 
+### 0.9.3 (2021-04-04)
+- Patch to support sqlalchemy >= 1.4 changes
+
 ### 0.9.2 (2021-01-26)
 - Bugfix for dataset creator
 
