@@ -1,25 +1,31 @@
 '''
 Module with helper classes to create new persistables
 '''
+
+__author__ = 'Elisha Yadgaran'
+
+import logging
+
 from abc import ABCMeta, abstractmethod
+from future.utils import with_metaclass
+from typing import Dict, Any, Optional, Tuple
+
 from simpleml.registries import SIMPLEML_REGISTRY
+from simpleml.persistables.base_persistable import Persistable
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.pipelines.base_pipeline import Pipeline
 from simpleml.models.base_model import Model
 from simpleml.metrics.base_metric import Metric
 from simpleml.utils.errors import TrainingError
-import logging
-from future.utils import with_metaclass
+
 
 LOGGER = logging.getLogger(__name__)
-
-__author__ = 'Elisha Yadgaran'
 
 
 class PersistableCreator(with_metaclass(ABCMeta, object)):
 
     @classmethod
-    def retrieve_or_create(self, **kwargs):
+    def retrieve_or_create(self, **kwargs) -> Persistable:
         '''
         Wrapper method to first attempt to retrieve a matching persistable and
         then create a new one if it isn't found
@@ -39,7 +45,7 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
             return persistable
 
     @staticmethod
-    def retrieve(cls, filters):
+    def retrieve(cls, filters: Dict[str, Any]) -> Persistable:
         '''
         Query database using the table model (cls) and filters for a matching
         persistable
@@ -47,7 +53,7 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
         return cls.where(**filters).order_by(cls.version.desc()).first()
 
     @staticmethod
-    def retrieve_dependency(dependency_cls, **dependency_kwargs):
+    def retrieve_dependency(dependency_cls: 'PersistableCreator', **dependency_kwargs) -> Persistable:
         '''
         Base method to query for dependency
         Raises TrainingError if dependency does not exist
@@ -63,10 +69,10 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
 
     @classmethod
     def retrieve_dataset(cls,
-                         dataset=None,
+                         dataset: Optional[Dataset] = None,
                          dataset_id: str = None,
-                         dataset_kwargs=None,
-                         **kwargs):
+                         dataset_kwargs: Optional[Dict[str, Any]] = None,
+                         **kwargs) -> Dataset:
         if dataset is not None:
             return dataset
         if dataset_id is not None:
@@ -77,10 +83,10 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
 
     @classmethod
     def retrieve_pipeline(cls,
-                          pipeline=None,
+                          pipeline: Optional[Pipeline] = None,
                           pipeline_id: str = None,
-                          pipeline_kwargs=None,
-                          **kwargs):
+                          pipeline_kwargs: Optional[Dict[str, Any]] = None,
+                          **kwargs) -> Pipeline:
         if pipeline is not None:
             return pipeline
         if pipeline_id is not None:
@@ -91,10 +97,10 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
 
     @classmethod
     def retrieve_model(cls,
-                       model=None,
+                       model: Optional[Model] = None,
                        model_id: str = None,
-                       model_kwargs=None,
-                       **kwargs):
+                       model_kwargs: Optional[Dict[str, Any]] = None,
+                       **kwargs) -> Model:
         if model is not None:
             return model
         if model_id is not None:
@@ -104,7 +110,7 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
             return cls.retrieve_dependency(ModelCreator, **model_kwargs)
 
     @abstractmethod
-    def determine_filters(cls, strict=False, **kwargs):
+    def determine_filters(cls, strict: bool = False, **kwargs):
         '''
         method to determine which filters to apply when looking for
         existing persistable
@@ -131,7 +137,7 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
         '''
 
     @staticmethod
-    def retrieve_from_registry(registered_name):
+    def retrieve_from_registry(registered_name: str) -> Persistable:
         '''
         stateless method to query registry for class definitions. handles errors
         '''
@@ -143,7 +149,7 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
 
 class DatasetCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, strict=True, **kwargs):
+    def determine_filters(cls, strict: bool = True, **kwargs) -> Tuple[Dataset, Dict[str, Any]]:
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -198,7 +204,7 @@ class DatasetCreator(PersistableCreator):
         return Dataset, filters
 
     @classmethod
-    def create(cls, registered_name, **kwargs):
+    def create(cls, registered_name: str, **kwargs) -> Dataset:
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -217,7 +223,7 @@ class DatasetCreator(PersistableCreator):
 
 class PipelineCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, strict=False, **kwargs):
+    def determine_filters(cls, strict: bool = False, **kwargs) -> Tuple[Pipeline, Dict[str, Any]]:
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -263,7 +269,7 @@ class PipelineCreator(PersistableCreator):
         return Pipeline, filters
 
     @classmethod
-    def create(cls, registered_name, **kwargs):
+    def create(cls, registered_name: str, **kwargs) -> Pipeline:
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -282,7 +288,7 @@ class PipelineCreator(PersistableCreator):
 
 class ModelCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, strict=False, **kwargs):
+    def determine_filters(cls, strict: bool = False, **kwargs) -> Tuple[Model, Dict[str, Any]]:
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -328,7 +334,7 @@ class ModelCreator(PersistableCreator):
         return Model, filters
 
     @classmethod
-    def create(cls, registered_name, **kwargs):
+    def create(cls, registered_name: str, **kwargs) -> Model:
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
@@ -347,7 +353,7 @@ class ModelCreator(PersistableCreator):
 
 class MetricCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, strict=False, **kwargs):
+    def determine_filters(cls, strict: bool = False, **kwargs) -> Tuple[Metric, Dict[str, Any]]:
         '''
         stateless method to determine which filters to apply when looking for
         existing persistable
@@ -398,7 +404,7 @@ class MetricCreator(PersistableCreator):
         return Metric, filters
 
     @classmethod
-    def create(cls, registered_name, **kwargs):
+    def create(cls, registered_name: str, **kwargs) -> Metric:
         '''
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable

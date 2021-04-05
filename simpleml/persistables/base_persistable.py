@@ -11,7 +11,7 @@ import logging
 from abc import abstractmethod
 from future.utils import with_metaclass
 from collections import defaultdict
-from typing import Dict, Union, Optional, Any, Type
+from typing import Dict, Union, Optional, Any, Type, List
 from sqlalchemy import Column, func, String, Boolean, Integer
 
 from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
@@ -106,12 +106,17 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
     # Generic store and metadata for all child objects
     metadata_ = Column('metadata', MutableJSON, default={})
 
-    def __init__(self, name=None, has_external_files=False,
-                 author=None, project=None, version_description=None,
-                 save_patterns=None, **kwargs):
+    def __init__(self,
+                 name: Optional[str] = None,
+                 has_external_files: bool = False,
+                 author: Optional[str] = None,
+                 project: Optional[str] = None,
+                 version_description: Optional[str] = None,
+                 save_patterns: Optional[Dict[str, List[str]]] = None,
+                 **kwargs):
         # Initialize values expected to exist at time of instantiation
-        self.registered_name = self.__class__.__name__
-        self.id = uuid.uuid4()
+        self.registered_name: str = self.__class__.__name__
+        self.id: uuid.UUID = uuid.uuid4()
         self.author = author
         self.project = project
         self.name = name
@@ -123,26 +128,26 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
 
         # Special place for SimpleML internal params
         # Think of as the config to initialize objects
-        self.metadata_ = {}  # Place for any arbitrary metadata
+        self.metadata_: Dict[str, Any] = {}  # Place for any arbitrary metadata
         self.metadata_['config'] = {}  # Place for parameters that uniquely configure an instance on initialization
         self.metadata_['state'] = {}  # Place for transitory values that may be set post initialization (and want to be persisted)
 
         # For external loading - initialize to None
-        self.unloaded_artifacts = []
+        self.unloaded_artifacts: List[str] = []
         # Store save pattern in state metadata as an operational setting, otherwise
         # it could affect the hash and result in a different object per save location
         self.state['save_patterns'] = save_patterns
 
     @property
-    def config(self):
+    def config(self) -> Dict[str, Any]:
         return self.metadata_['config']
 
     @property
-    def state(self):
+    def state(self) -> Dict[str, Any]:
         return self.metadata_['state']
 
     @property
-    def library_versions(self):
+    def library_versions(self) -> Dict[str, str]:
         return self.metadata_.get('library_versions', {})
 
     @abstractmethod
@@ -153,7 +158,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
         to assert identity across code definitions
         '''
 
-    def _get_latest_version(self):
+    def _get_latest_version(self) -> int:
         '''
         Versions should be autoincrementing for each object (constrained over
         friendly name). Executes a database lookup and increments..
@@ -169,7 +174,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
 
         return last_version + 1
 
-    def save(self):
+    def save(self) -> None:
         '''
         Each subclass needs to instantiate a save routine to persist to the
         database and any other required filestore
@@ -191,7 +196,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
 
         super(Persistable, self).save()
 
-    def save_external_files(self):
+    def save_external_files(self) -> None:
         '''
         Main routine to save registered external artifacts. Each save pattern
         is defined using the standard api for the save params defined here. If
@@ -222,7 +227,8 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
                     obj=obj, **save_params)
 
     def save_external_file(self,
-                           artifact_name: str, save_pattern: str,
+                           artifact_name: str,
+                           save_pattern: str,
                            cls: Optional[Type] = None,
                            **save_params) -> None:
         '''
@@ -259,7 +265,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
         save_attribute = getattr(self, registered_attribute)['save']
         return getattr(self, save_attribute)
 
-    def load(self, load_externals=True):
+    def load(self, load_externals: bool = True) -> None:
         '''
         Counter operation for save
         Needs to load any file and db objects
@@ -286,7 +292,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
         if self.has_external_files and load_externals:
             self.load_external_files()
 
-    def load_external_files(self, artifact_name: Optional[str] = None):
+    def load_external_files(self, artifact_name: Optional[str] = None) -> None:
         '''
         Main routine to restore registered external artifacts. Will iterate
         through save patterns and break after the first successful restore
@@ -312,7 +318,9 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
         else:
             _load(artifact_name, self.filepaths.get(artifact_name, {}))
 
-    def load_external_file(self, artifact_name: str, save_pattern: str,
+    def load_external_file(self,
+                           artifact_name: str,
+                           save_pattern: str,
                            cls: Optional[Type] = None) -> Any:
         '''
         Define pattern for loading external files
@@ -373,7 +381,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
         if artifact_name in self.unloaded_artifacts:
             self.load_external_files(artifact_name=artifact_name)
 
-    def _load_class(self):
+    def _load_class(self) -> 'Persistable':
         '''
         Wrapper function to call global registry of all imported class names
         '''

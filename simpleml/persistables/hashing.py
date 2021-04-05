@@ -7,8 +7,10 @@ __author__ = 'Elisha Yadgaran'
 
 import pandas as pd
 import numpy as np
-from pandas.util import hash_pandas_object
 import inspect
+
+from pandas.util import hash_pandas_object
+from typing import Any, Type
 
 
 class CustomHasherMixin(object):
@@ -16,7 +18,9 @@ class CustomHasherMixin(object):
     Mixin class to hash any object
     '''
     @classmethod
-    def custom_hasher(cls, object_to_hash, custom_class_proxy=type(object.__dict__)):
+    def custom_hasher(cls,
+                      object_to_hash: Any,
+                      custom_class_proxy: Type = type(object.__dict__)) -> str:
         """
         Adapted from: https://stackoverflow.com/questions/5884066/hashing-a-dictionary
         Makes a hash from a dictionary, list, tuple or set to any level, that

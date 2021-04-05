@@ -12,37 +12,50 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 
-class MissingImportFactory(object):
+class MissingImportWrapper(object):
     '''
     Wrapper class and callable generator to be used instead of unavailable dependencies
     Errors on reference when not available instead of on import
     '''
-    def __new__(cls, name, pypi_name, simpleml_extra_group):
+
+    def __init__(self, *args, **kwargs):
+        self.raise_error()
+
+    def __new__(cls, *args, **kwargs):
+        cls.raise_error()
+
+    @classmethod
+    def raise_error(cls):
+        raise ImportError(f'Attempting to use missing dependency {cls.name}. Install via `pip install {cls.pypi_name}` or `pip install simpleml[{cls.simpleml_extra_group}]` and restart script')
+
+    @classmethod
+    def __call__(cls):
+        cls.raise_error()
+
+    @classmethod
+    def __repr__(cls):
+        return f'Missing Dependency Wrapper for {cls.name} (`pip install {cls.pypi_name}` or `pip install simpleml[{cls.simpleml_extra_group}]`)'
+
+
+class MissingImportFactory(object):
+    '''
+    Factory class to generate library specific import wrappers
+    '''
+    def __new__(cls,
+                name: str,
+                pypi_name: str,
+                simpleml_extra_group: str):
         LOGGER.debug(f'Wrapping missing dependency: {name}')
 
-        class MissingImportWrapper(object):
-            def __init__(self, *args, **kwargs):
-                self.raise_error()
-
-            def __new__(cls, *args, **kwargs):
-                cls.raise_error()
-
-            @classmethod
-            def raise_error(cls):
-                raise ImportError(f'Attempting to use missing dependency {cls.name}. Install via `pip install {cls.pypi_name}` or `pip install simpleml[{cls.simpleml_extra_group}]` and restart script')
-
-            @classmethod
-            def __call__(cls):
-                cls.raise_error()
-
-            @classmethod
-            def __repr__(cls):
-                return f'Missing Dependency Wrapper for {cls.name} (`pip install {cls.pypi_name}` or `pip install simpleml[{cls.simpleml_extra_group}]`)'
-
-        MissingImportWrapper.name = name
-        MissingImportWrapper.pypi_name = pypi_name
-        MissingImportWrapper.simpleml_extra_group = simpleml_extra_group
-        return MissingImportWrapper
+        class LibraryMissingImportWrapper(MissingImportWrapper):
+            '''
+            Wrap as a library specific instance
+            '''
+            pass
+        LibraryMissingImportWrapper.name = name
+        LibraryMissingImportWrapper.pypi_name = pypi_name
+        LibraryMissingImportWrapper.simpleml_extra_group = simpleml_extra_group
+        return LibraryMissingImportWrapper
 
 
 # Import optional dependencies or set to wrapper to avoid import errors

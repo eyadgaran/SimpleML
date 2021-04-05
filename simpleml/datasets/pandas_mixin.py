@@ -8,11 +8,14 @@ means unique to pandas.
 
 __author__ = 'Elisha Yadgaran'
 
-
-from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 import pandas as pd
 
-DATAFRAME_SPLIT_COLUMN = 'DATASET_SPLIT'
+from typing import Any, List
+
+from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
+
+
+DATAFRAME_SPLIT_COLUMN: str = 'DATASET_SPLIT'
 
 
 class PandasDatasetMixin(AbstractDatasetMixin):
@@ -35,20 +38,20 @@ class PandasDatasetMixin(AbstractDatasetMixin):
             - squeeze(
     '''
     @property
-    def X(self):
+    def X(self) -> Any:
         '''
         Return the subset that isn't in the target labels (across all potential splits)
         '''
         return self.get(column='X', split=None)
 
     @property
-    def y(self):
+    def y(self) -> Any:
         '''
         Return the target label columns
         '''
         return self.get(column='y', split=None)
 
-    def get(self, column, split):
+    def get(self, column: str, split: str) -> Any:
         '''
         Explicitly split validation splits
         Assumes self.dataframe has a get method to return the dataframe associated with the split
@@ -78,7 +81,9 @@ class PandasDatasetMixin(AbstractDatasetMixin):
         else:
             return df[df.columns.difference(self.label_columns)]
 
-    def concatenate_dataframes(self, dataframes, split_names):
+    def concatenate_dataframes(self,
+                               dataframes: List[pd.DataFrame],
+                               split_names: List[str]) -> pd.DataFrame:
         '''
         Helper method to merge dataframes into a single one with the split
         specified under `DATAFRAME_SPLIT_COLUMN`
@@ -89,13 +94,13 @@ class PandasDatasetMixin(AbstractDatasetMixin):
         # Join row wise - drop index in case duplicates exist
         return pd.concat(dataframes, axis=0, ignore_index=True)
 
-    def get_feature_names(self):
+    def get_feature_names(self) -> List[str]:
         '''
         Should return a list of the features in the dataset
         '''
         return self.X.columns.tolist()
 
     @staticmethod
-    def load_csv(filename, **kwargs):
+    def load_csv(filename: str, **kwargs) -> pd.DataFrame:
         '''Helper method to read in a csv file'''
         return pd.read_csv(filename, **kwargs)

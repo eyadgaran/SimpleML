@@ -10,14 +10,15 @@ Module for different split methods for cross validation
 
 __author__ = 'Elisha Yadgaran'
 
-
-from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
+import pandas as pd
 
 from abc import ABCMeta, abstractmethod
 from sklearn.model_selection import train_test_split
 from future.utils import with_metaclass
 from collections import defaultdict
-import pandas as pd
+from typing import Any, Dict, List, Optional, Union
+
+from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 
 
 class Split(dict):
@@ -33,7 +34,7 @@ class Split(dict):
         return self.get(attr, None)
 
     @staticmethod
-    def is_null_type(obj):
+    def is_null_type(obj: Any) -> bool:
         '''
         Helper to check for nulls - useful to not pass "empty" attributes
         so defaults of None will get returned downstream instead
@@ -83,17 +84,17 @@ class SplitMixin(with_metaclass(ABCMeta, object)):
         Must set self._dataset_splits
         '''
 
-    def containerize_split(self, split_dict):
+    def containerize_split(self, split_dict: Dict[str, Split]) -> SplitContainer:
         return SplitContainer(**split_dict)
 
-    def get_split_names(self):
+    def get_split_names(self) -> List[str]:
         if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
             self.split_dataset()
         return list(self._dataset_splits.keys())
 
 
 class NoSplitMixin(SplitMixin):
-    def split_dataset(self):
+    def split_dataset(self) -> None:
         '''
         Non-split mixin class. Returns full dataset for any split name
         '''
@@ -104,7 +105,7 @@ class NoSplitMixin(SplitMixin):
 
 
 class ExplicitSplitMixin(SplitMixin):
-    def split_dataset(self):
+    def split_dataset(self) -> None:
         '''
         Method to split the dataframe into different sets. Assumes dataset
         explicitly delineates between train, validation, and test
@@ -121,8 +122,12 @@ class RandomSplitMixin(SplitMixin):
     Class to randomly split dataset into different sets
     '''
 
-    def __init__(self, train_size, test_size=None, validation_size=0.0,
-                 random_state=123, shuffle=True, **kwargs):
+    def __init__(self,
+                 train_size: Union[float, int],
+                 test_size: Optional[Union[float, int]] = None,
+                 validation_size: Union[float, int] = 0.0,
+                 random_state: int = 123,
+                 shuffle: bool = True, **kwargs):
         '''
         Set splitting params:
         By default validation is 0.0 because it is only used for hyperparameter
@@ -145,7 +150,7 @@ class RandomSplitMixin(SplitMixin):
             'shuffle': shuffle
         })
 
-    def split_dataset(self):
+    def split_dataset(self) -> None:
         '''
         Overwrite method to split by percentage
         '''
