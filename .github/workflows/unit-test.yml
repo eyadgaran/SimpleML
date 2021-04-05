@@ -15,7 +15,8 @@ jobs:
         image:               postgres
         # Provide the password for postgres
         env:
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: simpleml
+          POSTGRES_USER:     simpleml
         # Set health checks to wait until postgres has started
         options:             >-
           --health-cmd pg_isready
@@ -32,8 +33,6 @@ jobs:
       uses:                  actions/setup-python@v2
       with:
         python-version:      ${{ matrix.python-version }}
-    # - name:                Postgres
-    #   uses:
     - name:                  Install Dependencies
       run:                   |
         python -m pip install --upgrade pip
