@@ -21,7 +21,7 @@ jobs:
         pip install -e .[all]
     - name:             Test
       run:              |
-        simpleml-unit-test
+        coverage run
 
     - name:             Coveralls
       uses:             coverallsapp/github-action@master
