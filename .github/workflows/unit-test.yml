@@ -32,8 +32,8 @@ jobs:
       uses:                  actions/setup-python@v2
       with:
         python-version:      ${{ matrix.python-version }}
-    - name:                  Postgres
-      uses:
+    # - name:                Postgres
+    #   uses:
     - name:                  Install Dependencies
       run:                   |
         python -m pip install --upgrade pip
