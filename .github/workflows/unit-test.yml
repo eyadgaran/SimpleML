@@ -43,6 +43,8 @@ jobs:
         coverage run
 
     - name:                  Coveralls
-      uses:                  coverallsapp/github-action@master
+      # uses:                coverallsapp/github-action@master
       with:
         github-token:        ${{ secrets.GITHUB_TOKEN }}
+      run:
+        coveralls
