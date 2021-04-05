@@ -25,10 +25,8 @@ install:
   - pip install pip --upgrade
   - pip install psycopg2
   - pip install coveralls
-  - pip install flake8
 
 script:
-  - flake8 . --ignore=E121,E221,E251,E261,E266,E302,E303,E305,F401,E402,E501,E502,W503 --exclude=.git,.tox,build,dist
   - pip install -e .[all]
   - coverage run
 
@@ -54,19 +52,3 @@ deploy:
     tags:        true
     branch:      master
   skip_existing: true
-
-# Flake8 Ignored Syntax
-# Codes:         http://flake8.pycqa.org/en/latest/user/error-codes.html
-# E121, # continuation line under-indented for hanging indent
-# E221, # multiple spaces before operator
-# E251, # unexpected spaces around keyword / parameter equals
-# E261, # at least two spaces before inline comment
-# E266, # too many leading '#' for block comment
-# E302, # too many blank lines
-# E303, # too many blank lines
-# E305, # expected 2 blank lines after class or function definition
-# F401, # '' imported but unused
-# E402, # module level import not at top of file
-# E501, # line too long
-# E502, # the backslash is redundant between brackets
-# W503, # line break before binary operator (considered an anti-pattern in W504)
