@@ -50,4 +50,4 @@ jobs:
         GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
       run:                   |
         coverage combine
-        coveralls
+        coveralls --service=github
