@@ -38,8 +38,9 @@ postgres_dependencies = ["psycopg2"]
 deep_learning_dependencies = ["tensorflow>=2", "hickle<4"]  # Hickle regression > 4 for scalar values
 cloud_dependencies = ["apache-libcloud", "pycrypto", "sshtunnel"]
 onedrive_dependencies = ["onedrivesdk<2"]  # Python support EOL >2
+test_dependencies = ["coverage"]
 all_dependencies = list(set(postgres_dependencies + deep_learning_dependencies + cloud_dependencies + onedrive_dependencies))
-
+test_dependencies = all_dependencies + test_dependencies
 
 setup(
     name='simpleml',
@@ -70,11 +71,12 @@ setup(
         'deep-learning': deep_learning_dependencies,
         'cloud': cloud_dependencies,
         'onedrive': onedrive_dependencies,
-        'all': all_dependencies
+        'all': all_dependencies,
+        'test': test_dependencies,
     },
     zip_safe=False,
     test_suite='simpleml.tests.load_tests',
-    tests_require=all_dependencies,
+    tests_require=test_dependencies,
     entry_points={
         'console_scripts': [
             'simpleml=simpleml.cli.main:cli',

@@ -13,6 +13,8 @@ import unittest
 import os
 import glob
 
+from coverage import Coverage
+
 from simpleml.utils.configuration import FILESTORE_DIRECTORY
 from simpleml.utils.initialization import Database
 from simpleml.utils.postgres import create_database, drop_database
@@ -111,8 +113,19 @@ def load_tests(*args, **kwargs):
 
 
 def run_tests():
+    # Start coverage collection
+    cov = Coverage(
+        context='integration',
+        data_file='.coverage.integration'
+    )
+    cov.start()
+
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(load_tests())
+
+    # Stop and save
+    cov.stop()
+    cov.save()
 
     if result.wasSuccessful():
         exit(0)

@@ -40,6 +40,8 @@ __author__ = 'Elisha Yadgaran'
 
 import unittest
 
+from coverage import Coverage
+
 from simpleml.tests.unit import load_tests as unit_test_loader
 from simpleml.tests.integration import load_tests as integration_test_loader
 from simpleml.tests.regression import load_tests as regression_test_loader
@@ -55,8 +57,16 @@ def load_tests(*args, **kwargs):
 
 
 def run_tests():
+    # Start coverage collection
+    cov = Coverage(data_file='.coverage')
+    cov.start()
+
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(load_tests())
+
+    # Stop and save
+    cov.stop()
+    cov.save()
 
     if result.wasSuccessful():
         exit(0)
