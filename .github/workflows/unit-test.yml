@@ -73,11 +73,6 @@ jobs:
   #       github-token:      ${{ secrets.github_token }}
   #       parallel-finished: true
 
-      - name:                Upload coverage data to coveralls.io
-        run:                 coveralls
-        env:
-          GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
-
   coveralls:
     name:                    Indicate completion to coveralls.io
     needs:                   test
