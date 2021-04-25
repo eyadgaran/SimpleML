@@ -42,19 +42,7 @@ jobs:
     - name:                  Run ${{ matrix.test-suite }} tests
       run:                   |
         simpleml-${{ matrix.test-suite }}-test
-
-    # - name:                Coveralls Parallel
-    #   uses:                coverallsapp/github-action@master
-    #   with:
-    #     github-token:      ${{ secrets.github_token }}
-    #     flag-name:         ${{ matrix.python-version }}-${{ matrix.test-suite }}-tests
-    #     path-to-lcov:      ./.coverage.${{ matrix.test-suite }}
-    #     parallel:          true
-
-    - name:                  Coveralls
-    #   # uses:              coverallsapp/github-action@master
-    #   # with:
-    #   #   github-token:    ${{ secrets.GITHUB_TOKEN }}
+    - name:                  Coveralls Parallel
       env:
         GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
         COVERALLS_FLAG_NAME: ${{ matrix.python-version }}-${{ matrix.test-suite }}-tests
@@ -63,18 +51,8 @@ jobs:
     #     coverage combine
         coveralls --service=github
 
-  # finish:
-  #   needs:                 test
-  #   runs-on:               ubuntu-latest
-  #   steps:
-  #   - name:                Coveralls Finished
-  #     uses:                coverallsapp/github-action@master
-  #     with:
-  #       github-token:      ${{ secrets.github_token }}
-  #       parallel-finished: true
-
   coveralls:
-    name:                    Indicate completion to coveralls.io
+    name:                    Coveralls Finish
     needs:                   test
     runs-on:                 ubuntu-latest
     steps:
