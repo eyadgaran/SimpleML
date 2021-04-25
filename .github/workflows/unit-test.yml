@@ -3,11 +3,12 @@ name:                        Unit Tests
 on:                          [push]
 
 jobs:
-  build:
+  test:
     runs-on:                 ubuntu-latest
     strategy:
       matrix:
         python-version:      [3.6, 3.7, 3.8]
+        test-suite:          [unit, integration, regression]
     services:
       # Label used to access the service container
       postgres:
@@ -38,16 +39,33 @@ jobs:
         python -m pip install --upgrade pip
         pip install coveralls
         pip install -e .[test]
-    - name:                  Test
+    - name:                  Run ${{ matrix.test-suite }} tests
       run:                   |
-        simpleml-unit-test
+        simpleml-${{ matrix.test-suite }}-test
 
-    - name:                  Coveralls
-      # uses:                coverallsapp/github-action@master
-      # with:
-      #   github-token:      ${{ secrets.GITHUB_TOKEN }}
-      env:
-        GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
-      run:                   |
-        coverage combine
-        coveralls --service=github
+    - name:                  Coveralls Parallel
+      uses:                  coverallsapp/github-action@master
+      with:
+        github-token:        ${{ secrets.github_token }}
+        flag-name:           ${{ matrix.test-suite }}-tests
+        parallel:            true
+
+    # - name:                Coveralls
+    #   # uses:              coverallsapp/github-action@master
+    #   # with:
+    #   #   github-token:    ${{ secrets.GITHUB_TOKEN }}
+    #   env:
+    #     GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
+    #   run:                 |
+    #     coverage combine
+    #     coveralls --service=github
+
+  finish:
+    needs:                   test
+    runs-on:                 ubuntu-latest
+    steps:
+    - name:                  Coveralls Finished
+      uses:                  coverallsapp/github-action@master
+      with:
+        github-token:        ${{ secrets.github_token }}
+        parallel-finished:   true
