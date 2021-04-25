@@ -47,7 +47,8 @@ jobs:
       uses:                  coverallsapp/github-action@master
       with:
         github-token:        ${{ secrets.github_token }}
-        flag-name:           ${{ matrix.test-suite }}-tests
+        flag-name:           ${{ matrix.python-version }}-${{ matrix.test-suite }}-tests
+        path-to-lcov:        ./.coverage.${{ matrix.test-suite }}
         parallel:            true
 
     # - name:                Coveralls
