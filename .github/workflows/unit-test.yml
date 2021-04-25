@@ -43,30 +43,49 @@ jobs:
       run:                   |
         simpleml-${{ matrix.test-suite }}-test
 
-    - name:                  Coveralls Parallel
-      uses:                  coverallsapp/github-action@master
-      with:
-        github-token:        ${{ secrets.github_token }}
-        flag-name:           ${{ matrix.python-version }}-${{ matrix.test-suite }}-tests
-        path-to-lcov:        ./.coverage.${{ matrix.test-suite }}
-        parallel:            true
+    # - name:                Coveralls Parallel
+    #   uses:                coverallsapp/github-action@master
+    #   with:
+    #     github-token:      ${{ secrets.github_token }}
+    #     flag-name:         ${{ matrix.python-version }}-${{ matrix.test-suite }}-tests
+    #     path-to-lcov:      ./.coverage.${{ matrix.test-suite }}
+    #     parallel:          true
 
-    # - name:                Coveralls
+    - name:                  Coveralls
     #   # uses:              coverallsapp/github-action@master
     #   # with:
     #   #   github-token:    ${{ secrets.GITHUB_TOKEN }}
-    #   env:
-    #     GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
-    #   run:                 |
+      env:
+        GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_FLAG_NAME: ${{ matrix.python-version }}-${{ matrix.test-suite }}-tests
+        COVERALLS_PARALLEL:  true
+      run:                   |
     #     coverage combine
-    #     coveralls --service=github
+        coveralls --service=github
 
-  finish:
+  # finish:
+  #   needs:                 test
+  #   runs-on:               ubuntu-latest
+  #   steps:
+  #   - name:                Coveralls Finished
+  #     uses:                coverallsapp/github-action@master
+  #     with:
+  #       github-token:      ${{ secrets.github_token }}
+  #       parallel-finished: true
+
+      - name:                Upload coverage data to coveralls.io
+        run:                 coveralls
+        env:
+          GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
+
+  coveralls:
+    name:                    Indicate completion to coveralls.io
     needs:                   test
     runs-on:                 ubuntu-latest
     steps:
-    - name:                  Coveralls Finished
-      uses:                  coverallsapp/github-action@master
-      with:
-        github-token:        ${{ secrets.github_token }}
-        parallel-finished:   true
+    - name:                  Finished
+      run:                   |
+        pip install --upgrade coveralls
+        coveralls --finish --service=github
+      env:
+        GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
