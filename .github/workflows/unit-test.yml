@@ -48,7 +48,7 @@ jobs:
         COVERALLS_FLAG_NAME: ${{ matrix.python-version }}-${{ matrix.test-suite }}-tests
         COVERALLS_PARALLEL:  true
       run:                   |
-    #     coverage combine
+        coverage combine
         coveralls --service=github
 
   coveralls:
