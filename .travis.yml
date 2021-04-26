@@ -28,7 +28,7 @@ install:
 
 script:
   - pip install -e .[all]
-  - coverage run
+  - simpleml-unit-test
 
 after_success:
   - coverage combine
