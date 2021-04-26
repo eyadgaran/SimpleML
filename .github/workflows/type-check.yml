@@ -1,9 +1,9 @@
-name:                   Mypy
+name:                   Type-Check
 
 on:                     [push]
 
 jobs:
-  type-check:
+  mypy:
     runs-on:            ubuntu-latest
     name:               Mypy
     steps:
