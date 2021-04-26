@@ -49,6 +49,7 @@ jobs:
         COVERALLS_PARALLEL:  true
       run:                   |
         coverage combine
+        coverage report -m
         coveralls --service=github
 
   coveralls:

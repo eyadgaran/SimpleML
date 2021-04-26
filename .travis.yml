@@ -32,7 +32,7 @@ script:
 
 after_success:
   - coverage combine
-  - coveralls
+  - coverage report -m
 
 matrix:
   include:
