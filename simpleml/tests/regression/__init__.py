@@ -10,6 +10,8 @@ import unittest
 import os
 import glob
 
+from coverage import Coverage
+
 
 DIRECTORY_IMPORT_PATH = 'simpleml.tests.regression'
 DIRECTORY_ABSOLUTE_PATH = os.path.dirname(__file__)
@@ -42,8 +44,19 @@ def load_tests(*args, **kwargs):
 
 
 def run_tests():
+    # Start coverage collection
+    cov = Coverage(
+        context='regression',
+        data_file='.coverage.regression'
+    )
+    cov.start()
+
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(load_tests())
+
+    # Stop and save
+    cov.stop()
+    cov.save()
 
     if result.wasSuccessful():
         exit(0)
