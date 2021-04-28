@@ -1,0 +1,9 @@
+version: '3'
+services:
+  simpleml-sandbox:
+    image: eyadgaran/simpleml-sandbox:${TRAVIS_TAG}
+    build:
+      context: ./
+      dockerfile: Sandbox-Dockerfile
+      args:
+        - TRAVIS_TAG
