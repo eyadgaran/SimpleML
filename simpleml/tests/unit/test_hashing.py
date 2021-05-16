@@ -447,8 +447,9 @@ class CustomHasherTests(unittest.TestCase):
     def test_lambda_hashing(self):
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
-            def data(): return 0
-            expected_final_hash = '5a64f6d1f1d1ac11bec5cc3740c21ec4'
+            def data():
+                return 0
+            expected_final_hash = 'd7ab3b20053da4fb93531950ad4ffb66'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -457,7 +458,7 @@ class CustomHasherTests(unittest.TestCase):
                 logs.output,
                 [f"DEBUG:simpleml.persistables.hashing:Hashing input: {data}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'function'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing input:             def data(): return 0\n",
+                 "DEBUG:simpleml.persistables.hashing:Hashing input:             def data():\n                return 0\n",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}",
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
