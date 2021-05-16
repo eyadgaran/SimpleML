@@ -57,7 +57,8 @@ class CustomHasherTests(unittest.TestCase):
                 with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
                     # input/output
                     data = pd.Series(d)
-                    self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+                    with self.subTest():
+                        self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
                     # internal behavior
                     # hash series
@@ -77,7 +78,8 @@ class CustomHasherTests(unittest.TestCase):
                 with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
                     # input/output
                     data = pd.DataFrame(d)
-                    self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+                    with self.subTest():
+                        self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
                     # internal behavior
                     # hash dataframe
@@ -92,7 +94,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             data = None
             expected_final_hash = -12345678987654321
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             # hash None
@@ -115,7 +118,8 @@ class CustomHasherTests(unittest.TestCase):
                 pd.DataFrame([1])
             ]
             expected_final_hash = '68e95c072ffb1a8271e7e472f9fee504'
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             # hash list -> hash items in list
@@ -183,7 +187,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             data = ['a', 2, ['b', 3], {'d': 4}]
             expected_final_hash = 'c3ee3ea76093a4ffa266010db2a19748'
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             # hash list -> hash items in list
@@ -232,7 +237,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             data = [pd.Series(['a']), pd.DataFrame([1])]
             expected_final_hash = '9357fb780e7774f3426bc93d5eccdcc0'
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             # hash list -> hash items in list
@@ -266,7 +272,8 @@ class CustomHasherTests(unittest.TestCase):
             }
 
             expected_final_hash = '1cc5ab5d0c77f755358fe7f4d77ea04a'
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             # hash dict -> hash items in dict
@@ -367,7 +374,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             data = 'a'
             expected_final_hash = '0357109b163771392cc674173d921e4b'
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             self.assertEqual(
@@ -381,7 +389,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             data = 2
             expected_final_hash = '76f34d73a1a6753d1243c9ba0afe3457'
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             self.assertEqual(
@@ -395,7 +404,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             data = ['b', 3]
             expected_final_hash = '38b1de0299d81decb1341f9f2bfb4c8b'
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             self.assertEqual(
@@ -415,7 +425,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             data = {'d': 4}
             expected_final_hash = '21065bb299df9d8a902754661f1dcf08'
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             self.assertEqual(
@@ -438,7 +449,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             def data(): return 0
             expected_final_hash = '5a64f6d1f1d1ac11bec5cc3740c21ec4'
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             self.assertEqual(
@@ -455,7 +467,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             data = pd.Series()
             expected_final_hash = 0
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             self.assertEqual(
@@ -469,7 +482,8 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             data = pd.DataFrame()
             expected_final_hash = 0
-            self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
             # internal behavior
             self.assertEqual(
