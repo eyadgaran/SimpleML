@@ -33,7 +33,8 @@ class CustomHasherTests(unittest.TestCase):
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
             expected_final_hash = '91f4d36d1bd9d3e0607334f43befb786'
-            self.assertEqual(CustomHasherMixin.custom_hasher(Test123), expected_final_hash)
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(Test123), expected_final_hash)
 
             # internal behavior
             # hash class -> hash class repr
