@@ -12,6 +12,19 @@ from simpleml.persistables.hashing import CustomHasherMixin
 from simpleml._external.joblib import hash as deterministic_hash
 
 
+class _Test123(object):
+    random_attribute = 'abc'
+
+    def __init__(self):
+        pass
+
+    def fancy_method(self):
+        pass
+
+    def __repr__(self):
+        return 'not actually used in hashing'
+
+
 class CustomHasherTests(unittest.TestCase):
     '''
     Hashing tests for consistency across environment and machines.
@@ -20,32 +33,50 @@ class CustomHasherTests(unittest.TestCase):
     Tests trace recursive behavior via log assertions
     '''
 
-    def test_class_hashing(self):
-        class Test123(object):
-            random_attribute = 'abc'
-
-        def __init__(self):
-            pass
-
-        def fancy_method(self):
-            pass
+    def test_initialized_class_hashing(self):
+        '''
+        Hashes the initialized object directly (via pickle)
+        '''
 
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
-            expected_final_hash = '91f4d36d1bd9d3e0607334f43befb786'
+            expected_final_hash = 'e4728209b833849314b0f05dc59c6096'
             with self.subTest():
-                self.assertEqual(CustomHasherMixin.custom_hasher(Test123), expected_final_hash)
+                self.assertEqual(CustomHasherMixin.custom_hasher(_Test123()), expected_final_hash)
+
+            # internal behavior
+            # hash object
+            self.maxDiff = None
+            self.assertEqual(
+                logs.output,
+                [f"DEBUG:simpleml.persistables.hashing:Hashing input: {_Test123()}",
+                 f"DEBUG:simpleml.persistables.hashing:hash type: {_Test123}",
+                 f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
+
+    def test_uninitialized_class_hashing(self):
+        '''
+        Hashes the repr(cls) for initialized objects
+        '''
+
+        with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
+            # input/output
+            expected_final_hash = '0392beff85f9eb48de4cf51f2b7ee139'
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(_Test123), expected_final_hash)
 
             # internal behavior
             # hash class -> hash class repr
+            self.maxDiff = None
             self.assertEqual(
                 logs.output,
-                [f"DEBUG:simpleml.persistables.hashing:Hashing input: {Test123}",
+                [f"DEBUG:simpleml.persistables.hashing:Hashing input: {_Test123}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'type'>",
-                 f"DEBUG:simpleml.persistables.hashing:Hashing input: {repr(Test123)}",
+                 f"DEBUG:simpleml.persistables.hashing:Hashing input: {_Test123}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}",
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
+            # repr of an unitialized class is just the import path
+            self.assertNotEqual(logs.output[2], f"DEBUG:simpleml.persistables.hashing:Hashing input: {repr(_Test123())}")
 
     def test_pandas_series_hashing(self):
         # series

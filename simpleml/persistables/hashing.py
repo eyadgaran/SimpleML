@@ -89,13 +89,14 @@ class CustomHasherMixin(object):
             # Attempt to use the source code string
             hash_output = cls.custom_hasher(inspect.getsource(object_to_hash))
 
-        elif isinstance(object_to_hash, type):
+        elif isinstance(object_to_hash, type):  # uninitialized classes
             # Have to keep this at the end of the try list; np.ndarray,
             # pd.DataFrame/Series, and function are also of <type 'type'>
             hash_output = cls.custom_hasher(repr(object_to_hash))
             # return self.custom_hasher(inspect.getsource(object_to_hash))
 
         else:
+            # primitives (str, int) and initialized objects
             hash_output = deterministic_hash(object_to_hash)
 
         LOGGER.debug(f'Hashing output: {hash_output}')
