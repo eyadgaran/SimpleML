@@ -570,10 +570,30 @@ class CustomHasherTests(unittest.TestCase):
 class DeterministicHasherTests(unittest.TestCase):
     def test_tuple_hash(self):
         '''
-        set/tuple/list
+        set/tuple/list/dict/mappingproxy reduce to a tuple of hashes
         '''
         data = ('0357109b163771392cc674173d921e4b', '76f34d73a1a6753d1243c9ba0afe3457', '38b1de0299d81decb1341f9f2bfb4c8b', '21065bb299df9d8a902754661f1dcf08')
         expected_hash = 'c3ee3ea76093a4ffa266010db2a19748'
+        self.assertEqual(deterministic_hash(data), expected_hash)
+
+    def test_string_hash(self):
+        data = 'abc'
+        expected_hash = 'a5a2f6c8adba6852e4d3888ce0c26016'
+        self.assertEqual(deterministic_hash(data), expected_hash)
+
+    def test_int_hash(self):
+        data = 12
+        expected_hash = 'feb1c5cac6acf399a62e281ca8aaac96'
+        self.assertEqual(deterministic_hash(data), expected_hash)
+
+    def test_float_hash(self):
+        data = 0.045
+        expected_hash = '900c461ea0f92e9dba4eaef616dbfd35'
+        self.assertEqual(deterministic_hash(data), expected_hash)
+
+    def test_initialized_object_hash(self):
+        data = _Test123()
+        expected_hash = 'e4728209b833849314b0f05dc59c6096'
         self.assertEqual(deterministic_hash(data), expected_hash)
 
 
