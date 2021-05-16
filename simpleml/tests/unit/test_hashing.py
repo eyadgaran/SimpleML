@@ -78,6 +78,48 @@ class CustomHasherTests(unittest.TestCase):
             # repr of an unitialized class is just the import path
             self.assertNotEqual(logs.output[2], f"DEBUG:simpleml.persistables.hashing:Hashing input: {repr(_Test123())}")
 
+    def test_uninitialized_class_dict_hashing(self):
+        '''
+        Hashes just class attributes (input via cls.__dict__)
+        Recursively includes all public methods and class attributes
+        '''
+
+        with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
+            # input/output
+            expected_final_hash = 'f327094b997618017ae36b8251885a8f'
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(_Test123.__dict__), expected_final_hash)
+
+            # internal behavior
+            # hash class dict -> hash dict
+            self.maxDiff = None
+            self.assertEqual(
+                logs.output,
+                [f"DEBUG:simpleml.persistables.hashing:Hashing input: {_Test123.__dict__}",
+                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'dict'>",
+                 "DEBUG:simpleml.persistables.hashing:Hashing input: ('random_attribute', 'abc')",
+                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
+                 'DEBUG:simpleml.persistables.hashing:Hashing input: random_attribute',
+                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: 2ca4e7f734729525d18e56f1fa5862b7',
+                 'DEBUG:simpleml.persistables.hashing:Hashing input: abc',
+                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: a5a2f6c8adba6852e4d3888ce0c26016',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: a4391ea84fdef203422c770de28a05f7',
+                 f"DEBUG:simpleml.persistables.hashing:Hashing input: ('fancy_method', {_Test123.fancy_method})",
+                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
+                 'DEBUG:simpleml.persistables.hashing:Hashing input: fancy_method',
+                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: 4518d84f1fde3a4f6d9830df8ca4721c',
+                 f'DEBUG:simpleml.persistables.hashing:Hashing input: {_Test123.fancy_method}',
+                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'function'>",
+                 'DEBUG:simpleml.persistables.hashing:Hashing input:     def fancy_method(self):\n        pass\n',
+                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: c60ec24e327caf1cdb2f409ae9a1fd6f',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: c60ec24e327caf1cdb2f409ae9a1fd6f',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: 1751bf1c56fc8c1027ec11f83ba264dd',
+                 f'DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}'])
+
     def test_pandas_series_hashing(self):
         # series
         for d, expected_final_hash in zip(
