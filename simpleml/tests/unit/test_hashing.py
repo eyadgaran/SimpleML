@@ -22,7 +22,7 @@ class _Test123(object):
         pass
 
     def __repr__(self):
-        return 'not actually used in hashing'
+        return 'pretty repr of test class'
 
 
 class CustomHasherTests(unittest.TestCase):
@@ -35,23 +35,64 @@ class CustomHasherTests(unittest.TestCase):
 
     def test_initialized_class_hashing(self):
         '''
-        Hashes the initialized object directly (via pickle)
+        Hashes the initialized object as (name, __dict__)
         '''
 
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
-            # input/output
-            expected_final_hash = 'e4728209b833849314b0f05dc59c6096'
-            with self.subTest():
-                self.assertEqual(CustomHasherMixin.custom_hasher(_Test123()), expected_final_hash)
-
-            # internal behavior
-            # hash object
+            hash_object = _Test123()
             self.maxDiff = None
-            self.assertEqual(
-                logs.output,
-                [f"DEBUG:simpleml.persistables.hashing:Hashing input: {_Test123()}",
-                 f"DEBUG:simpleml.persistables.hashing:hash type: {_Test123}",
-                 f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
+
+            # results are sensitive to entrypoint (relative path names)
+            if __name__ == 'simpleml.tests.unit.test_hashing':
+                # entry from loader
+                # input/output
+                expected_final_hash = 'adfdad10e2f1e6e2f423824c7b6df461'
+                expected_logs = [
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: pretty repr of test class",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'simpleml.tests.unit.test_hashing._Test123'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: (<class 'simpleml.tests.unit.test_hashing._Test123'>, {})",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: <class 'simpleml.tests.unit.test_hashing._Test123'>",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'type'>",
+                    "WARNING:simpleml.persistables.hashing:Hashing class import path for <class 'simpleml.tests.unit.test_hashing._Test123'>, if a fully qualified import path is not used, calling again from a different location will yield different results!",
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: simpleml.tests.unit.test_hashing._Test123",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: eddefe8dd7b1dd0d06078e9198eae04c',
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: eddefe8dd7b1dd0d06078e9198eae04c',
+                    'DEBUG:simpleml.persistables.hashing:Hashing input: {}',
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'dict'>",
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: 7aa3631cc45701e2df0e03ef7162f2cb',
+                    f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}",
+                    f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"
+                ]
+
+            elif __name__ == '__main__':
+                # entry from this file
+                # input/output
+                expected_final_hash = 'ad105926db464bf085b64b3b7a908fa7'
+                expected_logs = [
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: pretty repr of test class",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class '__main__._Test123'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: (<class '__main__._Test123'>, {})",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: <class '__main__._Test123'>",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'type'>",
+                    "WARNING:simpleml.persistables.hashing:Hashing class import path for <class '__main__._Test123'>, if a fully qualified import path is not used, calling again from a different location will yield different results!",
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: __main__._Test123",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: e7196e9a7496ebb28620e2a88854398f',
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: e7196e9a7496ebb28620e2a88854398f',
+                    'DEBUG:simpleml.persistables.hashing:Hashing input: {}',
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'dict'>",
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: 7aa3631cc45701e2df0e03ef7162f2cb',
+                    f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}",
+                    f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"
+                ]
+
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(hash_object), expected_final_hash)
+
+            self.assertEqual(logs.output, expected_logs)
 
     def test_uninitialized_class_hashing(self):
         '''
@@ -59,24 +100,42 @@ class CustomHasherTests(unittest.TestCase):
         '''
 
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
-            # input/output
-            expected_final_hash = '0392beff85f9eb48de4cf51f2b7ee139'
-            with self.subTest():
-                self.assertEqual(CustomHasherMixin.custom_hasher(_Test123), expected_final_hash)
-
-            # internal behavior
-            # hash class -> hash class repr
+            hash_object = _Test123
             self.maxDiff = None
-            self.assertEqual(
-                logs.output,
-                [f"DEBUG:simpleml.persistables.hashing:Hashing input: {_Test123}",
-                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'type'>",
-                 f"DEBUG:simpleml.persistables.hashing:Hashing input: {_Test123}",
-                 "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}",
-                 f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
-            # repr of an unitialized class is just the import path
-            self.assertNotEqual(logs.output[2], f"DEBUG:simpleml.persistables.hashing:Hashing input: {repr(_Test123())}")
+
+            # results are sensitive to entrypoint (relative path names)
+            if __name__ == 'simpleml.tests.unit.test_hashing':
+                # entry from loader
+                # input/output
+                expected_final_hash = 'eddefe8dd7b1dd0d06078e9198eae04c'
+                expected_logs = [
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: <class 'simpleml.tests.unit.test_hashing._Test123'>",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'type'>",
+                    "WARNING:simpleml.persistables.hashing:Hashing class import path for <class 'simpleml.tests.unit.test_hashing._Test123'>, if a fully qualified import path is not used, calling again from a different location will yield different results!",
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: simpleml.tests.unit.test_hashing._Test123",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
+                    f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}",
+                    f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"
+                ]
+
+            elif __name__ == '__main__':
+                # entry from this file
+                # input/output
+                expected_final_hash = 'e7196e9a7496ebb28620e2a88854398f'
+                expected_logs = [
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: <class '__main__._Test123'>",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'type'>",
+                    "WARNING:simpleml.persistables.hashing:Hashing class import path for <class '__main__._Test123'>, if a fully qualified import path is not used, calling again from a different location will yield different results!",
+                    "DEBUG:simpleml.persistables.hashing:Hashing input: __main__._Test123",
+                    "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
+                    f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}",
+                    f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"
+                ]
+
+            with self.subTest():
+                self.assertEqual(CustomHasherMixin.custom_hasher(hash_object), expected_final_hash)
+
+            self.assertEqual(logs.output, expected_logs)
 
     def test_uninitialized_class_dict_hashing(self):
         '''
@@ -589,11 +648,6 @@ class DeterministicHasherTests(unittest.TestCase):
     def test_float_hash(self):
         data = 0.045
         expected_hash = '900c461ea0f92e9dba4eaef616dbfd35'
-        self.assertEqual(deterministic_hash(data), expected_hash)
-
-    def test_initialized_object_hash(self):
-        data = _Test123()
-        expected_hash = 'e4728209b833849314b0f05dc59c6096'
         self.assertEqual(deterministic_hash(data), expected_hash)
 
 

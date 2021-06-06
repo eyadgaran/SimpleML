@@ -25,8 +25,7 @@ class CustomHasherMixin(object):
     '''
     @classmethod
     def custom_hasher(cls,
-                      object_to_hash: Any,
-                      custom_class_proxy: Type = type(object.__dict__)) -> str:
+                      object_to_hash: Any) -> str:
         """
         Adapted from: https://stackoverflow.com/questions/5884066/hashing-a-dictionary
         Makes a hash from a dictionary, list, tuple or set to any level, that
@@ -47,7 +46,8 @@ class CustomHasherMixin(object):
         """
         LOGGER.debug(f'Hashing input: {object_to_hash}')
 
-        if type(object_to_hash) == custom_class_proxy:
+        # Class attribute dict (mappingproxy class)
+        if type(object_to_hash) == type(object.__dict__):
             o2 = {}
             for k, v in object_to_hash.items():
                 if not k.startswith("__"):
@@ -90,13 +90,32 @@ class CustomHasherMixin(object):
             hash_output = cls.custom_hasher(inspect.getsource(object_to_hash))
 
         elif isinstance(object_to_hash, type):  # uninitialized classes
-            # Have to keep this at the end of the try list; np.ndarray,
-            # pd.DataFrame/Series, and function are also of <type 'type'>
-            hash_output = cls.custom_hasher(repr(object_to_hash))
+            # Have to keep this at the end of the try list
+            # functions are also of <type 'type'>
+            # dynamically defined classes will throw an error trying to find source code
+            # also do not want to rigidly define classes as the hash of the code
+            # lots of non behavior code changes (extra functionality, comments, etc)
+            # can be done and should map to the same "content" (what the hash
+            # tries to capture)
+            # fall back to just the module.class name instead
+            # WARNING: module paths reflect import paths and will be different
+            # depending on how a class is imported (from a import cls != from library.a import cls)
+            LOGGER.warning(f'Hashing class import path for {object_to_hash}, if a fully qualified import path is not used, calling again from a different location will yield different results!')
+            hash_output = cls.custom_hasher(f"{object_to_hash.__module__}.{object_to_hash.__name__}")
             # return self.custom_hasher(inspect.getsource(object_to_hash))
 
+        elif isinstance(object_to_hash, object) and hasattr(object_to_hash, '__dict__'):
+            # Everything is an object so keep this at the very end.
+            # Should only match initialized objects at this point
+            # Represent as a tuple of (class, __dict__)
+            hash_output = cls.custom_hasher((object_to_hash.__class__, object_to_hash.__dict__))
+
         else:
-            # primitives (str, int) and initialized objects
+            # primitives (str, int, float)
+            # Log a warning if the previous checks were unable to find a suitable
+            # decomposition for the object
+            if not isinstance(object_to_hash, (float, str, int)):
+                LOGGER.warning(f'Unable to find suitable representation of {object_to_hash}, passing through to hash function directly. (This may result in future breaking changes)')
             hash_output = deterministic_hash(object_to_hash)
 
         LOGGER.debug(f'Hashing output: {hash_output}')

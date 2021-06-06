@@ -1,5 +1,11 @@
 ## Change Log
 
+### TBD
+- Added support to hasher for initialized objects
+
+*Breaking Changes*
+- Hash for an uninitialized class changed from repr(cls) to "cls.__module_.cls.__name_"
+
 ### 0.9.3 (2021-04-04)
 - Patch to support sqlalchemy >= 1.4 changes
 
