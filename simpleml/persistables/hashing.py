@@ -47,7 +47,7 @@ class CustomHasherMixin(object):
         LOGGER.debug(f'Hashing input: {object_to_hash}')
 
         # Class attribute dict (mappingproxy class)
-        if type(object_to_hash) == type(object.__dict__):
+        if isinstance(object_to_hash, type(object.__dict__)):
             o2 = {}
             for k, v in object_to_hash.items():
                 if not k.startswith("__"):
