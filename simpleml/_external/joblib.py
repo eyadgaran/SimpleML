@@ -68,7 +68,9 @@ class Hasher(Pickler):
         self.stream = io.BytesIO()
         # By default we want a pickle protocol that only changes with
         # the major python version and not the minor one
-        protocol = (pickle.DEFAULT_PROTOCOL if PY3_OR_LATER
+        # default protocol bumps from 3 to 4 in python 3.8
+        # peg to protocol 3 for all python 3.x
+        protocol = (3 if PY3_OR_LATER
                     else pickle.HIGHEST_PROTOCOL)
         Pickler.__init__(self, self.stream, protocol=protocol)
         # Initialise the hash obj
