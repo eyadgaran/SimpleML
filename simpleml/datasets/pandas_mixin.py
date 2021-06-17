@@ -64,22 +64,32 @@ class PandasDatasetMixin(AbstractDatasetMixin):
 
         if isinstance(self.dataframe, pd.DataFrame):
             if split is None:  # Return the full dataset (all splits)
-                df = self.dataframe
+                # return a copy so mutations can happen inplace with memory efficient objects
+                df = self.dataframe.copy()
             else:
+                # query automatically returns a copy
                 df = self.dataframe.query("{}=='{}'".format(DATAFRAME_SPLIT_COLUMN, split))
             if DATAFRAME_SPLIT_COLUMN in df.columns:
                 df.drop(DATAFRAME_SPLIT_COLUMN, inplace=True, axis=1)
         else:
-            df = self.dataframe.get(split)
-
-        if df is None:  # Make compatible with subscription syntax
-            df = pd.DataFrame()
+            # in case the dataframe is contained in a dict or other itemgetter enclosure
+            # expects type pd.DataFrame returned
+            df = self.dataframe.get(split, None)
+            if df is None:  # Make compatible with subscription syntax
+                df = pd.DataFrame()
+            else:
+                # copy for mutable downstream operations
+                df = df.copy()
 
         if column == 'y':  # Squeeze to reduce dimensionality of return
-            return df[[col for col in self.label_columns if col in df.columns]].squeeze()
+            # inplace drop non label columns
+            drop_columns = [col for col in df.columns if col not in self.label_columns]
+            df.drop(drop_columns, axis=1, inplace=True)
+            return df.squeeze()
 
         else:
-            return df[df.columns.difference(self.label_columns)]
+            df.drop(self.label_columns, axis=1, inplace=True)
+            return df
 
     def concatenate_dataframes(self,
                                dataframes: List[pd.DataFrame],
