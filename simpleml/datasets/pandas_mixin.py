@@ -79,6 +79,8 @@ class PandasDatasetMixin(AbstractDatasetMixin):
                 df = self.dataframe
             else:
                 # query automatically returns a copy
+                if DATAFRAME_SPLIT_COLUMN not in self.dataframe.columns:
+                    raise DatasetError('Cannot retrieve dataset split `{split}` from dataframe without `{DATAFRAME_SPLIT_COLUMN}` column')
                 df = self.dataframe.query("{}=='{}'".format(DATAFRAME_SPLIT_COLUMN, split))
             if DATAFRAME_SPLIT_COLUMN in df.columns:
                 df.drop(DATAFRAME_SPLIT_COLUMN, inplace=True, axis=1)
