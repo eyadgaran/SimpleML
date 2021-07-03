@@ -51,7 +51,19 @@ class PandasDatasetMixin(AbstractDatasetMixin):
         '''
         return self.get(column='y', split=None)
 
-    def get(self, column: str, split: str) -> Any:
+    @property
+    def _dataframe(self) -> pd.DataFrame:
+        '''
+        Overwrite base behavior to return a copy of the data in case consumers
+        attempt to mutate the data structure
+        '''
+        if isinstance(self._external_file, pd.DataFrame):
+            # return a copy so mutations can happen inplace with memory efficient objects
+            return self._external_file.copy()
+        else:
+            return self._external_file
+
+    def get(self, column: str, split: str) -> Union[pd.Series, pd.DataFrame]:
         '''
         Explicitly split validation splits
         Assumes self.dataframe has a get method to return the dataframe associated with the split
@@ -64,8 +76,7 @@ class PandasDatasetMixin(AbstractDatasetMixin):
 
         if isinstance(self.dataframe, pd.DataFrame):
             if split is None:  # Return the full dataset (all splits)
-                # return a copy so mutations can happen inplace with memory efficient objects
-                df = self.dataframe.copy()
+                df = self.dataframe
             else:
                 # query automatically returns a copy
                 df = self.dataframe.query("{}=='{}'".format(DATAFRAME_SPLIT_COLUMN, split))

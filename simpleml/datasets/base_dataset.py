@@ -85,6 +85,14 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         if not hasattr(self, '_external_file') or self._external_file is None:
             self.build_dataframe()
 
+        return self._dataframe
+
+    @property
+    def _dataframe(self) -> Any:
+        '''
+        Separate property method wrapper for the external object
+        Allows mixins/subclasses to change behavior of accsessor 
+        '''
         return self._external_file
 
     @property
