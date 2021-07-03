@@ -10,7 +10,7 @@ __author__ = 'Elisha Yadgaran'
 
 import pandas as pd
 
-from typing import Any, List
+from typing import Any, List, Union
 
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 from simpleml.utils.errors import DatasetError
@@ -39,14 +39,14 @@ class PandasDatasetMixin(AbstractDatasetMixin):
             - squeeze(
     '''
     @property
-    def X(self) -> Any:
+    def X(self) -> pd.DataFrame:
         '''
         Return the subset that isn't in the target labels (across all potential splits)
         '''
         return self.get(column='X', split=None)
 
     @property
-    def y(self) -> Any:
+    def y(self) -> Union[pd.Series, pd.DataFrame]:
         '''
         Return the target label columns
         '''
