@@ -13,6 +13,7 @@ import pandas as pd
 from typing import Any, List
 
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
+from simpleml.utils.errors import DatasetError
 
 
 DATAFRAME_SPLIT_COLUMN: str = 'DATASET_SPLIT'
@@ -71,8 +72,8 @@ class PandasDatasetMixin(AbstractDatasetMixin):
 
         returns empty dataframe for missing combinations of column & split
         '''
-        if column not in ('X', 'y'):
-            raise ValueError('Only support columns: X & y')
+        if column not in ('X', 'y', None):
+            raise ValueError('Only support columns: X, y, None')
 
         if isinstance(self.dataframe, pd.DataFrame):
             if split is None:  # Return the full dataset (all splits)
@@ -92,15 +93,19 @@ class PandasDatasetMixin(AbstractDatasetMixin):
                 df = pd.DataFrame()
             else:
                 # copy for mutable downstream operations
+                # self.dataframe only returns a copy if type dataframe
                 df = df.copy()
 
-        if column == 'y':  # Squeeze to reduce dimensionality of return
+        if column is None:
+            return df
+
+        elif column == 'y':  # Squeeze to reduce dimensionality of return
             # inplace drop non label columns
             drop_columns = [col for col in df.columns if col not in self.label_columns]
             df.drop(drop_columns, axis=1, inplace=True)
             return df.squeeze()
 
-        else:
+        else:  # X
             df.drop(self.label_columns, axis=1, inplace=True)
             return df
 
