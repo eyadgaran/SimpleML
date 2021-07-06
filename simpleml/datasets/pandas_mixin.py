@@ -57,17 +57,26 @@ class PandasDatasetMixin(AbstractDatasetMixin):
         '''
         Overwrite base behavior to return a copy of the data in case consumers
         attempt to mutate the data structure
-        '''
-        if isinstance(self._external_file, pd.DataFrame):
-            # return a copy so mutations can happen inplace with memory efficient objects
-            return self._external_file.copy()
-        else:
-            return self._external_file
 
-    def get(self, column: str, split: str) -> Union[pd.Series, pd.DataFrame]:
+        Only copies the pandas container - underlying cell objects can still propagate
+        inplace mutations (eg lists, dicts, objects)
+        '''
+        # return a copy so mutations can happen inplace with memory efficient objects
+        return self._external_file.copy()
+
+    @_dataframe.setter
+    def _dataframe(self, df: pd.DataFrame) -> None:
+        '''
+        Validating setter method for self._external_file
+        Checks input is of type pd.DataFrame
+        '''
+        if not isinstance(df, pd.DataFrame):
+            raise DatasetError('Pandas Datasets must be of type `pd.DataFrame`')
+        self._external_file = df
+
+    def get(self, column: str, split: str) -> pd.DataFrame:
         '''
         Explicitly split validation splits
-        Assumes self.dataframe has a get method to return the dataframe associated with the split
         Uses self.label_columns to separate x and y columns inside the returned dataframe
 
         returns empty dataframe for missing combinations of column & split
