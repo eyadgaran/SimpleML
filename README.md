@@ -42,7 +42,7 @@ Starting a project is as simple as defining the raw data and guiding the transfo
 
 ```python
 from simpleml.utils import Database
-from simpleml.datasets import PandasDataset
+from simpleml.datasets import SingleLabelPandasDataset
 from simpleml.pipelines import RandomSplitPipeline
 from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
 from simpleml.models import SklearnLogisticRegression
@@ -55,7 +55,7 @@ from simpleml.constants import TEST_SPLIT
 db = Database().initialize(upgrade=True)
 
 # Define Dataset and point to loading file
-class TitanicDataset(PandasDataset):
+class TitanicDataset(SingleLabelPandasDataset):
     def build_dataframe(self):
         self.dataframe = self.load_csv('filepath/to/train.csv')
 
