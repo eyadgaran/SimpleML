@@ -63,7 +63,7 @@ From inside the notebook we will conduct a very minimal modeling exercise using
 the titanic dataset from kaggle_::
 
     from simpleml.utils import Database
-    from simpleml.datasets import PandasDataset
+    from simpleml.datasets import SingleLabelPandasDataset
     from simpleml.pipelines import RandomSplitPipeline
     from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
     from simpleml.models import SklearnLogisticRegression
@@ -75,7 +75,7 @@ the titanic dataset from kaggle_::
     Database().initialize(upgrade=True)
 
     # Define Dataset and point to loading file
-    class TitanicDataset(PandasDataset):
+    class TitanicDataset(SingleLabelPandasDataset):
         def build_dataframe(self):
             self.dataframe = self.load_csv('filepath/to/train.csv')
 
