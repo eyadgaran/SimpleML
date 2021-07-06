@@ -10,7 +10,7 @@ __author__ = 'Elisha Yadgaran'
 
 import pandas as pd
 
-from typing import List, Union
+from typing import List, Union, Optional
 
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 from simpleml.utils.errors import DatasetError
@@ -70,7 +70,7 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
             raise DatasetError('Pandas Datasets must be of type `pd.DataFrame`')
         self._external_file = df
 
-    def get(self, column: str, split: str) -> pd.DataFrame:
+    def get(self, column: Optional[str], split: Optional[str]) -> pd.DataFrame:
         '''
         Explicitly split validation splits
         Uses self.label_columns to separate x and y columns inside the returned dataframe
