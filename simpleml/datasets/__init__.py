@@ -7,23 +7,17 @@ Define convenience classes composed of different mixins
 __author__ = 'Elisha Yadgaran'
 
 import pandas as pd
+import logging
 
 from .base_dataset import Dataset
-from .pandas_mixin import PandasDatasetMixin
+from .pandas_mixin import BasePandasDatasetMixin, SingleLabelPandasDatasetMixin, MultiLabelPandasDatasetMixin
 from .numpy_mixin import NumpyDatasetMixin
 
 from simpleml.utils.errors import DatasetError
 
 
-# Mixin implementations for convenience
-class PandasDataset(Dataset, PandasDatasetMixin):
-    '''
-    Composed mixin class with pandas helper methods and a predefined build
-    routine, assuming dataset pipeline existence.
+LOGGER = logging.getLogger(__name__)
 
-    WARNING: this class will fail if build_dataframe is not overwritten or a
-    pipeline provided!
-    '''
 
 class _PandasDatasetPipelineBuildMixin(object):
     def build_dataframe(self) -> None:
@@ -48,6 +42,45 @@ class _PandasDatasetPipelineBuildMixin(object):
             self.dataframe = merged_splits[0]
 
 
+# Mixin implementations for convenience
+class PandasDataset(Dataset, BasePandasDatasetMixin, _PandasDatasetPipelineBuildMixin):
+    '''
+    Composed mixin class with pandas helper methods and a predefined build
+    routine, assuming dataset pipeline existence.
+
+    WARNING: this class will fail if build_dataframe is not overwritten or a
+    pipeline provided!
+    '''
+
+    def __init__(self, *args, **kwargs):
+        super.__init__(*args, **kwargs)
+
+        # warn that this class is deprecated and will be  removed
+        LOGGER.warn('PandasDataset class is deprecated and will be removed in a future release! Use `SingleLabelPandasDataset` or `MultiLabelPandasDataset` instead')
+
+
+class SingleLabelPandasDataset(Dataset, SingleLabelPandasDatasetMixin, _PandasDatasetPipelineBuildMixin):
+    '''
+    Composed mixin class with pandas helper methods and a predefined build
+    routine, assuming dataset pipeline existence.
+
+    Expects labels to only be a single column (1 label per sample)
+
+    WARNING: this class will fail if build_dataframe is not overwritten or a
+    pipeline provided!
+    '''
+
+
+class MultiLabelPandasDataset(Dataset, MultiLabelPandasDatasetMixin, _PandasDatasetPipelineBuildMixin):
+    '''
+    Composed mixin class with pandas helper methods and a predefined build
+    routine, assuming dataset pipeline existence.
+
+    Expects multiple labels across many columns (multi labels per sample)
+
+    WARNING: this class will fail if build_dataframe is not overwritten or a
+    pipeline provided!
+    '''
 
 
 class NumpyDataset(Dataset, NumpyDatasetMixin):

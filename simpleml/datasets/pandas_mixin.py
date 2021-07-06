@@ -20,7 +20,7 @@ from simpleml.pipelines.validation_split_mixins import Split
 DATAFRAME_SPLIT_COLUMN: str = 'DATASET_SPLIT'
 
 
-class PandasDatasetMixin(AbstractDatasetMixin):
+class BasePandasDatasetMixin(AbstractDatasetMixin):
     '''
     Pandas mixin class with control mechanism for `self.dataframe` of
     type `dataframe`. Mostly assumes pandas syntax, not types, so may be compatible
@@ -154,3 +154,44 @@ class PandasDatasetMixin(AbstractDatasetMixin):
     def load_csv(filename: str, **kwargs) -> pd.DataFrame:
         '''Helper method to read in a csv file'''
         return pd.read_csv(filename, **kwargs)
+
+
+class MultiLabelPandasDatasetMixin(BasePandasDatasetMixin):
+    '''
+    Multilabel implementation of pandas dataset - same as base for now
+    '''
+    pass
+
+
+class SingleLabelPandasDatasetMixin(BasePandasDatasetMixin):
+    '''
+    Customized label logic for single label (y dimension = 1) datasets
+    '''
+    @property
+    def label_column(self):
+        labels = self.label_columns
+
+        # validate single label status
+        if len(labels) != 1:
+            raise DatasetError(f'SingleLabelPandasDataset requires exactly one label column, {len(labels)} found')
+
+        return labels[0]
+
+    def get(self, column: str, split: str) -> Union[pd.Series, pd.DataFrame]:
+        '''
+        Extends PandasDatasetMixin.get with logic to squeeze labels to a
+        series (1D frame)
+        '''
+        data = super().get(column=column, split=split)
+
+        if column != 'y':
+            return data
+
+        # Custom logic for "y"
+        # 1D dataframe can squeeze to a series or numpy array
+        # edge case with one row will squeeze to a constant (or series for 2D)
+        if data.shape == (1, 1):  # single row
+            data = pd.Series(data.squeeze(), name=self.label_column, index=data.index)
+        else:
+            data = data.squeeze()
+        return data

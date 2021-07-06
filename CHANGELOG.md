@@ -1,8 +1,12 @@
 ## Change Log
 
 ### TBD
+- Dataset external file setter with validation hooks
+- Pandas changes to always return dataframe copies (does not extend to underlying python objects! eg lists, objects, etc)
+- Pandas Dataset Subclasses for Single and Multi label datasets
 
 *BREAKING CHANGES*
+- `PandasDataset` is deprecated and will be dropped in a future release. Use `SingleLabelPandasDataset` or `MultiLabelPandasDataset` instead
 - Pandas Dataset Classes require dataframe objects of type pd.DataFrame and will validate input (containers of pd.DataFrames are no longer supported)
 
 ### 0.9.3 (2021-04-04)
