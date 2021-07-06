@@ -39,24 +39,19 @@ class PersistableLoader(object):
             raise SimpleMLError('No persistable found for specified filters: {}'.format(filters))
 
     @classmethod
-    def load_dataset(cls, name: str = 'default', **filters) -> Dataset:
-        filters['name'] = name
+    def load_dataset(cls, **filters) -> Dataset:
         return cls.load_persistable(Dataset, filters)
 
     @classmethod
-    def load_pipeline(cls, name: str = 'default', **filters) -> Pipeline:
-        filters['name'] = name
+    def load_pipeline(cls, **filters) -> Pipeline:
         return cls.load_persistable(Pipeline, filters)
 
     @classmethod
-    def load_model(cls, name: str = 'default', **filters) -> Model:
-        filters['name'] = name
+    def load_model(cls, **filters) -> Model:
         return cls.load_persistable(Model, filters)
 
     @classmethod
-    def load_metric(cls, name: str, model_id: str, **filters) -> Metric:
-        filters['name'] = name
-        filters['model_id'] = model_id
+    def load_metric(cls, **filters) -> Metric:
         return cls.load_persistable(Metric, filters)
 
     @staticmethod
