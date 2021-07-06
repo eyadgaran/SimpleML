@@ -77,7 +77,7 @@ the titanic dataset from kaggle_::
     # Define Dataset and point to loading file
     class TitanicDataset(PandasDataset):
         def build_dataframe(self):
-            self._external_file = self.load_csv('filepath/to/train.csv')
+            self.dataframe = self.load_csv('filepath/to/train.csv')
 
     # Create Dataset and save it
     dataset = TitanicDataset(name='titanic', label_columns=['Survived'])
@@ -131,7 +131,7 @@ API layer using flask and serve predictions from our trained model::
     @app.route(/predict, methods=['POST'])
     def predict()
         X = pd.DataFrame(request.json)
-        prediction_probability = float(MODEL.predict_proba(X)[:, 1])
+        prediction_probability = float(MODEL.predict_proba(X, transform=True)[:, 1])
         prediction = int(round(prediction_probability, 0))
         return jsonify({'probability': prediction_probability, 'prediction': prediction}), 200
 

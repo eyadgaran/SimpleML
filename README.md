@@ -57,7 +57,7 @@ db = Database().initialize(upgrade=True)
 # Define Dataset and point to loading file
 class TitanicDataset(PandasDataset):
     def build_dataframe(self):
-        self._external_file = self.load_csv('filepath/to/train.csv')
+        self.dataframe = self.load_csv('filepath/to/train.csv')
 
 # Create Dataset and save it
 dataset = TitanicDataset(name='titanic', label_columns=['Survived'])
@@ -145,7 +145,7 @@ When it comes to production, one typically does not need all the training data s
 
 ```python
 desired_model = PersistableLoader.load_model(name='titanic', version=10)
-desired_model.predict_proba(new_dataframe)
+desired_model.predict_proba(new_dataframe, transform=True)
 ```
 
 
