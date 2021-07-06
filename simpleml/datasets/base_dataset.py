@@ -79,6 +79,13 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
 
     @property
     def dataframe(self) -> Any:
+        '''
+        Property wrapper to retrieve the external object associated with the
+        dataset.
+        Automatically checks for unloaded artifacts and loads, if necessary.
+        Will attempt to create a new dataframe if external object is not already
+        created via `self.build_dataframe()`
+        '''
         # Return dataframe if generated, otherwise generate first
         self.load_if_unloaded('dataset')
 
@@ -87,13 +94,31 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
 
         return self._dataframe
 
+    @dataframe.setter
+    def dataframe(self, df: Any) -> None:
+        '''
+        Exposed setter for the external dataframe object
+        '''
+        # TODO: add orm level restrictions if persistable is already saved
+        # can still be circumvented by directly calling low level methods,
+        # but shield against naive abuse
+        self._dataframe = df
+
     @property
     def _dataframe(self) -> Any:
         '''
         Separate property method wrapper for the external object
-        Allows mixins/subclasses to change behavior of accsessor 
+        Allows mixins/subclasses to change behavior of accsessor
         '''
         return self._external_file
+
+    @_dataframe.setter
+    def _dataframe(self, df: Any) -> None:
+        '''
+        Setter method for self._external_file
+        Allows mixins/subclasses to validate input
+        '''
+        self._external_file = df
 
     @property
     def label_columns(self) -> List[str]:
