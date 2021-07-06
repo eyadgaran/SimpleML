@@ -129,7 +129,7 @@ model = ModelCreator.retrieve_or_create(pipeline_kwargs=pipeline_kwargs, **model
 metric = MetricCreator.retrieve_or_create(model_kwargs=model_kwargs, dataset_kwargs=dataset_kwargs, **metric_kwargs)     
 ```
 
-Once objects have been created, they can be retrieved at whim by their name attribute (with the exception of metrics - which also need reference to the model). By default the latest version for a name will be returned, but this can be overridden by explicitly passing a version number.
+Once objects have been created, they can be retrieved at whim by their name attribute (or any other identifying metadata). By default the latest version for the supplied parameters will be returned, but this can be overridden by explicitly passing a version number.
 
 ```python
 from simpleml.utils import PersistableLoader
@@ -146,6 +146,14 @@ When it comes to production, one typically does not need all the training data s
 ```python
 desired_model = PersistableLoader.load_model(name='titanic', version=10)
 desired_model.predict_proba(new_dataframe, transform=True)
+```
+
+or (explicitly load a pipeline to use, by default the pipeline the model was trained on will be used)
+
+```python
+desired_pipeline = PersistableLoader.load_pipeline(name='titanic', version=11)
+desired_model = PersistableLoader.load_model(name='titanic', version=10)
+desired_model.predict_proba(desired_pipeline.transform(new_dataframe), transform=False)
 ```
 
 
