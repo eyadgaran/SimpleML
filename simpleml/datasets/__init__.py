@@ -53,7 +53,7 @@ class PandasDataset(Dataset, BasePandasDatasetMixin, _PandasDatasetPipelineBuild
     '''
 
     def __init__(self, *args, **kwargs):
-        super.__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # warn that this class is deprecated and will be  removed
         LOGGER.warn('PandasDataset class is deprecated and will be removed in a future release! Use `SingleLabelPandasDataset` or `MultiLabelPandasDataset` instead')
