@@ -14,6 +14,7 @@ from typing import List, Union
 
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 from simpleml.utils.errors import DatasetError
+from simpleml.pipelines.validation_split_mixins import Split
 
 
 DATAFRAME_SPLIT_COLUMN: str = 'DATASET_SPLIT'
@@ -132,6 +133,16 @@ class PandasDatasetMixin(AbstractDatasetMixin):
 
         # Join row wise - drop index in case duplicates exist
         return pd.concat(dataframes, axis=0, ignore_index=True)
+
+    @staticmethod
+    def merge_split(split: Split) -> pd.DataFrame:
+        '''
+        Helper method to merge all dataframes in a split object into a single df
+        does a column-wise join
+        ex: `df1 = [A, B, C](4 rows)` + `df2 = [D, E, F](4 rows)`
+        returns: `[A, B, C, D, E, F](4 rows)`
+        '''
+        return pd.concat(list(split.values()), axis=1)
 
     def get_feature_names(self) -> List[str]:
         '''

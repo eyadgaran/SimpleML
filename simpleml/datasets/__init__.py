@@ -12,7 +12,6 @@ from .base_dataset import Dataset
 from .pandas_mixin import PandasDatasetMixin
 from .numpy_mixin import NumpyDatasetMixin
 
-from simpleml.pipelines.validation_split_mixins import Split
 from simpleml.utils.errors import DatasetError
 
 
@@ -25,16 +24,8 @@ class PandasDataset(Dataset, PandasDatasetMixin):
     WARNING: this class will fail if build_dataframe is not overwritten or a
     pipeline provided!
     '''
-    @staticmethod
-    def merge_split(split: Split) -> pd.DataFrame:
-        '''
-        Helper method to merge all dataframes in a split object into a single df
-        does a column-wise join
-        ex: `df1 = [A, B, C](4 rows)` + `df2 = [D, E, F](4 rows)`
-        returns: `[A, B, C, D, E, F](4 rows)`
-        '''
-        return pd.concat(list(split.values()), axis=1)
 
+class _PandasDatasetPipelineBuildMixin(object):
     def build_dataframe(self) -> None:
         '''
         Transform raw dataset via dataset pipeline for production ready dataset
@@ -52,9 +43,11 @@ class PandasDataset(Dataset, PandasDatasetMixin):
 
         if len(merged_splits) > 1:  # Combine multiple splits
             # Join row wise - drop index in case duplicates exist
-            self._external_file = pd.concat(merged_splits, axis=0, ignore_index=True)
+            self.dataframe = pd.concat(merged_splits, axis=0, ignore_index=True)
         else:
-            self._external_file = merged_splits[0]
+            self.dataframe = merged_splits[0]
+
+
 
 
 class NumpyDataset(Dataset, NumpyDatasetMixin):
