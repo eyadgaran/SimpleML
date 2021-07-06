@@ -1,5 +1,10 @@
 ## Change Log
 
+### TBD
+
+*BREAKING CHANGES*
+- Pandas Dataset Classes require dataframe objects of type pd.DataFrame and will validate input (containers of pd.DataFrames are no longer supported)
+
 ### 0.9.3 (2021-04-04)
 - Patch to support sqlalchemy >= 1.4 changes
 
