@@ -43,7 +43,7 @@ class _PandasDatasetPipelineBuildMixin(object):
 
 
 # Mixin implementations for convenience
-class PandasDataset(Dataset, BasePandasDatasetMixin, _PandasDatasetPipelineBuildMixin):
+class PandasDataset(BasePandasDatasetMixin, Dataset, _PandasDatasetPipelineBuildMixin):
     '''
     Composed mixin class with pandas helper methods and a predefined build
     routine, assuming dataset pipeline existence.
@@ -59,7 +59,7 @@ class PandasDataset(Dataset, BasePandasDatasetMixin, _PandasDatasetPipelineBuild
         LOGGER.warn('PandasDataset class is deprecated and will be removed in a future release! Use `SingleLabelPandasDataset` or `MultiLabelPandasDataset` instead')
 
 
-class SingleLabelPandasDataset(Dataset, SingleLabelPandasDatasetMixin, _PandasDatasetPipelineBuildMixin):
+class SingleLabelPandasDataset(SingleLabelPandasDatasetMixin, Dataset, _PandasDatasetPipelineBuildMixin):
     '''
     Composed mixin class with pandas helper methods and a predefined build
     routine, assuming dataset pipeline existence.
@@ -71,7 +71,7 @@ class SingleLabelPandasDataset(Dataset, SingleLabelPandasDatasetMixin, _PandasDa
     '''
 
 
-class MultiLabelPandasDataset(Dataset, MultiLabelPandasDatasetMixin, _PandasDatasetPipelineBuildMixin):
+class MultiLabelPandasDataset(MultiLabelPandasDatasetMixin, Dataset, _PandasDatasetPipelineBuildMixin):
     '''
     Composed mixin class with pandas helper methods and a predefined build
     routine, assuming dataset pipeline existence.
