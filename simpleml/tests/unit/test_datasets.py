@@ -11,7 +11,7 @@ import pandas as pd
 import itertools
 from pandas.testing import assert_frame_equal, assert_series_equal
 
-from simpleml.datasets import PandasDataset, NumpyDataset
+from simpleml.datasets import PandasDataset, SingleLabelPandasDataset, MultiLabelPandasDataset, NumpyDataset
 from simpleml.datasets.base_dataset import Dataset, AbstractDataset
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 from simpleml.datasets.numpy_mixin import NumpyDatasetMixin
@@ -323,7 +323,15 @@ class BasePandasMixinTests(unittest.TestCase, _PandasTestHelper):
         return TestMixinClass()
 
 
-class SingleLabelPandasTests(unittest.TestCase, _PandasTestHelper):
+class PandasDatasetTests(BasePandasDatasetMixin):
+    @property
+    def dummy_dataset(self):
+        dataset = PandasDataset(label_columns=['label'])
+        dataset._external_file = self._data
+        return dataset
+
+
+class SingleLabelPandasMixinTests(unittest.TestCase, _PandasTestHelper):
     '''
     Same tests but overload labels to not squeeze to a numpy array
     '''
@@ -420,7 +428,15 @@ class SingleLabelPandasTests(unittest.TestCase, _PandasTestHelper):
         return TestMixinClass()
 
 
-class MultilabelPandasTests(unittest.TestCase, _PandasTestHelper):
+class SingleLabelPandasDatasetTests(SingleLabelPandasMixinTests):
+    @property
+    def dummy_dataset(self):
+        dataset = SingleLabelPandasDataset(label_columns=['label'])
+        dataset._external_file = self._data
+        return dataset
+
+
+class MultiLabelPandasMixinTests(unittest.TestCase, _PandasTestHelper):
     '''
     Same tests but overload labels to not squeeze to a numpy array
     '''
@@ -511,6 +527,14 @@ class MultilabelPandasTests(unittest.TestCase, _PandasTestHelper):
                 return self._dataframe
 
         return TestMixinClass()
+
+
+class MultiLabelPandasDatasetTests(MultiLabelPandasMixinTests):
+    @property
+    def dummy_dataset(self):
+        dataset = MultiLabelPandasDataset(label_columns=['label1', 'label2'])
+        dataset._external_file = self._data
+        return dataset
 
 
 class NumpyMixinTests(unittest.TestCase):

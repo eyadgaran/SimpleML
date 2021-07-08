@@ -33,6 +33,9 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
             - columns
             - drop()
             - squeeze()
+
+    WARNING: Needs to be used as a base class for datasets because it overwrites
+    the standard dataset dataframe property
     '''
     @property
     def X(self) -> pd.DataFrame:
