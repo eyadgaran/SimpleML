@@ -1,6 +1,6 @@
 ## Change Log
 
-### TBD
+### 0.10.0 (2021-07-09)
 - Dataset external file setter with validation hooks
 - Pandas changes to always return dataframe copies (does not extend to underlying python objects! eg lists, objects, etc)
 - Pandas Dataset Subclasses for Single and Multi label datasets
