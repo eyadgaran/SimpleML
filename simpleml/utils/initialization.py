@@ -12,7 +12,7 @@ import atexit
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, configure_mappers
 from sqlalchemy.engine.url import URL, make_url
 from alembic import command
 from alembic.config import Config
@@ -193,6 +193,9 @@ class BaseDatabase(object):
         :param drop_tables: Bool, whether to drop existing tables in database
         :return: None
         '''
+        # call configure_mappers to finish registering any version tables in
+        # the metadata
+        configure_mappers()
         engine = self.engine
         session = scoped_session(sessionmaker(autocommit=True,
                                               autoflush=False,

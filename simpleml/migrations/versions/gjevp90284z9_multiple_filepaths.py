@@ -8,7 +8,7 @@ Create Date: 2020-05-31 18:37:02.849204
 import logging
 from alembic import op
 from sqlalchemy import MetaData, Column
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, configure_mappers
 
 from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
@@ -31,6 +31,7 @@ class UpgradeTableModel(BaseSQLAlchemy):
     Minimal table model to conduct migrations
     '''
     __abstract__ = True
+    __versioned__ = {}
     __table_args__ = {'extend_existing': True}
     metadata = MetaData()
     id = Column(GUID, primary_key=True)
@@ -55,6 +56,7 @@ class MetricsModel(UpgradeTableModel):
 
 
 def configure_session(connection):
+    configure_mappers()
     session = scoped_session(sessionmaker(autocommit=False,
                                           autoflush=False,
                                           bind=connection))

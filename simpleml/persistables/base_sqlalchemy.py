@@ -9,8 +9,14 @@ import logging
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, DateTime, func, event, MetaData, DDL
 from sqlalchemy_mixins import AllFeaturesMixin
+from sqlalchemy_continuum import make_versioned
 
 
+# Register base class with sqlalchemy continuum to automatically enable
+# versioning for inheriting classes -- need to indicate model classes to
+# version with __versioned__ attribute and a call to `sqlalchemy.orm.configure_mappers()`
+# for each metadata object
+make_versioned(user_cls=None)
 Base = declarative_base()
 LOGGER = logging.getLogger(__name__)
 
@@ -60,8 +66,12 @@ same session -- ie base.metadata.create_all()/drop_all()/upgrade())
 class SimplemlCoreSqlalchemy(BaseSQLAlchemy):
     '''
     Shared metadata for all tables that live in the main schema
+    Automatically sets up version tables. Mappers need to be configured
+    via `sqlalchemy.orm.configure_mappers()` to add version tables to
+    metadata
     '''
     __abstract__ = True
+    __versioned__ = {}
     # Uses main (public) schema
     metadata = MetaData()
 
