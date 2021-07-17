@@ -1,5 +1,9 @@
 ## Change Log
 
+### TBD
+- Added SQLAlchemy-Continuum as a dependency
+- All tables have audit backups retaining all versions
+
 ### 0.10.0 (2021-07-09)
 - Dataset external file setter with validation hooks
 - Pandas changes to always return dataframe copies (does not extend to underlying python objects! eg lists, objects, etc)
