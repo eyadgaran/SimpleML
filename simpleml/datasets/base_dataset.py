@@ -122,10 +122,15 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
     def dataframe(self, df: Any) -> None:
         '''
         Exposed setter for the external dataframe object
+        Has hooks for data validation that can be customized in inheriting classes
         '''
-        # TODO: add orm level restrictions if persistable is already saved
-        # can still be circumvented by directly calling low level methods,
-        # but shield against naive abuse
+        # run validation
+        self._validate_state(df)
+        self._validate_data(df)
+        self._validate_schema(df)
+        self._validate_dtype(df)
+
+        # pass down to actually set attribute
         self._dataframe = df
 
     @property
@@ -156,6 +161,29 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         Keep column list for labels in metadata to persist through saving
         '''
         return self.get_section_columns('y')
+
+    def _validate_state(self, df: Any) -> None:
+        '''
+        Hook to validate the persistable state before allowing modification
+        '''
+        # TODO: add orm level restrictions if persistable is already saved
+        # can still be circumvented by directly calling low level methods,
+        # but shield against naive abuse
+
+    def _validate_data(self, df: Any) -> None:
+        '''
+        Hook to validate the contents of the data
+        '''
+
+    def _validate_schema(self, df: Any) -> None:
+        '''
+        Hook to validate the schema of the data (columns/sections)
+        '''
+
+    def _validate_dtype(self, df: Any) -> None:
+        '''
+        Hook to validate the types of the data
+        '''
 
     def build_dataframe(self):
         '''
