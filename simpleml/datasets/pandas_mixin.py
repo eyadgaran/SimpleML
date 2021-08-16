@@ -63,15 +63,13 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
         # return a copy so mutations can happen inplace with memory efficient objects
         return self._external_file.copy()
 
-    @_dataframe.setter
-    def _dataframe(self, df: pd.DataFrame) -> None:
+    def _validate_dtype(self, df: pd.DataFrame) -> None:
         '''
         Validating setter method for self._external_file
         Checks input is of type pd.DataFrame
         '''
         if not isinstance(df, pd.DataFrame):
             raise DatasetError('Pandas Datasets must be of type `pd.DataFrame`')
-        self._external_file = df
 
     def get(self, column: Optional[str], split: Optional[str]) -> pd.DataFrame:
         '''
@@ -170,6 +168,16 @@ class SingleLabelPandasDatasetMixin(BasePandasDatasetMixin):
     '''
     Customized label logic for single label (y dimension = 1) datasets
     '''
+
+    def _validate_schema(self, df: pd.DataFrame):
+        '''
+        Extend validation to check df has only a single column for the y section
+        '''
+        # validate single label status
+        labels = self.label_columns
+        if len(labels) != 1:
+            raise DatasetError(f'SingleLabelPandasDataset requires exactly one label column, {len(labels)} found')
+
     @property
     def label_column(self):
         labels = self.label_columns
