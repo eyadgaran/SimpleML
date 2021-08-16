@@ -17,12 +17,13 @@ import logging
 from future.utils import with_metaclass
 from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
-from typing import List, Optional, Any, TYPE_CHECKING
+from typing import Dict, List, Optional, Any, TYPE_CHECKING
 
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.persistables.sqlalchemy_types import GUID
 from simpleml.registries import DatasetRegistry
+from simpleml.utils.errors import DatasetError
 
 if TYPE_CHECKING:
     # Cyclical import hack for type hints
@@ -65,17 +66,40 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
     def __init__(self,
                  has_external_files: bool = True,
                  label_columns: Optional[List[str]] = None,
+                 other_named_split_sections: Optional[Dict[str, List[str]]] = None,
                  **kwargs):
+        '''
+        param label_columns: Optional list of column names to register as the "y" split section
+        param other_named_split_sections: Optional map of section names to lists of column names for
+            other arbitrary split columns -- must match expected consumer signatures (e.g. sample_weights)
+            because passed through untouched downstream (eg sklearn.fit(**split))
+        All other columns in the dataframe will automatically be referenced as "X"
+        '''
         # If no save patterns are set, specify a default for disk_pickled
         if 'save_patterns' not in kwargs:
             kwargs['save_patterns'] = {'dataset': ['disk_pickled']}
         super(AbstractDataset, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
-        # By default assume unsupervised so no targets
-        if label_columns is None:
-            label_columns = []
-        self.config['label_columns'] = label_columns
+        # split sections are an optional set of inputs to register split references
+        # for later use. defaults to just `X` and `y` but arbitrary inputs can
+        # be passed (eg sample_weights, etc)
+
+        # validate input
+        if other_named_split_sections is None:
+            other_named_split_sections = {}
+        else:
+            for k, v in other_named_split_sections.items():
+                if not isinstance(v, (list, tuple)):
+                    raise DatasetError(f'Split sections must be a map of section reference (eg `y`) to list of columns. {k}: {v} passed instead')
+
+        self.config['split_section_map'] = {
+            # y maps to label columns (by default assume unsupervised so no targets)
+            'y': label_columns or [],
+            # arbitrary passed others
+            **other_named_split_sections
+            # everything else automatically becomes "X"
+        }
 
     @property
     def dataframe(self) -> Any:
@@ -120,12 +144,18 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         '''
         self._external_file = df
 
+    def get_section_columns(self, section: str) -> List[str]:
+        '''
+        Helper accessor for column names in the split_section_map
+        '''
+        return self.config.get('split_section_map').get(section, [])
+
     @property
     def label_columns(self) -> List[str]:
         '''
         Keep column list for labels in metadata to persist through saving
         '''
-        return self.config.get('label_columns', [])
+        return self.get_section_columns('y')
 
     def build_dataframe(self):
         '''
