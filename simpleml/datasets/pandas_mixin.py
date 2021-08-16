@@ -10,6 +10,7 @@ __author__ = 'Elisha Yadgaran'
 
 import pandas as pd
 
+from itertools import chain
 from typing import List, Union, Optional
 
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
@@ -78,8 +79,9 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
 
         returns empty dataframe for missing combinations of column & split
         '''
-        if column not in ('X', 'y', None):
-            raise ValueError('Only support columns: X, y, None')
+        registered_sections = self.config.get('split_section_map')
+        if column is not None and column != 'X' and column not in registered_sections:
+            raise ValueError(f'Only support registered sections: {registered_sections}, X, or None')
 
         dataframe = self.dataframe  # copy
 
@@ -87,11 +89,17 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
         if column is None:  # All except internal columns
             return_columns = [col for col in dataframe.columns if col != DATAFRAME_SPLIT_COLUMN]
 
-        elif column == 'y':  # Just label columns
-            return_columns = self.label_columns
+        elif column != 'X':
+            # other passthrough columns
+            return_columns = registered_sections[column]
 
         else:  # X
-            return_columns = [col for col in dataframe.columns if col != DATAFRAME_SPLIT_COLUMN and col not in self.label_columns]
+            all_other_columns = list(chain(*registered_sections.values()))
+            return_columns = [
+                col for col in dataframe.columns
+                if col != DATAFRAME_SPLIT_COLUMN
+                and col not in all_other_columns
+            ]
 
         return self._get(dataframe=dataframe, columns=return_columns, split=split)
 
