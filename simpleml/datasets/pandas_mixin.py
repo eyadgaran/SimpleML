@@ -130,6 +130,18 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
 
         return dataframe
 
+    def get_split(self, split: Optional[str]) -> Split:
+        '''
+        Wrapper accessor to return a split object (for internal use)
+        '''
+        registered_sections = self.config.get('split_section_map')
+        return Split(
+            # explicitly get X as the "other" columns
+            X=self.get(column='X', split=split),
+            # should include y and any others if they exist
+            **{section: self.get(split=split, column=section) for section in registered_sections}
+        ).squeeze()
+
     def concatenate_dataframes(self,
                                dataframes: List[pd.DataFrame],
                                split_names: List[str]) -> pd.DataFrame:
