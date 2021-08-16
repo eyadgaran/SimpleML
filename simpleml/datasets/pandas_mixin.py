@@ -176,6 +176,13 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
         '''Helper method to read in a csv file'''
         return pd.read_csv(filename, **kwargs)
 
+    @staticmethod
+    def squeeze_dataframe(df: pd.DataFrame) -> pd.Series:
+        '''
+        Helper method to run dataframe squeeze and return a series
+        '''
+        return df.squeeze(axis=1)
+
 
 class MultiLabelPandasDatasetMixin(BasePandasDatasetMixin):
     '''
@@ -215,14 +222,9 @@ class SingleLabelPandasDatasetMixin(BasePandasDatasetMixin):
         '''
         data = super().get(column=column, split=split)
 
-        if column != 'y':
+        if column == 'X':
             return data
 
-        # Custom logic for "y"
-        # 1D dataframe can squeeze to a series or numpy array
-        # edge case with one row will squeeze to a constant (or series for 2D)
-        if data.shape == (1, 1):  # single row
-            data = pd.Series(data.squeeze(), name=self.label_column, index=data.index)
-        else:
-            data = data.squeeze()
-        return data
+        # Custom logic for other split sections
+        # 1D dataframe can squeeze to a series
+        return self.squeeze_dataframe(data)
