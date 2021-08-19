@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
+from .projected_splits import IdentityProjectedDatasetSplit, IndexBasedProjectedDatasetSplit
 
 
 class SplitMixin(with_metaclass(ABCMeta, object)):
@@ -45,7 +46,7 @@ class NoSplitMixin(SplitMixin):
         '''
         Non-split mixin class. Returns full dataset for any split name
         '''
-        default_split = Split(X=self.dataset.X, y=self.dataset.y).squeeze()
+        default_split = IdentityProjectedDatasetSplit(dataset=self.dataset, split=None)
         self._dataset_splits = self.containerize_split({
             'default_factory': lambda: default_split
         })
@@ -58,9 +59,9 @@ class ExplicitSplitMixin(SplitMixin):
         explicitly delineates between train, validation, and test
         '''
         self._dataset_splits = self.containerize_split({
-            TRAIN_SPLIT: Split(X=self.dataset.get('X', TRAIN_SPLIT), y=self.dataset.get('y', TRAIN_SPLIT)).squeeze(),
-            VALIDATION_SPLIT: Split(X=self.dataset.get('X', VALIDATION_SPLIT), y=self.dataset.get('y', VALIDATION_SPLIT)).squeeze(),
-            TEST_SPLIT: Split(X=self.dataset.get('X', TEST_SPLIT), y=self.dataset.get('y', TEST_SPLIT)).squeeze()
+            TRAIN_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=TRAIN_SPLIT),
+            VALIDATION_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=VALIDATION_SPLIT),
+            TEST_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=TEST_SPLIT)
         })
 
 
@@ -97,6 +98,19 @@ class RandomSplitMixin(SplitMixin):
             'shuffle': shuffle
         })
 
+    @staticmethod
+    def get_index(data) -> List[int]:
+        '''
+        Helper to extract the index from a dataset. Generates a range index
+        if none exists
+        '''
+        if isinstance(data, (pd.DataFrame, pd.Series)):
+            return data.index
+
+        else:
+            # no named index, use a linear range
+            return range(len(data))
+
     def split_dataset(self) -> None:
         '''
         Overwrite method to split by percentage
@@ -108,25 +122,29 @@ class RandomSplitMixin(SplitMixin):
         shuffle = self.config.get('shuffle')
 
         # Sklearn's train test split can only accomodate one split per iteration
+        # find the indices that match to each split
+        # use the X split section
+        index = self.get_index(self.dataset.X)
+
         if test_size == 0:  # No split necessary
-            X_remaining, y_remaining = self.dataset.X, self.dataset.y
-            X_test, y_test = [], []
+            test_indices = []
+            remaining_indices = index
         else:
-            X_remaining, X_test, y_remaining, y_test = train_test_split(
-                self.dataset.X, self.dataset.y, test_size=test_size, random_state=random_state, shuffle=shuffle)
+            remaining_indices, test_indices = train_test_split(
+                index, test_size=test_size, random_state=random_state, shuffle=shuffle)
 
         calibrated_validation_size = float(validation_size) / (validation_size + train_size)
         if calibrated_validation_size == 0:  # No split necessary
-            X_train, y_train = X_remaining, y_remaining
-            X_val, y_val = [], []
+            train_indices = remaining_indices
+            validation_indices = []
         else:
-            X_train, X_val, y_train, y_val = train_test_split(
-                X_remaining, y_remaining, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
+            train_indices, validation_indices = train_test_split(
+                remaining_indices, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
 
         self._dataset_splits = self.containerize_split({
-            TRAIN_SPLIT: Split(X=X_train, y=y_train).squeeze(),
-            VALIDATION_SPLIT: Split(X=X_val, y=y_val).squeeze(),
-            TEST_SPLIT: Split(X=X_test, y=y_test).squeeze()
+            TRAIN_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=TRAIN_SPLIT, indices=train_indices),
+            VALIDATION_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=VALIDATION_SPLIT, indices=validation_indices),
+            TEST_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=TEST_SPLIT, indices=test_indices)
         })
 
 
