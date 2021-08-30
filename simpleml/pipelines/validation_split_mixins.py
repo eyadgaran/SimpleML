@@ -15,8 +15,7 @@ import pandas as pd
 from abc import ABCMeta, abstractmethod
 from sklearn.model_selection import train_test_split
 from future.utils import with_metaclass
-from collections import defaultdict
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
@@ -56,18 +55,23 @@ class ExplicitSplitMixin(SplitMixin):
     def split_dataset(self) -> None:
         '''
         Method to split the dataframe into different sets. Assumes dataset
-        explicitly delineates between train, validation, and test
+        explicitly delineates between different splits
+
+        Passes forward dataset split names so uniquely named splits will propagate
+        and can be referenced the same way
         '''
         self._dataset_splits = self.containerize_split({
-            TRAIN_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=TRAIN_SPLIT),
-            VALIDATION_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=VALIDATION_SPLIT),
-            TEST_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=TEST_SPLIT)
+            split_name: IdentityProjectedDatasetSplit(dataset=self.dataset, split=split_name)
+            for split_name in self.dataset.get_split_names()
         })
 
 
 class RandomSplitMixin(SplitMixin):
     '''
     Class to randomly split dataset into different sets
+
+    **Redefines splits so custom named splits in dataset cannot be referenced
+    by the same names. Only TRAIN/TEST/VALIDATION**
     '''
 
     def __init__(self,
@@ -142,9 +146,9 @@ class RandomSplitMixin(SplitMixin):
                 remaining_indices, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
 
         self._dataset_splits = self.containerize_split({
-            TRAIN_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=TRAIN_SPLIT, indices=train_indices),
-            VALIDATION_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=VALIDATION_SPLIT, indices=validation_indices),
-            TEST_SPLIT: IdentityProjectedDatasetSplit(dataset=self.dataset, split=TEST_SPLIT, indices=test_indices)
+            TRAIN_SPLIT: IndexBasedProjectedDatasetSplit(dataset=self.dataset, split=None, indices=train_indices),
+            VALIDATION_SPLIT: IndexBasedProjectedDatasetSplit(dataset=self.dataset, split=None, indices=validation_indices),
+            TEST_SPLIT: IndexBasedProjectedDatasetSplit(dataset=self.dataset, split=None, indices=test_indices)
         })
 
 
