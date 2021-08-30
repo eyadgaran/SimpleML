@@ -28,20 +28,8 @@ class NoSplitMixinTests(unittest.TestCase):
     def test_same_split_always_returned(self):
         '''
         Calling defaultdict with a singleton value should always return the
-        same object, even if it has been mutated elsewhere
+        same object
         '''
-        class TestNoSplitPipeline(NoSplitMixin, MockBasePipeline):
-            pass
-
-        pipeline = TestNoSplitPipeline()
-        pipeline.split_dataset()
-        split = pipeline._dataset_splits[None]
-        np.testing.assert_array_equal(pipeline.dataset.X, split.X)
-        np.testing.assert_array_equal(pipeline.dataset.y, split.y)
-        self.assertIsNone(pipeline._dataset_splits['TRAIN'].BLUE)
-        split['BLUE'] = ['abc']
-        self.assertEqual(pipeline._dataset_splits['TRAIN'].BLUE, ['abc'])
-        self.assertEqual(pipeline._dataset_splits['TEST'].BLUE, ['abc'])
 
 
 class RandomSplitMixinTests(unittest.TestCase):
