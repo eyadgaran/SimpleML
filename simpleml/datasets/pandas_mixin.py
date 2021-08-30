@@ -144,6 +144,16 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
 
     def concatenate_dataframes(self,
                                dataframes: List[pd.DataFrame],
+    def get_split_names(self) -> List[str]:
+        '''
+        Helper to expose the splits contained in the dataset
+        '''
+        df = self.dataframe
+        if DATAFRAME_SPLIT_COLUMN in df.columns:
+            return df[DATAFRAME_SPLIT_COLUMN].unique().tolist()
+        else:
+            return []
+
                                split_names: List[str]) -> pd.DataFrame:
         '''
         Helper method to merge dataframes into a single one with the split

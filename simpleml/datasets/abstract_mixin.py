@@ -48,3 +48,9 @@ class AbstractDatasetMixin(object):
         and compatible with downstream SimpleML consumers (pipelines, models)
         '''
         raise NotImplementedError
+
+    def get_split_names(self):
+        '''
+        Uninplemented method to return the split names available for the dataset
+        '''
+        raise NotImplementedError

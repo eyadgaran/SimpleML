@@ -57,6 +57,13 @@ class NumpyDatasetMixin(AbstractDatasetMixin):
         else:
             return split_dict.get('X', None)
 
+    def get_split_names(self) -> List[str]:
+        '''
+        Helper to expose the splits contained in the dataset
+        '''
+        # assumes dict like container
+        return list(self.dataframe.keys())
+
     def get_feature_names(self) -> List[str]:
         '''
         Should return a list of the features in the dataset
