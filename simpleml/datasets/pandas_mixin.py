@@ -64,6 +64,14 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
         # return a copy so mutations can happen inplace with memory efficient objects
         return self._external_file.copy()
 
+    @_dataframe.setter
+    def _dataframe(self, df: pd.DataFrame) -> None:
+        '''
+        Setter method for self._external_file
+        Allows mixins/subclasses to validate input
+        '''
+        self._external_file = df
+
     def _validate_dtype(self, df: pd.DataFrame) -> None:
         '''
         Validating setter method for self._external_file
@@ -142,8 +150,6 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
             **{section: self.get(split=split, column=section) for section in registered_sections}
         ).squeeze()
 
-    def concatenate_dataframes(self,
-                               dataframes: List[pd.DataFrame],
     def get_split_names(self) -> List[str]:
         '''
         Helper to expose the splits contained in the dataset
@@ -154,6 +160,8 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
         else:
             return []
 
+    @staticmethod
+    def concatenate_dataframes(dataframes: List[pd.DataFrame],
                                split_names: List[str]) -> pd.DataFrame:
         '''
         Helper method to merge dataframes into a single one with the split
