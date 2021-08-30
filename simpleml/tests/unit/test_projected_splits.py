@@ -78,7 +78,7 @@ class ProjectedDatasetSplitTests(metaclass=ABCMeta):
         '''
         mock_split = Split(X='abc', y='def', other='xyz')
         prop_mock = PropertyMock(return_value=mock_split)
-        with patch.object(self.test_cls, 'projected_split', new_callable=prop_mock) as mocked_method:
+        with patch.object(self.test_cls, 'projected_split', new_callable=prop_mock):
             projected_split = self.mock_cls()
 
             for section in mock_split:
