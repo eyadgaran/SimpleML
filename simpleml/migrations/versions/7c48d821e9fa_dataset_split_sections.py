@@ -163,7 +163,7 @@ def new_hash(record):
         if not isinstance(record.filepaths, dict):
             record.unloaded_artifacts = []
         else:
-            record.unloaded_artifacts = list(self.filepaths.keys())
+            record.unloaded_artifacts = list(record.filepaths.keys())
 
         return record._hash()
     except Exception as e:
