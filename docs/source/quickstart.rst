@@ -14,7 +14,7 @@ but recommended to provide a clean working environment)::
     conda create -n simpleml python
     source activate simpleml
 
-Install SimpleML on Python 2.7.x or Python 3.5+ by running the following command::
+Install SimpleML on Python 3.6+ by running the following command::
 
     pip install simpleml
 
