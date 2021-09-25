@@ -92,3 +92,13 @@ the latest stable release, you can do so by adding ``--upgrade``::
 
 If you installed via distutils or the bleeding-edge method, simply
 perform the same step to install the most recent version.
+
+
+Database Migrations
+-------------------
+
+Database state can be managed as part of development scripts or independently.
+(Best practice for teams and production use cases is to separate permissions
+for insert/delete/admin).
+
+ See database configuration for instructions: :doc:`Database<database>`
