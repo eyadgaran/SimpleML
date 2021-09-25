@@ -1,7 +1,7 @@
 Installation
 ============
 
-SimpleML currently runs best on Python 2.7.x and 3.5+; other versions may work
+SimpleML currently runs best on Python 3.6+; other versions may work
 but are not explicitly supported.
 
 You can install SimpleML via several different methods. The simplest is via
