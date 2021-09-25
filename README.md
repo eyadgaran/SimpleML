@@ -105,7 +105,7 @@ Evaluation
 
 
 # Examples
-Examples will be posted in response to requests under :: Please open an issue on github to request more examples
+Examples will be posted in response to requests under [Examples](https://github.com/eyadgaran/SimpleML/tree/master/examples). Please open an issue on github to request more examples
 and tag them with `[Example Request] How to...`
 
 # Usage
