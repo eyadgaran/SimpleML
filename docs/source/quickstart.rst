@@ -14,7 +14,7 @@ but recommended to provide a clean working environment)::
     conda create -n simpleml python
     source activate simpleml
 
-Install SimpleML on Python 2.7.x or Python 3.5+ by running the following command::
+Install SimpleML on Python 3.6+ by running the following command::
 
     pip install simpleml
 
@@ -63,7 +63,7 @@ From inside the notebook we will conduct a very minimal modeling exercise using
 the titanic dataset from kaggle_::
 
     from simpleml.utils import Database
-    from simpleml.datasets import PandasDataset
+    from simpleml.datasets import SingleLabelPandasDataset
     from simpleml.pipelines import RandomSplitPipeline
     from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
     from simpleml.models import SklearnLogisticRegression
@@ -75,9 +75,9 @@ the titanic dataset from kaggle_::
     Database().initialize(upgrade=True)
 
     # Define Dataset and point to loading file
-    class TitanicDataset(PandasDataset):
+    class TitanicDataset(SingleLabelPandasDataset):
         def build_dataframe(self):
-            self._external_file = self.load_csv('filepath/to/train.csv')
+            self.dataframe = self.load_csv('filepath/to/train.csv')
 
     # Create Dataset and save it
     dataset = TitanicDataset(name='titanic', label_columns=['Survived'])
@@ -131,7 +131,7 @@ API layer using flask and serve predictions from our trained model::
     @app.route(/predict, methods=['POST'])
     def predict()
         X = pd.DataFrame(request.json)
-        prediction_probability = float(MODEL.predict_proba(X)[:, 1])
+        prediction_probability = float(MODEL.predict_proba(X, transform=True)[:, 1])
         prediction = int(round(prediction_probability, 0))
         return jsonify({'probability': prediction_probability, 'prediction': prediction}), 200
 

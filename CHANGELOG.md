@@ -6,6 +6,16 @@
 *Breaking Changes*
 - Hash for an uninitialized class changed from repr(cls) to "cls.__module_.cls.__name_"
 
+### 0.10.0 (2021-07-09)
+- Dataset external file setter with validation hooks
+- Pandas changes to always return dataframe copies (does not extend to underlying python objects! eg lists, objects, etc)
+- Pandas Dataset Subclasses for Single and Multi label datasets
+- PersistableLoader methods do not require name as a parameter
+
+*BREAKING CHANGES*
+- `PandasDataset` is deprecated and will be dropped in a future release. Use `SingleLabelPandasDataset` or `MultiLabelPandasDataset` instead
+- Pandas Dataset Classes require dataframe objects of type pd.DataFrame and will validate input (containers of pd.DataFrames are no longer supported)
+
 ### 0.9.3 (2021-04-04)
 - Patch to support sqlalchemy >= 1.4 changes
 

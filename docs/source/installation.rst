@@ -1,7 +1,7 @@
 Installation
 ============
 
-SimpleML currently runs best on Python 2.7.x and 3.5+; other versions may work
+SimpleML currently runs best on Python 3.6+; other versions may work
 but are not explicitly supported.
 
 You can install SimpleML via several different methods. The simplest is via
@@ -92,3 +92,13 @@ the latest stable release, you can do so by adding ``--upgrade``::
 
 If you installed via distutils or the bleeding-edge method, simply
 perform the same step to install the most recent version.
+
+
+Database Migrations
+-------------------
+
+Database state can be managed as part of development scripts or independently.
+(Best practice for teams and production use cases is to separate permissions
+for insert/delete/admin).
+
+ See database configuration for instructions: :doc:`Database<database>`

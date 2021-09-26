@@ -7,34 +7,19 @@ Define convenience classes composed of different mixins
 __author__ = 'Elisha Yadgaran'
 
 import pandas as pd
+import logging
 
 from .base_dataset import Dataset
-from .pandas_mixin import PandasDatasetMixin
+from .pandas_mixin import BasePandasDatasetMixin, SingleLabelPandasDatasetMixin, MultiLabelPandasDatasetMixin
 from .numpy_mixin import NumpyDatasetMixin
 
-from simpleml.pipelines.validation_split_mixins import Split
 from simpleml.utils.errors import DatasetError
 
 
-# Mixin implementations for convenience
-class PandasDataset(Dataset, PandasDatasetMixin):
-    '''
-    Composed mixin class with pandas helper methods and a predefined build
-    routine, assuming dataset pipeline existence.
+LOGGER = logging.getLogger(__name__)
 
-    WARNING: this class will fail if build_dataframe is not overwritten or a
-    pipeline provided!
-    '''
-    @staticmethod
-    def merge_split(split: Split) -> pd.DataFrame:
-        '''
-        Helper method to merge all dataframes in a split object into a single df
-        does a column-wise join
-        ex: `df1 = [A, B, C](4 rows)` + `df2 = [D, E, F](4 rows)`
-        returns: `[A, B, C, D, E, F](4 rows)`
-        '''
-        return pd.concat(list(split.values()), axis=1)
 
+class _PandasDatasetPipelineBuildMixin(object):
     def build_dataframe(self) -> None:
         '''
         Transform raw dataset via dataset pipeline for production ready dataset
@@ -52,9 +37,50 @@ class PandasDataset(Dataset, PandasDatasetMixin):
 
         if len(merged_splits) > 1:  # Combine multiple splits
             # Join row wise - drop index in case duplicates exist
-            self._external_file = pd.concat(merged_splits, axis=0, ignore_index=True)
+            self.dataframe = pd.concat(merged_splits, axis=0, ignore_index=True)
         else:
-            self._external_file = merged_splits[0]
+            self.dataframe = merged_splits[0]
+
+
+# Mixin implementations for convenience
+class PandasDataset(BasePandasDatasetMixin, Dataset, _PandasDatasetPipelineBuildMixin):
+    '''
+    Composed mixin class with pandas helper methods and a predefined build
+    routine, assuming dataset pipeline existence.
+
+    WARNING: this class will fail if build_dataframe is not overwritten or a
+    pipeline provided!
+    '''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # warn that this class is deprecated and will be  removed
+        LOGGER.warn('PandasDataset class is deprecated and will be removed in a future release! Use `SingleLabelPandasDataset` or `MultiLabelPandasDataset` instead')
+
+
+class SingleLabelPandasDataset(SingleLabelPandasDatasetMixin, Dataset, _PandasDatasetPipelineBuildMixin):
+    '''
+    Composed mixin class with pandas helper methods and a predefined build
+    routine, assuming dataset pipeline existence.
+
+    Expects labels to only be a single column (1 label per sample)
+
+    WARNING: this class will fail if build_dataframe is not overwritten or a
+    pipeline provided!
+    '''
+
+
+class MultiLabelPandasDataset(MultiLabelPandasDatasetMixin, Dataset, _PandasDatasetPipelineBuildMixin):
+    '''
+    Composed mixin class with pandas helper methods and a predefined build
+    routine, assuming dataset pipeline existence.
+
+    Expects multiple labels across many columns (multi labels per sample)
+
+    WARNING: this class will fail if build_dataframe is not overwritten or a
+    pipeline provided!
+    '''
 
 
 class NumpyDataset(Dataset, NumpyDatasetMixin):
