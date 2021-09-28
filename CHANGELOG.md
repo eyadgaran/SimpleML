@@ -1,5 +1,11 @@
 ## Change Log
 
+### TBD
+- Added support to hasher for initialized objects
+
+*Breaking Changes*
+- Hash for an uninitialized class changed from repr(cls) to "cls.__module_.cls.__name_"
+
 ### 0.10.0 (2021-07-09)
 - Dataset external file setter with validation hooks
 - Pandas changes to always return dataframe copies (does not extend to underlying python objects! eg lists, objects, etc)
