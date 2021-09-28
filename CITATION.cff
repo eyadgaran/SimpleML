@@ -6,7 +6,6 @@ authors:
   - family-names: Yadgaran
     given-names: Elisha
     orcid: "https://orcid.org/0000-0002-0444-6451"
-  - name: "SimpleML"
 version: 0.10.0
 date-released: "2021-07-09"
 identifiers:
