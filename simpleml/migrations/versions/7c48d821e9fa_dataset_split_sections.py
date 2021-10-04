@@ -7,7 +7,6 @@ Create Date: 2021-08-31 19:48:21.732924
 Data only migration
 """
 import logging
-import os
 from alembic import op
 from sqlalchemy import MetaData, Column
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -54,6 +53,7 @@ def configure_session(connection):
 
 def upgrade():
     LOGGER.info("Running data only migration 7c48d821e9fa")
+    LOGGER.info("Will NOT recalculate hashes for existing persistables! Use `simpleml.utils.hash_recalculation.recalculate_dataset_hashes()` to recalculate")
     connection = op.get_bind()
     session = configure_session(connection)
 
@@ -82,6 +82,8 @@ def upgrade_data(session, table):
 
 def downgrade():
     LOGGER.info("Running data only migration 7c48d821e9fa")
+    LOGGER.info("Will NOT recalculate hashes for existing persistables! Use `simpleml.utils.hash_recalculation.recalculate_dataset_hashes()` to recalculate")
+
     connection = op.get_bind()
     session = configure_session(connection)
 
