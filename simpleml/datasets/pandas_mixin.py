@@ -10,6 +10,7 @@ __author__ = 'Elisha Yadgaran'
 
 import pandas as pd
 
+from itertools import chain
 from typing import List, Union, Optional
 
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
@@ -66,12 +67,18 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
     @_dataframe.setter
     def _dataframe(self, df: pd.DataFrame) -> None:
         '''
+        Setter method for self._external_file
+        Allows mixins/subclasses to validate input
+        '''
+        self._external_file = df
+
+    def _validate_dtype(self, df: pd.DataFrame) -> None:
+        '''
         Validating setter method for self._external_file
         Checks input is of type pd.DataFrame
         '''
         if not isinstance(df, pd.DataFrame):
             raise DatasetError('Pandas Datasets must be of type `pd.DataFrame`')
-        self._external_file = df
 
     def get(self, column: Optional[str], split: Optional[str]) -> pd.DataFrame:
         '''
@@ -80,8 +87,9 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
 
         returns empty dataframe for missing combinations of column & split
         '''
-        if column not in ('X', 'y', None):
-            raise ValueError('Only support columns: X, y, None')
+        registered_sections = self.config.get('split_section_map')
+        if column is not None and column != 'X' and column not in registered_sections:
+            raise ValueError(f'Only support registered sections: {registered_sections}, X, or None')
 
         dataframe = self.dataframe  # copy
 
@@ -89,11 +97,17 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
         if column is None:  # All except internal columns
             return_columns = [col for col in dataframe.columns if col != DATAFRAME_SPLIT_COLUMN]
 
-        elif column == 'y':  # Just label columns
-            return_columns = self.label_columns
+        elif column != 'X':
+            # other passthrough columns
+            return_columns = registered_sections[column]
 
         else:  # X
-            return_columns = [col for col in dataframe.columns if col != DATAFRAME_SPLIT_COLUMN and col not in self.label_columns]
+            all_other_columns = list(chain(*registered_sections.values()))
+            return_columns = [
+                col for col in dataframe.columns
+                if col != DATAFRAME_SPLIT_COLUMN
+                and col not in all_other_columns
+            ]
 
         return self._get(dataframe=dataframe, columns=return_columns, split=split)
 
@@ -124,8 +138,30 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
 
         return dataframe
 
-    def concatenate_dataframes(self,
-                               dataframes: List[pd.DataFrame],
+    def get_split(self, split: Optional[str]) -> Split:
+        '''
+        Wrapper accessor to return a split object (for internal use)
+        '''
+        registered_sections = self.config.get('split_section_map')
+        return Split(
+            # explicitly get X as the "other" columns
+            X=self.get(column='X', split=split),
+            # should include y and any others if they exist
+            **{section: self.get(split=split, column=section) for section in registered_sections}
+        ).squeeze()
+
+    def get_split_names(self) -> List[str]:
+        '''
+        Helper to expose the splits contained in the dataset
+        '''
+        df = self.dataframe
+        if DATAFRAME_SPLIT_COLUMN in df.columns:
+            return df[DATAFRAME_SPLIT_COLUMN].unique().tolist()
+        else:
+            return []
+
+    @staticmethod
+    def concatenate_dataframes(dataframes: List[pd.DataFrame],
                                split_names: List[str]) -> pd.DataFrame:
         '''
         Helper method to merge dataframes into a single one with the split
@@ -158,6 +194,13 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
         '''Helper method to read in a csv file'''
         return pd.read_csv(filename, **kwargs)
 
+    @staticmethod
+    def squeeze_dataframe(df: pd.DataFrame) -> pd.Series:
+        '''
+        Helper method to run dataframe squeeze and return a series
+        '''
+        return df.squeeze(axis=1)
+
 
 class MultiLabelPandasDatasetMixin(BasePandasDatasetMixin):
     '''
@@ -170,6 +213,16 @@ class SingleLabelPandasDatasetMixin(BasePandasDatasetMixin):
     '''
     Customized label logic for single label (y dimension = 1) datasets
     '''
+
+    def _validate_schema(self, df: pd.DataFrame):
+        '''
+        Extend validation to check df has only a single column for the y section
+        '''
+        # validate single label status
+        labels = self.label_columns
+        if len(labels) != 1:
+            raise DatasetError(f'SingleLabelPandasDataset requires exactly one label column, {len(labels)} found')
+
     @property
     def label_column(self):
         labels = self.label_columns
@@ -187,14 +240,9 @@ class SingleLabelPandasDatasetMixin(BasePandasDatasetMixin):
         '''
         data = super().get(column=column, split=split)
 
-        if column != 'y':
+        if column == 'X':
             return data
 
-        # Custom logic for "y"
-        # 1D dataframe can squeeze to a series or numpy array
-        # edge case with one row will squeeze to a constant (or series for 2D)
-        if data.shape == (1, 1):  # single row
-            data = pd.Series(data.squeeze(), name=self.label_column, index=data.index)
-        else:
-            data = data.squeeze()
-        return data
+        # Custom logic for other split sections
+        # 1D dataframe can squeeze to a series
+        return self.squeeze_dataframe(data)

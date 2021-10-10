@@ -38,3 +38,19 @@ class AbstractDatasetMixin(object):
         Should return a list of the features in the dataset
         '''
         raise NotImplementedError
+
+    def get_split(self, split):
+        '''
+        Uninplemented method to return a Split object
+
+        Differs from the main get method by wrapping with an internal
+        interface class (`Split`). Agnostic to implementation library
+        and compatible with downstream SimpleML consumers (pipelines, models)
+        '''
+        raise NotImplementedError
+
+    def get_split_names(self):
+        '''
+        Uninplemented method to return the split names available for the dataset
+        '''
+        raise NotImplementedError

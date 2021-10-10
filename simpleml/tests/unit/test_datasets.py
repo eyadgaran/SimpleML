@@ -45,6 +45,9 @@ class AbstractMixinTests(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             dataset.get_feature_names()
 
+        with self.assertRaises(NotImplementedError):
+            dataset.get_split_names()
+
 
 class _PandasTestHelper(object):
     '''
@@ -71,9 +74,9 @@ class _PandasTestHelper(object):
         '''
         dataset = self.dummy_dataset
         with self.assertRaises(DatasetError):
-            dataset._dataframe = 'blah'
+            dataset.dataframe = 'blah'
 
-        dataset._dataframe = pd.DataFrame()
+        dataset.dataframe = pd.DataFrame()
 
     def test_y(self):
         '''
@@ -314,13 +317,18 @@ class BasePandasMixinTests(unittest.TestCase, _PandasTestHelper):
     def dummy_dataset(self):
         class TestMixinClass(BasePandasDatasetMixin):
             _external_file = self._data
-            label_columns = ['label']
+            config = {'split_section_map': {'y': ['label']}}
 
             @property
             def dataframe(self):
                 return self._dataframe
 
         return TestMixinClass()
+
+    def test_dataframe_set_validation(self):
+        '''
+        no validation for mixin
+        '''
 
 
 class PandasDatasetTests(BasePandasDatasetMixin):
@@ -419,13 +427,18 @@ class SingleLabelPandasMixinTests(unittest.TestCase, _PandasTestHelper):
     def dummy_dataset(self):
         class TestMixinClass(SingleLabelPandasDatasetMixin):
             _external_file = self._data
-            label_columns = ['label']
+            config = {'split_section_map': {'y': ['label']}}
 
             @property
             def dataframe(self):
                 return self._dataframe
 
         return TestMixinClass()
+
+    def test_dataframe_set_validation(self):
+        '''
+        no validation for mixin
+        '''
 
 
 class SingleLabelPandasDatasetTests(SingleLabelPandasMixinTests):
@@ -520,13 +533,18 @@ class MultiLabelPandasMixinTests(unittest.TestCase, _PandasTestHelper):
     def dummy_dataset(self):
         class TestMixinClass(MultiLabelPandasDatasetMixin):
             _external_file = self._data
-            label_columns = ['label1', 'label2']
+            config = {'split_section_map': {'y': ['label1', 'label2']}}
 
             @property
             def dataframe(self):
                 return self._dataframe
 
         return TestMixinClass()
+
+    def test_dataframe_set_validation(self):
+        '''
+        no validation for mixin
+        '''
 
 
 class MultiLabelPandasDatasetTests(MultiLabelPandasMixinTests):
@@ -553,7 +571,11 @@ class NumpyMixinTests(unittest.TestCase):
     def dummy_dataset(self):
         class TestMixinClass(NumpyDatasetMixin):
             dataframe = {'X': self.expected_x, 'label': self.expected_y}
-            label_columns = ['label']
+            config = {'split_section_map': {'y': ['label']}}
+
+            @property
+            def label_columns(self):
+                return self.config.get('split_section_map').get('y', [])
 
         return TestMixinClass()
 
@@ -563,7 +585,11 @@ class NumpyMixinTests(unittest.TestCase):
             dataframe = {
                 'TRAIN': {'X': self.expected_x, 'label': self.expected_y}
             }
-            label_columns = ['label']
+            config = {'split_section_map': {'y': ['label']}}
+
+            @property
+            def label_columns(self):
+                return self.config.get('split_section_map').get('y', [])
 
         return TestMixinClass()
 
