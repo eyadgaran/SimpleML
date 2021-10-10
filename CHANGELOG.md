@@ -1,6 +1,6 @@
 ## Change Log
 
-### TBD
+### 0.11.0 (2021-10-10)
 - Added support to hasher for initialized objects
 - Adds support for arbitrary dataset splits and sections
 - Dataset hooks to validate dataframe setting
