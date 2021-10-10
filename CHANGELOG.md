@@ -1,5 +1,15 @@
 ## Change Log
 
+### TBD
+- Adds support for arbitrary dataset splits and sections
+- Dataset hooks to validate dataframe setting
+- Pipelines no longer cache dataset splits and proxy directly to dataset on every call
+- Introduces pipeline splits as reproducible projections over dataset splits
+- Database utility to recalculate hashes for existing persistables
+
+*BREAKING CHANGES*
+- Database migrations no longer recalculate hashes. That has to be done manually via a utility
+
 ### 0.10.0 (2021-07-09)
 - Dataset external file setter with validation hooks
 - Pandas changes to always return dataframe copies (does not extend to underlying python objects! eg lists, objects, etc)
