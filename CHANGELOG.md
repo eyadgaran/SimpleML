@@ -1,6 +1,7 @@
 ## Change Log
 
 ### TBD
+- Added support to hasher for initialized objects
 - Adds support for arbitrary dataset splits and sections
 - Dataset hooks to validate dataframe setting
 - Pipelines no longer cache dataset splits and proxy directly to dataset on every call
@@ -8,6 +9,7 @@
 - Database utility to recalculate hashes for existing persistables
 
 *BREAKING CHANGES*
+- Hash for an uninitialized class changed from repr(cls) to "cls.__module_.cls.__name_"
 - Database migrations no longer recalculate hashes. That has to be done manually via a utility
 
 ### 0.10.0 (2021-07-09)
