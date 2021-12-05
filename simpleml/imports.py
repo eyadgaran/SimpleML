@@ -99,3 +99,12 @@ try:
 except ImportError:
     Provider = MissingImportFactory('libcloud.storage.types.Provider', 'apache-libcloud', 'cloud')
     get_driver = MissingImportFactory('libcloud.storage.providers.get_driver', 'apache-libcloud', 'cloud')
+
+try:
+    import dask.dataframe as dd
+    import dask.dataframe.DataFrame as ddDataFrame
+    import dask.dataframe.Series as ddSeries
+except ImportError:
+    dd = MissingImportFactory('dask.dataframe', 'dask', 'dask')
+    ddDataFrame = MissingImportFactory('dask.dataframe.DataFrame', 'dask', 'dask')
+    ddSeries = MissingImportFactory('dask.dataframe.Series', 'dask', 'dask')
