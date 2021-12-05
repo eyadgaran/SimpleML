@@ -38,8 +38,15 @@ postgres_dependencies = ["psycopg2"]
 deep_learning_dependencies = ["tensorflow>=2", "hickle<4"]  # Hickle regression > 4 for scalar values
 cloud_dependencies = ["apache-libcloud", "pycrypto", "sshtunnel"]
 onedrive_dependencies = ["onedrivesdk<2"]  # Python support EOL >2
+dask_dependencies = ["dask[complete]"]
 test_dependencies = ["coverage"]
-all_dependencies = list(set(postgres_dependencies + deep_learning_dependencies + cloud_dependencies + onedrive_dependencies))
+all_dependencies = list(set(
+    postgres_dependencies +
+    deep_learning_dependencies +
+    cloud_dependencies +
+    onedrive_dependencies +
+    dask_dependencies
+))
 test_dependencies = all_dependencies + test_dependencies
 
 setup(
@@ -71,6 +78,7 @@ setup(
         'deep-learning': deep_learning_dependencies,
         'cloud': cloud_dependencies,
         'onedrive': onedrive_dependencies,
+        'dask': dask_dependencies,
         'all': all_dependencies,
         'test': test_dependencies,
     },
