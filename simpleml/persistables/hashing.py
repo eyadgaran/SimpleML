@@ -13,10 +13,23 @@ import logging
 from pandas.util import hash_pandas_object
 from typing import Any, Type
 
+from simpleml.imports import ddDataFrame
 from simpleml._external.joblib import hash as deterministic_hash
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _pandas_hash(df):
+    '''
+    Helper for hashing pandas - outside local context to be pickleable between threads
+    (recursive class reference causes dask subgraph issues)
+    '''
+    # Pandas is unable to hash numpy arrays so prehash those
+    return hash_pandas_object(df.applymap(
+        lambda element: CustomHasherMixin.custom_hasher(element) if isinstance(element, np.ndarray) else element),
+        index=False
+    )
 
 
 class CustomHasherMixin(object):
@@ -63,10 +76,11 @@ class CustomHasherMixin(object):
             hash_output = cls.custom_hasher(object_to_hash.tostring())
 
         elif isinstance(object_to_hash, pd.DataFrame):
-            # Pandas is unable to hash numpy arrays so prehash those
-            hash_output = hash_pandas_object(object_to_hash.applymap(
-                lambda element: cls.custom_hasher(element) if isinstance(element, np.ndarray) else element),
-                index=False).sum()
+            hash_output = _pandas_hash(object_to_hash).sum()
+
+        elif isinstance(object_to_hash, ddDataFrame):
+            # dask dataframes are just collections of pandas
+            hash_output = object_to_hash.map_partitions(_pandas_hash, meta=(None, int)).sum().compute()
 
         elif isinstance(object_to_hash, pd.Series):
             # Pandas is unable to hash numpy arrays so prehash those
