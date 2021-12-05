@@ -8,31 +8,36 @@ means unique to pandas.
 
 __author__ = 'Elisha Yadgaran'
 
+import numpy as np
 
 from typing import Any, List
 
-from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
+from simpleml.datasets.base_dataset import Dataset
+from simpleml.utils.errors import DatasetError
+from simpleml.pipelines.validation_split_mixins import Split
 
 
-class NumpyDatasetMixin(AbstractDatasetMixin):
+class BaseNumpyDataset(Dataset):
     '''
     Assumes _external_file is a dictionary of numpy ndarrays
     '''
+    # TODO: rewrite class to index native numpy array directly
+
     @property
-    def X(self) -> Any:
+    def X(self) -> np.ndarray:
         '''
         Return the subset that isn't in the target labels
         '''
         return self.get(column='X', split=None)
 
     @property
-    def y(self) -> Any:
+    def y(self) -> np.ndarray:
         '''
         Return the target label columns
         '''
         return self.get(column='y', split=None)
 
-    def get(self, column: str, split: str) -> Any:
+    def get(self, column: str, split: str) -> np.ndarray:
         '''
         Explicitly split validation splits
         Assumes self.dataframe has a get method to return a dictionary of {'X': X, 'y': y}
