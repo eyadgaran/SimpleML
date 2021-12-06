@@ -102,8 +102,8 @@ except ImportError:
 
 try:
     import dask.dataframe as dd
-    import dask.dataframe.DataFrame as ddDataFrame
-    import dask.dataframe.Series as ddSeries
+    ddDataFrame = dd.DataFrame
+    ddSeries = dd.Series
 except ImportError:
     dd = MissingImportFactory('dask.dataframe', 'dask', 'dask')
     ddDataFrame = MissingImportFactory('dask.dataframe.DataFrame', 'dask', 'dask')
