@@ -12,6 +12,7 @@ import numpy as np
 from typing import Optional
 from abc import ABCMeta, abstractmethod
 
+from simpleml.imports import ddDataFrame, ddSeries
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.datasets.dataset_splits import Split
 
@@ -98,8 +99,17 @@ class IndexBasedProjectedDatasetSplit(ProjectedDatasetSplit):
         elif isinstance(df, np.ndarray):
             return cls.numpy_indexing(df, *args, **kwargs)
 
+        elif isinstance(df, (ddDataFrame, ddSeries)):
+            return cls.dask_indexing(df, *args, **kwargs)
+
         else:
-            raise NotImplementedError('Only pandas and numpy datasets are supported right now. Add additional indexing methods to support other dtypes')
+            raise NotImplementedError('Add additional indexing methods to support other dtypes')
+
+    @staticmethod
+    def dask_indexing(df, indices):
+        # dask indexing requires known divisions
+        # https://docs.dask.org/en/stable/dataframe-design.html#dataframe-design
+        return df.loc[indices]
 
     @staticmethod
     def pandas_indexing(df, indices):
