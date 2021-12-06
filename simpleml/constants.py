@@ -9,3 +9,10 @@ __author__ = 'Elisha Yadgaran'
 TRAIN_SPLIT: str = 'TRAIN'
 VALIDATION_SPLIT: str = 'VALIDATION'
 TEST_SPLIT: str = 'TEST'
+
+
+class SimpleMLConstants(object):
+    '''
+    Class for constants referenced in the code base.
+    Uses class attributes to better facilitate developer mutation
+    '''
