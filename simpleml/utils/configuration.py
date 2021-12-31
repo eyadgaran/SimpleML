@@ -129,6 +129,7 @@ PARQUET_DIRECTORY = 'parquet/'
 CSV_DIRECTORY = 'csv/'
 ORC_DIRECTORY = 'orc/'
 JSON_DIRECTORY = 'json/'
+TENSORFLOW_SAVED_MODEL_DIRECTORY = 'saved_model/'
 FILESTORE_DIRECTORY = os.path.join(SIMPLEML_DIRECTORY, 'filestore/')
 SYSTEM_TEMP_DIRECTORY = tempfile.gettempdir()
 
