@@ -10,8 +10,7 @@ from .errors import SimpleMLError, DatasetError, PipelineError, ModelError,\
 
 from .initialization import BaseDatabase, AlembicDatabase, Database, DatasetDatabase, BinaryStorageDatabase
 
-from .configuration import CONFIG, SIMPLEML_DIRECTORY, FILESTORE_DIRECTORY,\
-    HDF5_FILESTORE_DIRECTORY, PICKLED_FILESTORE_DIRECTORY
+from .configuration import CONFIG, SIMPLEML_DIRECTORY, FILESTORE_DIRECTORY
 
 from .training.create_persistable import PersistableCreator, DatasetCreator,\
     PipelineCreator, ModelCreator, MetricCreator
