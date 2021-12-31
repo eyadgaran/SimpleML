@@ -58,7 +58,11 @@ from .locations.libcloud import (LibcloudCopyFileLocation,
                                  LibcloudCopyFilesLocation,
                                  LibcloudCopyFolderLocation)
 from .serializers.cloudpickle import CloudpickleFileSerializer
-from .serializers.dask import DaskCSVSerializer, DaskParquetSerializer
+from .serializers.dask import (DaskCSVSerializer, DaskJSONSerializer,
+                               DaskParquetSerializer)
+from .serializers.keras import KerasH5Serializer, KerasSavedModelSerializer
+from .serializers.pandas import (PandasCSVSerializer, PandasJSONSerializer,
+                                 PandasParquetSerializer)
 
 LOGGER = logging.getLogger(__name__)
 
