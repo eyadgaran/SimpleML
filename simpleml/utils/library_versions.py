@@ -4,10 +4,10 @@ Helper module to track installed libraries
 
 __author__ = 'Elisha Yadgaran'
 
-import pkg_resources
 import sys
-
 from typing import Dict
+
+import pkg_resources
 
 
 def safe_lookup(package):
@@ -30,5 +30,9 @@ INSTALLED_LIBRARIES: Dict[str, str] = {
     'hickle': safe_lookup('hickle'),
     'tensorflow': safe_lookup('tensorflow'),
     'scipy': safe_lookup('scipy'),
-    'sqlalchemy_json': safe_lookup('sqlalchemy-json')
+    'sqlalchemy_json': safe_lookup('sqlalchemy-json'),
+    'onedrivesdk': safe_lookup('onedrivesdk'),
+    'sshtunnel': safe_lookup('sshtunnel'),
+    'apache-libcloud': safe_lookup('apache-libcloud'),
+    'dask': safe_lookup('dask'),
 }
