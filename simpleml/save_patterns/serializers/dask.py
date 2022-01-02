@@ -24,12 +24,17 @@ class DaskPersistenceMethods(object):
 
     Wraps dd.Dataframe methods with sensible defaults
     '''
-    @staticmethod
-    def read_csv(filepaths: List[str],
+    INDEX_COLUMN = 'simpleml_index'
+
+    @classmethod
+    def read_csv(cls, filepaths: List[str],
                  **kwargs) -> ddDataFrame:
         # Automatically handle index (dask cannot read in index) so
         # set based on output format
-        return dd.read_csv(filepaths, **kwargs).set_index('index')
+        df = dd.read_csv(filepaths, **kwargs)
+        if cls.INDEX_COLUMN in df.columns:
+            df = df.set_index(cls.INDEX_COLUMN)
+        return df
 
     @staticmethod
     def read_parquet(filepath: str,
@@ -46,10 +51,14 @@ class DaskPersistenceMethods(object):
                  **kwargs) -> ddDataFrame:
         return dd.read_orc(filepath, **kwargs)
 
-    @staticmethod
-    def read_json(filepath: str,
+    @classmethod
+    def read_json(cls, filepaths: List[str],
                   **kwargs) -> ddDataFrame:
-        return dd.read_json(filepath, **kwargs)
+        # Automatically handle index
+        df = dd.read_json(filepaths, **kwargs)
+        if cls.INDEX_COLUMN in df.columns:
+            df = df.set_index(cls.INDEX_COLUMN)
+        return df
 
     @staticmethod
     def read_sql_table(**kwargs) -> ddDataFrame:
@@ -63,8 +72,8 @@ class DaskPersistenceMethods(object):
     def read_fwf(**kwargs) -> ddDataFrame:
         return dd.read_fwf(**kwargs)
 
-    @staticmethod
-    def to_csv(df: ddDataFrame,
+    @classmethod
+    def to_csv(cls, df: ddDataFrame,
                filepath: str,
                overwrite: bool = True,
                **kwargs) -> None:
@@ -72,7 +81,7 @@ class DaskPersistenceMethods(object):
             # Check if file was already serialized
             if isfile(filepath):
                 return
-        df.to_csv(filepath, index_label='index', **kwargs)
+        df.to_csv(filepath, index_label=cls.INDEX_COLUMN, **kwargs)
 
     @staticmethod
     def to_parquet(df: ddDataFrame,
@@ -96,8 +105,8 @@ class DaskPersistenceMethods(object):
                 return
         df.to_hdf(filepath, **kwargs)
 
-    @staticmethod
-    def to_json(df: ddDataFrame,
+    @classmethod
+    def to_json(cls, df: ddDataFrame,
                 filepath: str,
                 overwrite: bool = True,
                 **kwargs) -> None:
@@ -105,7 +114,11 @@ class DaskPersistenceMethods(object):
             # Check if file was already serialized
             if isfile(filepath):
                 return
-        df.to_json(filepath, **kwargs)
+        # json records do not include index so artificially inject
+        if cls.INDEX_COLUMN in df.columns:
+            df.to_json(filepath, **kwargs)
+        else:
+            df.reset_index(drop=False).rename(columns={'index': cls.INDEX_COLUMN}).to_json(filepath, **kwargs)
 
     @staticmethod
     def to_orc(df: ddDataFrame,
@@ -189,10 +202,11 @@ class DaskJSONSerializer(BaseSerializer):
                   format_extension: str = '.jsonl',
                   destination_directory: str = 'system_temp',
                   **kwargs) -> Dict[str, str]:
-
         # Append the filepath to the storage directory
-        filepath = join(format_directory, filepath + '-*' + format_extension)
-        full_path = join(FILEPATH_REGISTRY.get(destination_directory), filepath)
+        # read_json method expects a * format
+        destination_folder = FILEPATH_REGISTRY.get(destination_directory)
+        filename_format = join(format_directory, filepath + '-*' + format_extension)
+        full_path = join(destination_folder, filename_format)
         DaskPersistenceMethods.to_json(obj, full_path)
 
         written_filepaths = glob.glob(full_path)
