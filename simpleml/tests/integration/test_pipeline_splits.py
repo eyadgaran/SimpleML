@@ -6,14 +6,15 @@ __author__ = 'Elisha Yadgaran'
 
 
 import unittest
-import pandas as pd
-
 from abc import ABC, abstractmethod
-from simpleml.tests.utils import assert_split_equal
-from simpleml.datasets import SingleLabelPandasDataset, MultiLabelPandasDataset
+
+import pandas as pd
 from simpleml.datasets.dataset_splits import Split
-from simpleml.pipelines import NoSplitPipeline, ExplicitSplitPipeline, RandomSplitPipeline
+from simpleml.datasets.pandas.base import BasePandasDataset
+from simpleml.pipelines import (ExplicitSplitPipeline, NoSplitPipeline,
+                                RandomSplitPipeline)
 from simpleml.pipelines.projected_splits import ProjectedDatasetSplit
+from simpleml.tests.utils import assert_split_equal
 
 
 class _PipelineSplitTests(ABC):
@@ -81,12 +82,12 @@ class NoSplitPipelineSingleLabelPandasDatasetSplitTests(_PipelineSplitTests, uni
 
     Validate consistent and resilient behavior
     '''
-    dataset_cls = SingleLabelPandasDataset
+    dataset_cls = BasePandasDataset
     pipeline_cls = NoSplitPipeline
 
     @property
     def dataset_params(self):
-        return {'label_columns': ['c'], 'other_named_split_sections': {'other': ['e']}}
+        return {'label_columns': ['c'], 'other_named_split_sections': {'other': ['e']}, 'squeeze_return': True}
 
     def example_split_name(self):
         return None
@@ -121,12 +122,12 @@ class ExplicitSplitPipelineSingleLabelPandasDatasetSplitTests(_PipelineSplitTest
 
     Validate consistent and resilient behavior
     '''
-    dataset_cls = SingleLabelPandasDataset
+    dataset_cls = BasePandasDataset
     pipeline_cls = ExplicitSplitPipeline
 
     @property
     def dataset_params(self):
-        return {'label_columns': ['c'], 'other_named_split_sections': {'other': ['e']}}
+        return {'label_columns': ['c'], 'other_named_split_sections': {'other': ['e']}, 'squeeze_return': True}
 
     def example_split_name(self):
         return 'first'
@@ -157,12 +158,12 @@ class RandomSplitPipelineSingleLabelPandasDatasetSplitTests(_PipelineSplitTests,
 
     Validate consistent and resilient behavior
     '''
-    dataset_cls = SingleLabelPandasDataset
+    dataset_cls = BasePandasDataset
     pipeline_cls = RandomSplitPipeline
 
     @property
     def dataset_params(self):
-        return {'label_columns': ['c'], 'other_named_split_sections': {'other': ['e']}}
+        return {'label_columns': ['c'], 'other_named_split_sections': {'other': ['e']}, 'squeeze_return': True}
 
     @property
     def pipeline_params(self):
@@ -199,12 +200,12 @@ class NoSplitPipelineMultiLabelPandasDatasetSplitTests(_PipelineSplitTests, unit
 
     Validate consistent and resilient behavior
     '''
-    dataset_cls = MultiLabelPandasDataset
+    dataset_cls = BasePandasDataset
     pipeline_cls = NoSplitPipeline
 
     @property
     def dataset_params(self):
-        return {'label_columns': ['c', 'd'], 'other_named_split_sections': {'other': ['e']}}
+        return {'label_columns': ['c', 'd'], 'other_named_split_sections': {'other': ['e']}, 'squeeze_return': False}
 
     def example_split_name(self):
         return None
@@ -252,12 +253,12 @@ class ExplicitSplitPipelineMultiLabelPandasDatasetSplitTests(_PipelineSplitTests
 
     Validate consistent and resilient behavior
     '''
-    dataset_cls = MultiLabelPandasDataset
+    dataset_cls = BasePandasDataset
     pipeline_cls = ExplicitSplitPipeline
 
     @ property
     def dataset_params(self):
-        return {'label_columns': ['c', 'd'], 'other_named_split_sections': {'other': ['e']}}
+        return {'label_columns': ['c', 'd'], 'other_named_split_sections': {'other': ['e']}, 'squeeze_return': False}
 
     def example_split_name(self):
         return 'first'
@@ -293,12 +294,12 @@ class RandomSplitPipelineMultiLabelPandasDatasetSplitTests(_PipelineSplitTests, 
 
     Validate consistent and resilient behavior
     '''
-    dataset_cls = MultiLabelPandasDataset
+    dataset_cls = BasePandasDataset
     pipeline_cls = RandomSplitPipeline
 
     @ property
     def dataset_params(self):
-        return {'label_columns': ['c', 'd'], 'other_named_split_sections': {'other': ['e']}}
+        return {'label_columns': ['c', 'd'], 'other_named_split_sections': {'other': ['e']}, 'squeeze_return': False}
 
     @ property
     def pipeline_params(self):

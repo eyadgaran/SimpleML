@@ -12,7 +12,7 @@ import itertools
 from pandas.testing import assert_frame_equal, assert_series_equal
 
 from simpleml.datasets import PandasDataset, SingleLabelPandasDataset, MultiLabelPandasDataset, NumpyDataset
-from simpleml.datasets.base_dataset import Dataset, AbstractDataset
+from simpleml.datasets.base_dataset import Dataset
 from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
 from simpleml.datasets.numpy_mixin import NumpyDatasetMixin
 from simpleml.datasets.pandas_mixin import BasePandasDatasetMixin, \
@@ -20,18 +20,16 @@ from simpleml.datasets.pandas_mixin import BasePandasDatasetMixin, \
 from simpleml.utils.errors import DatasetError
 
 
-class AbstractMixinTests(unittest.TestCase):
+class AbstractDatasetTests(unittest.TestCase):
     '''
     Tests for abstract mixin class
     '''
-    @property
-    def dummy_dataset(self):
-        class TestMixinClass(AbstractDatasetMixin):
-            pass
-        return TestMixinClass()
 
     def test_abstract_methods(self):
-        dataset = self.dummy_dataset
+        dataset = Dataset()
+
+        with self.assertRaises(NotImplementedError):
+            dataset.build_dataframe()
 
         with self.assertRaises(NotImplementedError):
             dataset.X
@@ -44,6 +42,9 @@ class AbstractMixinTests(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError):
             dataset.get_feature_names()
+
+        with self.assertRaises(NotImplementedError):
+            dataset.get_split()
 
         with self.assertRaises(NotImplementedError):
             dataset.get_split_names()
@@ -339,7 +340,7 @@ class PandasDatasetTests(BasePandasDatasetMixin):
         return dataset
 
 
-class SingleLabelPandasMixinTests(unittest.TestCase, _PandasTestHelper):
+class BasePandasDatasetTests(unittest.TestCase, _PandasTestHelper):
     '''
     Same tests but overload labels to not squeeze to a numpy array
     '''
