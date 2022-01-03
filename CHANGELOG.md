@@ -1,5 +1,9 @@
 ## Change Log
 
+### TBD
+*BREAKING CHANGES*
+- Changed pandas hash output to int from numpy.int64 (due to breaking change in NumpyHasher)
+
 ### 0.11.0 (2021-10-10)
 - Added support to hasher for initialized objects
 - Adds support for arbitrary dataset splits and sections

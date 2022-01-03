@@ -6,10 +6,10 @@ __author__ = 'Elisha Yadgaran'
 
 
 import unittest
-import pandas as pd
 
-from simpleml.persistables.hashing import CustomHasherMixin
+import pandas as pd
 from simpleml._external.joblib import hash as deterministic_hash
+from simpleml.persistables.hashing import CustomHasherMixin
 
 
 class _Test123(object):
@@ -249,7 +249,7 @@ class CustomHasherTests(unittest.TestCase):
                 pd.Series(['a']),
                 pd.DataFrame([1])
             ]
-            expected_final_hash = '68e95c072ffb1a8271e7e472f9fee504'
+            expected_final_hash = 'c1430c14a64747cb10f80c70928bace9'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -368,7 +368,7 @@ class CustomHasherTests(unittest.TestCase):
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
             data = [pd.Series(['a']), pd.DataFrame([1])]
-            expected_final_hash = '9357fb780e7774f3426bc93d5eccdcc0'
+            expected_final_hash = '9edbac4ffc268facb9960d3d5b21a04c'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -403,7 +403,7 @@ class CustomHasherTests(unittest.TestCase):
                 'f': pd.DataFrame([1])
             }
 
-            expected_final_hash = '1cc5ab5d0c77f755358fe7f4d77ea04a'
+            expected_final_hash = 'f08d7f7448b56161cbc557a256f9fd8a'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -486,7 +486,7 @@ class CustomHasherTests(unittest.TestCase):
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: {data['e']}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'pandas.core.series.Series'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing output: -4496393130729816112",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 022f7f3c9c3c4f477b8537dce4eb7b11",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 78dc79d99ac85282b0b3855db66415dc",
 
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: ('f', {data['f']})",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
@@ -496,7 +496,7 @@ class CustomHasherTests(unittest.TestCase):
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: {data['f']}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'pandas.core.frame.DataFrame'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing output: -7087755961261762286",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 214e5e5e60ff60baee6174e1846e0625",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0342e4e6698f99fd12716a1512dcae9b",
 
                  # Final
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])

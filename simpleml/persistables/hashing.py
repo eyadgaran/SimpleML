@@ -5,17 +5,15 @@ Mixin classes to handle hashing
 __author__ = 'Elisha Yadgaran'
 
 
-import pandas as pd
-import numpy as np
 import inspect
 import logging
-
-from pandas.util import hash_pandas_object
 from typing import Any, Type
 
-from simpleml.imports import ddDataFrame
+import numpy as np
+import pandas as pd
+from pandas.util import hash_pandas_object
 from simpleml._external.joblib import hash as deterministic_hash
-
+from simpleml.imports import ddDataFrame
 
 LOGGER = logging.getLogger(__name__)
 
@@ -70,13 +68,18 @@ class CustomHasherMixin(object):
         LOGGER.debug(f'hash type: {type(object_to_hash)}')
 
         if isinstance(object_to_hash, (set, tuple, list)):
-            hash_output = deterministic_hash(tuple([cls.custom_hasher(e) for e in object_to_hash]))
+            _intermediate_hashes = tuple([cls.custom_hasher(e) for e in object_to_hash])
+            hash_output = deterministic_hash(_intermediate_hashes)
 
         elif isinstance(object_to_hash, np.ndarray):
             hash_output = cls.custom_hasher(object_to_hash.tostring())
 
+        elif isinstance(object_to_hash, np.int64):
+            hash_output = int(object_to_hash)
+
         elif isinstance(object_to_hash, pd.DataFrame):
-            hash_output = _pandas_hash(object_to_hash).sum()
+            # returns numpy.int64 dtype which hashes differently in newer numpy versions
+            hash_output = int(_pandas_hash(object_to_hash).sum())
 
         elif isinstance(object_to_hash, ddDataFrame):
             # dask dataframes are just collections of pandas
@@ -84,18 +87,17 @@ class CustomHasherMixin(object):
 
         elif isinstance(object_to_hash, pd.Series):
             # Pandas is unable to hash numpy arrays so prehash those
-            hash_output = hash_pandas_object(object_to_hash.apply(
+            hash_output = int(hash_pandas_object(object_to_hash.apply(
                 lambda element: cls.custom_hasher(element) if isinstance(element, np.ndarray) else element),
-                index=False).sum()
+                index=False).sum())
 
         elif object_to_hash is None:
             # hash of None is unstable between systems
             hash_output = -12345678987654321
 
         elif isinstance(object_to_hash, dict):
-            hash_output = deterministic_hash(tuple(
-                sorted([cls.custom_hasher(item) for item in object_to_hash.items()])
-            ))
+            _intermediate_hashes = tuple(sorted([cls.custom_hasher(item) for item in object_to_hash.items()]))
+            hash_output = deterministic_hash(_intermediate_hashes)
 
         elif isinstance(object_to_hash, type(lambda: 0)):
             # Functions dont hash consistently because of the halting problem
