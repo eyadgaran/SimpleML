@@ -46,7 +46,7 @@ class CustomHasherTests(unittest.TestCase):
             if __name__ == 'simpleml.tests.unit.test_hashing':
                 # entry from loader
                 # input/output
-                expected_final_hash = 'adfdad10e2f1e6e2f423824c7b6df461'
+                expected_final_hash = '8e8c5f11154ccf2eda948ab98f468bf9'
                 expected_logs = [
                     "DEBUG:simpleml.persistables.hashing:Hashing input: pretty repr of test class",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'simpleml.tests.unit.test_hashing._Test123'>",
@@ -57,11 +57,11 @@ class CustomHasherTests(unittest.TestCase):
                     "WARNING:simpleml.persistables.hashing:Hashing class import path for <class 'simpleml.tests.unit.test_hashing._Test123'>, if a fully qualified import path is not used, calling again from a different location will yield different results!",
                     "DEBUG:simpleml.persistables.hashing:Hashing input: simpleml.tests.unit.test_hashing._Test123",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                    'DEBUG:simpleml.persistables.hashing:Hashing output: eddefe8dd7b1dd0d06078e9198eae04c',
-                    'DEBUG:simpleml.persistables.hashing:Hashing output: eddefe8dd7b1dd0d06078e9198eae04c',
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: efc89d254a441c047df389223d0f14fc',
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: efc89d254a441c047df389223d0f14fc',
                     'DEBUG:simpleml.persistables.hashing:Hashing input: {}',
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'dict'>",
-                    'DEBUG:simpleml.persistables.hashing:Hashing output: 7aa3631cc45701e2df0e03ef7162f2cb',
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: d41d8cd98f00b204e9800998ecf8427e',
                     f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}",
                     f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"
                 ]
@@ -107,7 +107,7 @@ class CustomHasherTests(unittest.TestCase):
             if __name__ == 'simpleml.tests.unit.test_hashing':
                 # entry from loader
                 # input/output
-                expected_final_hash = 'eddefe8dd7b1dd0d06078e9198eae04c'
+                expected_final_hash = 'efc89d254a441c047df389223d0f14fc'
                 expected_logs = [
                     "DEBUG:simpleml.persistables.hashing:Hashing input: <class 'simpleml.tests.unit.test_hashing._Test123'>",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'type'>",
