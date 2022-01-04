@@ -4,14 +4,20 @@ Testing Utilities
 
 __author__ = 'Elisha Yadgaran'
 
-import pandas as pd
-import numpy as np
-
+from os.path import abspath, dirname, join
 from typing import Any, Union
-from pandas.testing import assert_frame_equal, assert_series_equal
+
+import numpy as np
+import pandas as pd
 from numpy.testing import assert_array_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 from simpleml.datasets.dataset_splits import Split
 from simpleml.pipelines.projected_splits import ProjectedDatasetSplit
+
+# Test Data Paths
+DATA_PATH = join(dirname(abspath(__file__)), 'data')
+ARTIFACTS_PATH = join(DATA_PATH, 'artifacts')
+MOCK_PATH = join(DATA_PATH, 'mock')
 
 
 def assert_data_container_equal(a: Any, b: Any):

@@ -9,13 +9,10 @@ __author__ = 'Elisha Yadgaran'
 import os
 import unittest
 
-from pandas.testing import assert_frame_equal
 from simpleml.datasets.dask import BaseDaskDataset
 from simpleml.imports import dd
 from simpleml.save_patterns.serializers.dask import DaskPersistenceMethods
-
-DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
-ARTIFACTS_PATH = os.path.join(DATA_PATH, 'artifacts')
+from simpleml.tests.utils import MOCK_PATH, assert_data_container_equal
 
 
 class DaskPersistenceTests(unittest.TestCase):
@@ -23,7 +20,7 @@ class DaskPersistenceTests(unittest.TestCase):
         dataset = BaseDaskDataset(name='dask_integration_tests', label_columns=['Survived'],
                                   squeeze_return=True,
                                   save_patterns={'dataset': [save_pattern]})
-        dataset.dataframe = dd.read_csv(os.path.join(ARTIFACTS_PATH, 'titanic.csv')).repartition(npartitions=20)
+        dataset.dataframe = dd.read_csv(os.path.join(MOCK_PATH, 'titanic.csv')).repartition(npartitions=20)
         return dataset
 
     def test_save_and_load_json(self):
@@ -35,7 +32,7 @@ class DaskPersistenceTests(unittest.TestCase):
         dataset.save()
         dataset.load()
         df2 = dataset.dataframe.compute()
-        assert_frame_equal(df, df2)
+        assert_data_container_equal(df, df2)
 
     def test_save_and_load_csv(self):
         save_pattern = 'dask_disk_csv'
@@ -46,7 +43,7 @@ class DaskPersistenceTests(unittest.TestCase):
         dataset.save()
         dataset.load()
         df2 = dataset.dataframe.compute()
-        assert_frame_equal(df, df2)
+        assert_data_container_equal(df, df2)
 
     def test_save_and_load_parquet(self):
         save_pattern = 'dask_disk_parquet'
@@ -55,7 +52,7 @@ class DaskPersistenceTests(unittest.TestCase):
         dataset.save()
         dataset.load()
         df2 = dataset.dataframe.compute()
-        assert_frame_equal(df, df2)
+        assert_data_container_equal(df, df2)
 
 
 if __name__ == '__main__':
