@@ -69,7 +69,7 @@ class CustomHasherTests(unittest.TestCase):
             elif __name__ == '__main__':
                 # entry from this file
                 # input/output
-                expected_final_hash = 'ad105926db464bf085b64b3b7a908fa7'
+                expected_final_hash = '0399fcca26cf14ec1b3e31b69ca2397e'
                 expected_logs = [
                     "DEBUG:simpleml.persistables.hashing:Hashing input: pretty repr of test class",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class '__main__._Test123'>",
@@ -80,11 +80,11 @@ class CustomHasherTests(unittest.TestCase):
                     "WARNING:simpleml.persistables.hashing:Hashing class import path for <class '__main__._Test123'>, if a fully qualified import path is not used, calling again from a different location will yield different results!",
                     "DEBUG:simpleml.persistables.hashing:Hashing input: __main__._Test123",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                    'DEBUG:simpleml.persistables.hashing:Hashing output: e7196e9a7496ebb28620e2a88854398f',
-                    'DEBUG:simpleml.persistables.hashing:Hashing output: e7196e9a7496ebb28620e2a88854398f',
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: 1ec00bc22a3c72500ab551cbb2f9d520',
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: 1ec00bc22a3c72500ab551cbb2f9d520',
                     'DEBUG:simpleml.persistables.hashing:Hashing input: {}',
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'dict'>",
-                    'DEBUG:simpleml.persistables.hashing:Hashing output: 7aa3631cc45701e2df0e03ef7162f2cb',
+                    'DEBUG:simpleml.persistables.hashing:Hashing output: d41d8cd98f00b204e9800998ecf8427e',
                     f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}",
                     f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"
                 ]
@@ -121,7 +121,7 @@ class CustomHasherTests(unittest.TestCase):
             elif __name__ == '__main__':
                 # entry from this file
                 # input/output
-                expected_final_hash = 'e7196e9a7496ebb28620e2a88854398f'
+                expected_final_hash = '1ec00bc22a3c72500ab551cbb2f9d520'
                 expected_logs = [
                     "DEBUG:simpleml.persistables.hashing:Hashing input: <class '__main__._Test123'>",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'type'>",
@@ -145,7 +145,7 @@ class CustomHasherTests(unittest.TestCase):
 
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
-            expected_final_hash = 'f327094b997618017ae36b8251885a8f'
+            expected_final_hash = 'c7317170afd08252742af30eb98fe2d3'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(_Test123.__dict__), expected_final_hash)
 
@@ -160,23 +160,23 @@ class CustomHasherTests(unittest.TestCase):
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  'DEBUG:simpleml.persistables.hashing:Hashing input: random_attribute',
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 'DEBUG:simpleml.persistables.hashing:Hashing output: 2ca4e7f734729525d18e56f1fa5862b7',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: 2a0611fe4463747f0ec29cd5ad5664ef',
                  'DEBUG:simpleml.persistables.hashing:Hashing input: abc',
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 'DEBUG:simpleml.persistables.hashing:Hashing output: a5a2f6c8adba6852e4d3888ce0c26016',
-                 'DEBUG:simpleml.persistables.hashing:Hashing output: a4391ea84fdef203422c770de28a05f7',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: 900150983cd24fb0d6963f7d28e17f72',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: a5cccdfa42200d663c4f62f18fe22af7',
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: ('fancy_method', {_Test123.fancy_method})",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  'DEBUG:simpleml.persistables.hashing:Hashing input: fancy_method',
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 'DEBUG:simpleml.persistables.hashing:Hashing output: 4518d84f1fde3a4f6d9830df8ca4721c',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: 702b2a8795c39644af3dfc8ad728f918',
                  f'DEBUG:simpleml.persistables.hashing:Hashing input: {_Test123.fancy_method}',
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'function'>",
                  'DEBUG:simpleml.persistables.hashing:Hashing input:     def fancy_method(self):\n        pass\n',
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 'DEBUG:simpleml.persistables.hashing:Hashing output: c60ec24e327caf1cdb2f409ae9a1fd6f',
-                 'DEBUG:simpleml.persistables.hashing:Hashing output: c60ec24e327caf1cdb2f409ae9a1fd6f',
-                 'DEBUG:simpleml.persistables.hashing:Hashing output: 1751bf1c56fc8c1027ec11f83ba264dd',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: ee31cc150ab1b82f7cd90ee978eb4970',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: ee31cc150ab1b82f7cd90ee978eb4970',
+                 'DEBUG:simpleml.persistables.hashing:Hashing output: a32e10936ab14ba8a9afa0527229fb7f',
                  f'DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}'])
 
     def test_pandas_series_hashing(self):
@@ -249,7 +249,7 @@ class CustomHasherTests(unittest.TestCase):
                 pd.Series(['a']),
                 pd.DataFrame([1])
             ]
-            expected_final_hash = 'c1430c14a64747cb10f80c70928bace9'
+            expected_final_hash = '2be1e4c1f34ee1614844b6b5130052d0'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -263,21 +263,21 @@ class CustomHasherTests(unittest.TestCase):
                  # primitives
                  "DEBUG:simpleml.persistables.hashing:Hashing input: a",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0357109b163771392cc674173d921e4b",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0cc175b9c0f1b6a831c399e269772661",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 2",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 76f34d73a1a6753d1243c9ba0afe3457",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 4753b753264f02d409ef7e2fa734d1e5",
 
                  # simple containers
                  "DEBUG:simpleml.persistables.hashing:Hashing input: ['b', 3]",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'list'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: b",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 10b474053f957b5c70dd5f01c695b8a0",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 92eb5ffee6ae2fec3ad71c777531578f",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 3",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 56615ea01687173ebab08c915ad7e500",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 38b1de0299d81decb1341f9f2bfb4c8b",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: c01ef2d65e504ea354c5bf4f5b6f6329",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: bf00e62763be22f17074498f35a68302",
 
                  "DEBUG:simpleml.persistables.hashing:Hashing input: {'d': 4}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'dict'>",
@@ -285,12 +285,12 @@ class CustomHasherTests(unittest.TestCase):
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: d",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 5adbbd6cebbee97eda238235075de7ea",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 8277e0910d750195b448797616e091ad",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 4",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: a8216e26a2093b48a0b7c57159313c8e",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0bd9aca51ddaab2f96485637ec4c21ed",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 21065bb299df9d8a902754661f1dcf08",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 038835f45126b13749d59afa4382ec30",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 2bbf775e58a10239cb79016c7ae0ec92",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 63c3302ff7ac527023a43dd85cbb92e1",
 
                  # functions
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: {data[4]}",
@@ -299,8 +299,8 @@ class CustomHasherTests(unittest.TestCase):
                  # depending on source, this could be more variables than just the function
                  "DEBUG:simpleml.persistables.hashing:Hashing input:                 lambda: 0,\n",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 1f55d5d00641bc583fef1c244a94116d",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 1f55d5d00641bc583fef1c244a94116d",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 7c7ecb893a2bdd05739b7fc600fda7e4",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 7c7ecb893a2bdd05739b7fc600fda7e4",
 
                  # data
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: {data[5]}",
@@ -318,7 +318,7 @@ class CustomHasherTests(unittest.TestCase):
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
             data = ['a', 2, ['b', 3], {'d': 4}]
-            expected_final_hash = 'c3ee3ea76093a4ffa266010db2a19748'
+            expected_final_hash = 'a0a531f7754274ea2fe57fefce20a55e'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -332,21 +332,21 @@ class CustomHasherTests(unittest.TestCase):
                  # primitives
                  "DEBUG:simpleml.persistables.hashing:Hashing input: a",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0357109b163771392cc674173d921e4b",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0cc175b9c0f1b6a831c399e269772661",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 2",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 76f34d73a1a6753d1243c9ba0afe3457",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 4753b753264f02d409ef7e2fa734d1e5",
 
                  # simple containers
                  "DEBUG:simpleml.persistables.hashing:Hashing input: ['b', 3]",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'list'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: b",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 10b474053f957b5c70dd5f01c695b8a0",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 92eb5ffee6ae2fec3ad71c777531578f",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 3",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 56615ea01687173ebab08c915ad7e500",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 38b1de0299d81decb1341f9f2bfb4c8b",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: c01ef2d65e504ea354c5bf4f5b6f6329",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: bf00e62763be22f17074498f35a68302",
 
                  "DEBUG:simpleml.persistables.hashing:Hashing input: {'d': 4}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'dict'>",
@@ -354,12 +354,12 @@ class CustomHasherTests(unittest.TestCase):
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: d",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 5adbbd6cebbee97eda238235075de7ea",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 8277e0910d750195b448797616e091ad",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 4",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: a8216e26a2093b48a0b7c57159313c8e",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0bd9aca51ddaab2f96485637ec4c21ed",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 21065bb299df9d8a902754661f1dcf08",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 038835f45126b13749d59afa4382ec30",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 2bbf775e58a10239cb79016c7ae0ec92",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 63c3302ff7ac527023a43dd85cbb92e1",
 
                  # Final
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
@@ -368,7 +368,7 @@ class CustomHasherTests(unittest.TestCase):
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
             data = [pd.Series(['a']), pd.DataFrame([1])]
-            expected_final_hash = '9edbac4ffc268facb9960d3d5b21a04c'
+            expected_final_hash = '58d577105165dfc792672f4e430f2b0a'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -403,7 +403,7 @@ class CustomHasherTests(unittest.TestCase):
                 'f': pd.DataFrame([1])
             }
 
-            expected_final_hash = 'f08d7f7448b56161cbc557a256f9fd8a'
+            expected_final_hash = '86e34938e508c4e41143331423d35135'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -419,84 +419,84 @@ class CustomHasherTests(unittest.TestCase):
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: a",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0357109b163771392cc674173d921e4b",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0cc175b9c0f1b6a831c399e269772661",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 2",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 76f34d73a1a6753d1243c9ba0afe3457",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 4168a931adf69a5c1cfd58cc89a5934b",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 4753b753264f02d409ef7e2fa734d1e5",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: ac4e6d00fdf03922ad2785e91a749963",
 
                  # simple containers
                  "DEBUG:simpleml.persistables.hashing:Hashing input: ('b', ['b', 3])",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: b",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 10b474053f957b5c70dd5f01c695b8a0",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 92eb5ffee6ae2fec3ad71c777531578f",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: ['b', 3]",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'list'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: b",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 10b474053f957b5c70dd5f01c695b8a0",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 92eb5ffee6ae2fec3ad71c777531578f",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 3",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 56615ea01687173ebab08c915ad7e500",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 38b1de0299d81decb1341f9f2bfb4c8b",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: ddfeb8c7d0f3b5e186ea6d5f75dc3a42",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: c01ef2d65e504ea354c5bf4f5b6f6329",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: bf00e62763be22f17074498f35a68302",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 89204e715c58f21a1cb85ee468e932f6",
 
                  "DEBUG:simpleml.persistables.hashing:Hashing input: ('c', {'d': 4})",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: c",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: eb5af44d447eeee22659894e100629ba",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 4a8a08f09d37b73795649038408b5f33",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: {'d': 4}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'dict'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: ('d', 4)",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: d",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 5adbbd6cebbee97eda238235075de7ea",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 8277e0910d750195b448797616e091ad",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 4",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: a8216e26a2093b48a0b7c57159313c8e",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0bd9aca51ddaab2f96485637ec4c21ed",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 21065bb299df9d8a902754661f1dcf08",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 23b65131a3c1e7692718ce5e16dbc6e1",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 038835f45126b13749d59afa4382ec30",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 2bbf775e58a10239cb79016c7ae0ec92",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 63c3302ff7ac527023a43dd85cbb92e1",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: bb623855eb965681e3be391b1d01df2d",
 
                  # functions
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: ('d', {data['d']})",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: d",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 5adbbd6cebbee97eda238235075de7ea",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 8277e0910d750195b448797616e091ad",
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: {data['d']}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'function'>",
                  # source inspection pulls the line the function is defined on with all whitespace
                  # depending on source, this could be more variables than just the function
                  "DEBUG:simpleml.persistables.hashing:Hashing input:                 'd': lambda: 0,\n",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: bface6eb385c3eda922dae2ea0b1392d",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: bface6eb385c3eda922dae2ea0b1392d",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: db969ff10c6c237542b1244b2a54d4c3",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: c9a7e524abd9d6db4108a4314e7082d7",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: c9a7e524abd9d6db4108a4314e7082d7",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: ae338bc5442a052f122182363859534b",
 
                  # data
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: ('e', {data['e']})",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: e",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: f97a2d5131312082a54b26e764026dfd",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: e1671797c52e15f763380b45e841ec32",
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: {data['e']}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'pandas.core.series.Series'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing output: -4496393130729816112",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 78dc79d99ac85282b0b3855db66415dc",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 389d9f8d08ee8620fe0eeb9c55228418",
 
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: ('f', {data['f']})",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: f",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: d6a88b3c515fcfac7a70b4ee89ecc94d",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 8fa14cdd754f91cc6554c9e71929cce7",
                  f"DEBUG:simpleml.persistables.hashing:Hashing input: {data['f']}",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'pandas.core.frame.DataFrame'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing output: -7087755961261762286",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0342e4e6698f99fd12716a1512dcae9b",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: f91de4d68dee99f575029a1ee9a7a265",
 
                  # Final
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
@@ -505,7 +505,7 @@ class CustomHasherTests(unittest.TestCase):
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
             data = 'a'
-            expected_final_hash = '0357109b163771392cc674173d921e4b'
+            expected_final_hash = '0cc175b9c0f1b6a831c399e269772661'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -520,7 +520,7 @@ class CustomHasherTests(unittest.TestCase):
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
             data = 2
-            expected_final_hash = '76f34d73a1a6753d1243c9ba0afe3457'
+            expected_final_hash = '4753b753264f02d409ef7e2fa734d1e5'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -535,7 +535,7 @@ class CustomHasherTests(unittest.TestCase):
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
             data = ['b', 3]
-            expected_final_hash = '38b1de0299d81decb1341f9f2bfb4c8b'
+            expected_final_hash = 'bf00e62763be22f17074498f35a68302'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -546,17 +546,17 @@ class CustomHasherTests(unittest.TestCase):
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'list'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: b",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 10b474053f957b5c70dd5f01c695b8a0",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 92eb5ffee6ae2fec3ad71c777531578f",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 3",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 56615ea01687173ebab08c915ad7e500",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: c01ef2d65e504ea354c5bf4f5b6f6329",
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
 
     def test_simple_dict_hashing(self):
         with self.assertLogs(logger='simpleml.persistables.hashing', level='DEBUG') as logs:
             # input/output
             data = {'d': 4}
-            expected_final_hash = '21065bb299df9d8a902754661f1dcf08'
+            expected_final_hash = '63c3302ff7ac527023a43dd85cbb92e1'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -569,11 +569,11 @@ class CustomHasherTests(unittest.TestCase):
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: d",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 5adbbd6cebbee97eda238235075de7ea",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 8277e0910d750195b448797616e091ad",
                  "DEBUG:simpleml.persistables.hashing:Hashing input: 4",
                  "DEBUG:simpleml.persistables.hashing:hash type: <class 'int'>",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: a8216e26a2093b48a0b7c57159313c8e",
-                 "DEBUG:simpleml.persistables.hashing:Hashing output: 0bd9aca51ddaab2f96485637ec4c21ed",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 038835f45126b13749d59afa4382ec30",
+                 "DEBUG:simpleml.persistables.hashing:Hashing output: 2bbf775e58a10239cb79016c7ae0ec92",
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
 
     def test_lambda_hashing(self):
@@ -581,7 +581,7 @@ class CustomHasherTests(unittest.TestCase):
             # input/output
             def data():
                 return 0
-            expected_final_hash = 'd7ab3b20053da4fb93531950ad4ffb66'
+            expected_final_hash = 'edf9b34707b6a63fd5ec95017e690f8f'
             with self.subTest():
                 self.assertEqual(CustomHasherMixin.custom_hasher(data), expected_final_hash)
 
@@ -626,7 +626,52 @@ class CustomHasherTests(unittest.TestCase):
                  f"DEBUG:simpleml.persistables.hashing:Hashing output: {expected_final_hash}"])
 
 
-class DeterministicHasherTests(unittest.TestCase):
+class MD5HasherTests(unittest.TestCase):
+    def test_tuple_hash(self):
+        '''
+        set/tuple/list/dict/mappingproxy reduce to a tuple of hashes
+        '''
+        data = ('0357109b163771392cc674173d921e4b', '76f34d73a1a6753d1243c9ba0afe3457', '38b1de0299d81decb1341f9f2bfb4c8b', '21065bb299df9d8a902754661f1dcf08')
+        expected_hash = '57ef70a19f5ecb8fc70d9f173d4f7740'
+        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+
+    def test_string_hash(self):
+        data = 'abc'
+        expected_hash = '900150983cd24fb0d6963f7d28e17f72'
+        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+
+    def test_int_hash(self):
+        data = 12
+        expected_hash = '9788cdcdd2f907b2ba4c106e05db77dd'
+        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+
+    def test_long_int_hash(self):
+        data = 12756387463875648597426574256294765284528457465783
+        expected_hash = '4fceac488520aff1b49e0419ff29aef4'
+        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+
+    def test_signed_long_int_hash(self):
+        data = -76348735275375648597426574256294765284528457465783
+        expected_hash = 'a30cb8a201eec96790acd4057d8b5de0'
+        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+
+    def test_float_hash(self):
+        data = 0.045
+        expected_hash = '4ec2e10062562fe8ba5183cfee61dc7f'
+        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+
+    def test_long_float_hash(self):
+        data = 0.0981209867893243456787453211253689098765265778484245
+        expected_hash = '491007207b7b93336843ee3de9d64ec5'
+        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+
+    def test_other_dtype_error(self):
+        for dtype in ({}, [], set(), pd.DataFrame, None):
+            with self.assertRaises(ValueError):
+                CustomHasherMixin.md5_hasher(dtype)
+
+
+class PickleHasherTests(unittest.TestCase):
     def test_tuple_hash(self):
         '''
         set/tuple/list/dict/mappingproxy reduce to a tuple of hashes

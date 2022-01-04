@@ -5,14 +5,16 @@ Mixin classes to handle hashing
 __author__ = 'Elisha Yadgaran'
 
 
+import hashlib
 import inspect
 import logging
+import struct
 from typing import Any, Type
 
 import numpy as np
 import pandas as pd
 from pandas.util import hash_pandas_object
-from simpleml._external.joblib import hash as deterministic_hash
+from simpleml._external.joblib import hash as pickle_hash
 from simpleml.imports import ddDataFrame
 
 LOGGER = logging.getLogger(__name__)
@@ -54,6 +56,9 @@ class CustomHasherMixin(object):
         python 3.3+ changes the default hash method to add an additional random
         seed. Need to set the global PYTHONHASHSEED=0 or use a different hash
         function
+
+        reduces to primitive dtypes and then calls cls.md5_hasher for a consistent
+        hash value. falls back to joblib pickle hashing for other dtypes
         """
         LOGGER.debug(f'Hashing input: {object_to_hash}')
 
@@ -69,7 +74,7 @@ class CustomHasherMixin(object):
 
         if isinstance(object_to_hash, (set, tuple, list)):
             _intermediate_hashes = tuple([cls.custom_hasher(e) for e in object_to_hash])
-            hash_output = deterministic_hash(_intermediate_hashes)
+            hash_output = cls.md5_hasher(_intermediate_hashes)
 
         elif isinstance(object_to_hash, np.ndarray):
             hash_output = cls.custom_hasher(object_to_hash.tostring())
@@ -97,7 +102,7 @@ class CustomHasherMixin(object):
 
         elif isinstance(object_to_hash, dict):
             _intermediate_hashes = tuple(sorted([cls.custom_hasher(item) for item in object_to_hash.items()]))
-            hash_output = deterministic_hash(_intermediate_hashes)
+            hash_output = cls.md5_hasher(_intermediate_hashes)
 
         elif isinstance(object_to_hash, type(lambda: 0)):
             # Functions dont hash consistently because of the halting problem
@@ -126,13 +131,46 @@ class CustomHasherMixin(object):
             # Represent as a tuple of (class, __dict__)
             hash_output = cls.custom_hasher((object_to_hash.__class__, object_to_hash.__dict__))
 
+        elif isinstance(object_to_hash, (float, int, str)):
+            hash_output = cls.md5_hasher(object_to_hash)
+
         else:
             # primitives (str, int, float)
             # Log a warning if the previous checks were unable to find a suitable
             # decomposition for the object
-            if not isinstance(object_to_hash, (float, str, int)):
-                LOGGER.warning(f'Unable to find suitable representation of {object_to_hash}, passing through to hash function directly. (This may result in future breaking changes)')
-            hash_output = deterministic_hash(object_to_hash)
+            LOGGER.warning(f'Unable to find suitable representation of {object_to_hash}, passing through to hash function directly. (This may result in future breaking changes)')
+            hash_output = pickle_hash(object_to_hash)
 
         LOGGER.debug(f'Hashing output: {hash_output}')
         return hash_output
+
+    @staticmethod
+    def md5_hasher(object_to_hash):
+        '''
+        Generate a simple deterministic hash with md5 - only supports basic dtypes
+        '''
+        if not isinstance(object_to_hash, (float, str, int, tuple)):
+            raise ValueError(f'md5 can only hash simple dtypes, passed: {type(object_to_hash)}')
+
+        def update_hash(m, k):
+            '''
+            md5 requires byte objects as input. performs consistent encoding on inputs
+            '''
+            if isinstance(k, str):
+                k = k.encode()  # encode unicode
+            elif isinstance(k, int):
+                k = k.to_bytes(256, 'big', signed=True)
+            elif isinstance(k, float):
+                k = struct.pack('>d', k)
+            else:
+                raise NotImplementedError
+            m.update(k)
+
+        m = hashlib.md5()
+        if isinstance(object_to_hash, tuple):
+            for k in object_to_hash:
+                update_hash(m, k)
+        else:
+            update_hash(m, object_to_hash)
+
+        return m.hexdigest()

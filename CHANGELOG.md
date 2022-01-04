@@ -3,6 +3,7 @@
 ### TBD
 *BREAKING CHANGES*
 - Changed pandas hash output to int from numpy.int64 (due to breaking change in NumpyHasher)
+- Changed primitive deterministic hash from pickle to md5
 
 ### 0.11.0 (2021-10-10)
 - Added support to hasher for initialized objects
