@@ -636,34 +636,30 @@ class MD5HasherTests(unittest.TestCase):
         self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
 
     def test_string_hash(self):
-        data = 'abc'
-        expected_hash = '900150983cd24fb0d6963f7d28e17f72'
-        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+        for data, expected_hash in {
+            'abc': '900150983cd24fb0d6963f7d28e17f72',
+            'ajfoh203949fja..!#@#@$@': '1cb83ecc9f13349b4b04eb4b4aa93d26',
+            'AFAL;FADFKA;JAFIEFHIA': '33b899614e1e16b4a84646d435064f53',
+            'extra_long_value_extra_long_value_extra_long_value_extra_long_value_extra_long_value_extra_long_value': 'e192f15053eb1e6fce7d0a0769280dc5'
+        }.items():
+            self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
 
     def test_int_hash(self):
-        data = 12
-        expected_hash = '9788cdcdd2f907b2ba4c106e05db77dd'
-        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
-
-    def test_long_int_hash(self):
-        data = 12756387463875648597426574256294765284528457465783
-        expected_hash = '4fceac488520aff1b49e0419ff29aef4'
-        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
-
-    def test_signed_long_int_hash(self):
-        data = -76348735275375648597426574256294765284528457465783
-        expected_hash = 'a30cb8a201eec96790acd4057d8b5de0'
-        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+        for data, expected_hash in {
+            12: '9788cdcdd2f907b2ba4c106e05db77dd',
+            12756387463875648597426574256294765284528457465783: '4fceac488520aff1b49e0419ff29aef4',
+            -76348735275375648597426574256294765284528457465783: 'a30cb8a201eec96790acd4057d8b5de0',
+            122390254752894527495027528529045974590245949201071407541071504574910: 'bde13a1a7d7af2e3d3af1650e3af5d2e',
+            -2898275276148014718015745618934189374190558956134871589634510914871105: '8aae8e41e85aa776b435dddefd741b6a'
+        }.items():
+            self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
 
     def test_float_hash(self):
-        data = 0.045
-        expected_hash = '4ec2e10062562fe8ba5183cfee61dc7f'
-        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
-
-    def test_long_float_hash(self):
-        data = 0.0981209867893243456787453211253689098765265778484245
-        expected_hash = '491007207b7b93336843ee3de9d64ec5'
-        self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
+        for data, expected_hash in {
+            0.045: '4ec2e10062562fe8ba5183cfee61dc7f',
+            0.0981209867893243456787453211253689098765265778484245: '491007207b7b93336843ee3de9d64ec5'
+        }.items():
+            self.assertEqual(CustomHasherMixin.md5_hasher(data), expected_hash)
 
     def test_other_dtype_error(self):
         for dtype in ({}, [], set(), pd.DataFrame, None):
