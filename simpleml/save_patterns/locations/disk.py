@@ -17,10 +17,14 @@ from simpleml.save_patterns.base import BaseSerializer
 class DiskIOMethods(object):
     @staticmethod
     def copy_file(src: str, destination: str):
+        # safety check for the destination path
+        makedirs(dirname(destination), exist_ok=True)
         shutil.copy2(src, destination)
 
     @staticmethod
     def copy_directory(src: str, destination: str):
+        # safety check for the destination path
+        makedirs(dirname(destination), exist_ok=True)
         shutil.copytree(src, destination)
 
 
