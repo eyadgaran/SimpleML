@@ -1,6 +1,7 @@
 ## Change Log
 
 ### TBD
+- Adds context manager support to registries for temporary overwrite
 *BREAKING CHANGES*
 - Changed pandas hash output to int from numpy.int64 (due to breaking change in NumpyHasher)
 - Changed primitive deterministic hash from pickle to md5

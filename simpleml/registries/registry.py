@@ -6,6 +6,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 import logging
+from contextlib import contextmanager
 from typing import Dict, Type
 
 LOGGER = logging.getLogger(__name__)
@@ -26,6 +27,38 @@ class Registry(object):
         if cls.__name__ in self.registry and cls is not self.registry[cls.__name__]:
             raise ValueError('Cannot duplicate class in registry: {}'.format(cls.__name__))
         self.registry[cls.__name__] = cls
+
+    @contextmanager
+    def context_register(self, cls: Type) -> None:
+        '''
+        Context manager to temporarily overwrite registry value
+        Reverts to original value on exit
+
+        usage:
+        ```
+        with Registry(...).context_register(cls):
+            ...
+        ```
+        '''
+        # __enter__
+        name = cls.__name__
+        if name in self.registry:
+            LOGGER.debug(f'Overwriting registry key {name} for the scope of this context')
+            original_value = self.get(name)
+            has_original_value = True
+        else:
+            has_original_value = False
+
+        self.registry[name] = cls
+        try:
+            yield self
+
+        finally:
+            #  __exit__
+            self.drop(name)
+            if has_original_value:
+                LOGGER.debug(f'Reverting value of registry key {name}')
+                self.registry[name] = original_value
 
     def get_from_registry(self, class_name: str) -> Type:
         cls = self.registry.get(class_name)
@@ -61,3 +94,35 @@ class NamedRegistry(Registry):
             if not allow_duplicates:
                 raise ValueError(f'Cannot overwrite class in registry: {name}')
         self.registry[name] = cls
+
+    @contextmanager
+    def context_register(self, name: str, cls: Type) -> None:
+        '''
+        Context manager to temporarily overwrite registry value
+        Reverts to original value on exit
+
+        usage:
+        ```
+        with NamedRegistry(...).context_register(name, cls):
+            ...
+        ```
+        '''
+        # __enter__
+        if name in self.registry:
+            LOGGER.debug(f'Overwriting registry key {name} for the scope of this context')
+            original_value = self.get(name)
+            has_original_value = True
+        else:
+            has_original_value = False
+
+        self.registry[name] = cls
+
+        try:
+            yield self
+
+        finally:
+            #  __exit__
+            self.drop(name)
+            if has_original_value:
+                LOGGER.debug(f'Reverting value of registry key {name}')
+                self.registry[name] = original_value
