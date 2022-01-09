@@ -1,5 +1,6 @@
-from setuptools import setup, find_packages
 import sys
+
+from setuptools import find_packages, setup
 
 __version__ = '0.11.0'
 
@@ -38,7 +39,7 @@ postgres_dependencies = ["psycopg2"]
 deep_learning_dependencies = ["tensorflow>=2", "hickle<4"]  # Hickle regression > 4 for scalar values
 cloud_dependencies = ["apache-libcloud", "pycrypto", "sshtunnel"]
 onedrive_dependencies = ["onedrivesdk<2"]  # Python support EOL >2
-dask_dependencies = ["dask[complete]"]
+dask_dependencies = ["dask[complete]", "pyarrow"]
 test_dependencies = ["coverage"]
 all_dependencies = list(set(
     postgres_dependencies +
