@@ -88,7 +88,7 @@ class CustomHasherMixin(object):
 
         elif isinstance(object_to_hash, ddDataFrame):
             # dask dataframes are just collections of pandas
-            hash_output = object_to_hash.map_partitions(_pandas_hash, meta=(None, int)).sum().compute()
+            hash_output = int(object_to_hash.map_partitions(_pandas_hash, meta=(None, int)).sum().compute())
 
         elif isinstance(object_to_hash, pd.Series):
             # Pandas is unable to hash numpy arrays so prehash those
@@ -141,7 +141,7 @@ class CustomHasherMixin(object):
             LOGGER.warning(f'Unable to find suitable representation of {object_to_hash}, passing through to hash function directly. (This may result in future breaking changes)')
             hash_output = pickle_hash(object_to_hash)
 
-        LOGGER.debug(f'Hashing output: {hash_output}')
+        LOGGER.debug(f'Hashing output: {hash_output}, {type(hash_output)}')
         return hash_output
 
     @staticmethod
@@ -149,7 +149,11 @@ class CustomHasherMixin(object):
         '''
         Generate a simple deterministic hash with md5 - only supports basic dtypes
         '''
-        if not isinstance(object_to_hash, (float, str, int, tuple)):
+        if isinstance(object_to_hash, tuple):
+            for i in object_to_hash:
+                if not isinstance(i, (float, str, int)):
+                    raise ValueError(f'md5 can only hash simple dtypes, passed: {type(i)}')
+        elif not isinstance(object_to_hash, (float, str, int)):
             raise ValueError(f'md5 can only hash simple dtypes, passed: {type(object_to_hash)}')
 
         def update_hash(m, k):
