@@ -25,11 +25,15 @@ class PandasPersistenceMethods(object):
     https://pandas.pydata.org/docs/reference/io.html
     https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html
     '''
+    INDEX_COLUMN = 'simpleml_index'
 
-    @staticmethod
-    def read_csv(filename: str, **kwargs) -> pd.DataFrame:
+    @classmethod
+    def read_csv(cls, filename: str, **kwargs) -> pd.DataFrame:
         '''Helper method to read in a csv file'''
-        return pd.read_csv(filename, **kwargs)
+        df = pd.read_csv(filename, **kwargs)
+        if cls.INDEX_COLUMN in df.columns:
+            df = df.set_index(cls.INDEX_COLUMN)
+        return df
 
     @staticmethod
     def read_parquet(filepath: str,
@@ -46,10 +50,14 @@ class PandasPersistenceMethods(object):
                  **kwargs) -> pd.DataFrame:
         return pd.read_orc(filepath, **kwargs)
 
-    @staticmethod
-    def read_json(filepath: str,
+    @classmethod
+    def read_json(cls, filepath: str,
                   **kwargs) -> pd.DataFrame:
-        return pd.read_json(filepath, **kwargs)
+        # Automatically handle index
+        df = pd.read_json(filepath, **kwargs)
+        if cls.INDEX_COLUMN in df.columns:
+            df = df.set_index(cls.INDEX_COLUMN)
+        return df
 
     @staticmethod
     def read_fwf(**kwargs) -> pd.DataFrame:
@@ -176,8 +184,8 @@ class PandasPersistenceMethods(object):
                 return
         df.to_pickle(filepath, **kwargs)
 
-    @staticmethod
-    def to_csv(df: pd.DataFrame,
+    @classmethod
+    def to_csv(cls, df: pd.DataFrame,
                filepath: str,
                overwrite: bool = True,
                **kwargs) -> None:
@@ -185,7 +193,7 @@ class PandasPersistenceMethods(object):
             # Check if file was already serialized
             if isfile(filepath):
                 return
-        df.to_csv(filepath, **kwargs)
+        df.to_csv(filepath, index_label=cls.INDEX_COLUMN, **kwargs)
 
     @staticmethod
     def to_clipboard(df: pd.DataFrame,
@@ -209,8 +217,8 @@ class PandasPersistenceMethods(object):
                 return
         df.to_excel(filepath, **kwargs)
 
-    @staticmethod
-    def to_json(df: pd.DataFrame,
+    @classmethod
+    def to_json(cls, df: pd.DataFrame,
                 filepath: str,
                 overwrite: bool = True,
                 **kwargs) -> None:
@@ -218,7 +226,11 @@ class PandasPersistenceMethods(object):
             # Check if file was already serialized
             if isfile(filepath):
                 return
-        df.to_json(filepath, **kwargs)
+        # json records do not include index so artificially inject
+        if cls.INDEX_COLUMN in df.columns:
+            df.to_json(filepath, **kwargs)
+        else:
+            df.reset_index(drop=False).rename(columns={'index': cls.INDEX_COLUMN}).to_json(filepath, **kwargs)
 
     @staticmethod
     def to_html(df: pd.DataFrame,
