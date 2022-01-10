@@ -5,18 +5,16 @@ Dataset related tests
 __author__ = 'Elisha Yadgaran'
 
 
+import itertools
 import unittest
+
 import numpy as np
 import pandas as pd
-import itertools
 from pandas.testing import assert_frame_equal, assert_series_equal
-
-from simpleml.datasets import PandasDataset, SingleLabelPandasDataset, MultiLabelPandasDataset, NumpyDataset
 from simpleml.datasets.base_dataset import Dataset
-from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
-from simpleml.datasets.numpy_mixin import NumpyDatasetMixin
-from simpleml.datasets.pandas_mixin import BasePandasDatasetMixin, \
-    SingleLabelPandasDatasetMixin, MultiLabelPandasDatasetMixin, DATAFRAME_SPLIT_COLUMN
+from simpleml.datasets.numpy import BaseNumpyDataset
+from simpleml.datasets.pandas.base import (DATAFRAME_SPLIT_COLUMN,
+                                           BasePandasDataset)
 from simpleml.utils.errors import DatasetError
 
 
@@ -44,7 +42,7 @@ class AbstractDatasetTests(unittest.TestCase):
             dataset.get_feature_names()
 
         with self.assertRaises(NotImplementedError):
-            dataset.get_split()
+            dataset.get_split('any')
 
         with self.assertRaises(NotImplementedError):
             dataset.get_split_names()
@@ -231,7 +229,7 @@ class _PandasTestHelper(object):
         self.assertEqual(self.dummy_dataset.get_feature_names(), ['a', 'b'])
 
 
-class BasePandasMixinTests(unittest.TestCase, _PandasTestHelper):
+class BasePandasDatasetTests(unittest.TestCase, _PandasTestHelper):
     '''
     Tests for the pandas related functionality
     '''
@@ -314,33 +312,19 @@ class BasePandasMixinTests(unittest.TestCase, _PandasTestHelper):
             index=[10, 20, 30]
         )
 
-    @property
-    def dummy_dataset(self):
-        class TestMixinClass(BasePandasDatasetMixin):
-            _external_file = self._data
-            config = {'split_section_map': {'y': ['label']}}
-
-            @property
-            def dataframe(self):
-                return self._dataframe
-
-        return TestMixinClass()
-
     def test_dataframe_set_validation(self):
         '''
         no validation for mixin
         '''
 
-
-class PandasDatasetTests(BasePandasDatasetMixin):
     @property
     def dummy_dataset(self):
-        dataset = PandasDataset(label_columns=['label'])
+        dataset = BasePandasDataset(label_columns=['label'])
         dataset._external_file = self._data
         return dataset
 
 
-class BasePandasDatasetTests(unittest.TestCase, _PandasTestHelper):
+class SingleLabelPandasDatasetTests(unittest.TestCase, _PandasTestHelper):
     '''
     Same tests but overload labels to not squeeze to a numpy array
     '''
@@ -424,33 +408,19 @@ class BasePandasDatasetTests(unittest.TestCase, _PandasTestHelper):
             index=[10, 20, 30]
         )
 
-    @property
-    def dummy_dataset(self):
-        class TestMixinClass(SingleLabelPandasDatasetMixin):
-            _external_file = self._data
-            config = {'split_section_map': {'y': ['label']}}
-
-            @property
-            def dataframe(self):
-                return self._dataframe
-
-        return TestMixinClass()
-
     def test_dataframe_set_validation(self):
         '''
         no validation for mixin
         '''
 
-
-class SingleLabelPandasDatasetTests(SingleLabelPandasMixinTests):
     @property
     def dummy_dataset(self):
-        dataset = SingleLabelPandasDataset(label_columns=['label'])
+        dataset = BasePandasDataset(label_columns=['label'], squeeze_return=True)
         dataset._external_file = self._data
         return dataset
 
 
-class MultiLabelPandasMixinTests(unittest.TestCase, _PandasTestHelper):
+class MultiLabelPandasDatasetTests(unittest.TestCase, _PandasTestHelper):
     '''
     Same tests but overload labels to not squeeze to a numpy array
     '''
@@ -530,33 +500,19 @@ class MultiLabelPandasMixinTests(unittest.TestCase, _PandasTestHelper):
             index=[10, 20, 30]
         )
 
-    @property
-    def dummy_dataset(self):
-        class TestMixinClass(MultiLabelPandasDatasetMixin):
-            _external_file = self._data
-            config = {'split_section_map': {'y': ['label1', 'label2']}}
-
-            @property
-            def dataframe(self):
-                return self._dataframe
-
-        return TestMixinClass()
-
     def test_dataframe_set_validation(self):
         '''
         no validation for mixin
         '''
 
-
-class MultiLabelPandasDatasetTests(MultiLabelPandasMixinTests):
     @property
     def dummy_dataset(self):
-        dataset = MultiLabelPandasDataset(label_columns=['label1', 'label2'])
+        dataset = BasePandasDataset(label_columns=['label1', 'label2'], sqeeze_return=False)
         dataset._external_file = self._data
         return dataset
 
 
-class NumpyMixinTests(unittest.TestCase):
+class BaeNumpyDatasetTests(unittest.TestCase):
     '''
     Some tests for the numpy mixin class
     '''
@@ -570,29 +526,17 @@ class NumpyMixinTests(unittest.TestCase):
 
     @property
     def dummy_dataset(self):
-        class TestMixinClass(NumpyDatasetMixin):
-            dataframe = {'X': self.expected_x, 'label': self.expected_y}
-            config = {'split_section_map': {'y': ['label']}}
-
-            @property
-            def label_columns(self):
-                return self.config.get('split_section_map').get('y', [])
-
-        return TestMixinClass()
+        dataset = BaseNumpyDataset(label_columns=['label'])
+        dataset._external_file = {'X': self.expected_x, 'label': self.expected_y}
+        return dataset
 
     @property
     def dummy_split_dataset(self):
-        class TestMixinClass(NumpyDatasetMixin):
-            dataframe = {
-                'TRAIN': {'X': self.expected_x, 'label': self.expected_y}
-            }
-            config = {'split_section_map': {'y': ['label']}}
-
-            @property
-            def label_columns(self):
-                return self.config.get('split_section_map').get('y', [])
-
-        return TestMixinClass()
+        dataset = BaseNumpyDataset(label_columns=['label'])
+        dataset._external_file = {
+            'TRAIN': {'X': self.expected_x, 'label': self.expected_y}
+        }
+        return dataset
 
     def test_get_column_error(self):
         dataset = self.dummy_dataset
