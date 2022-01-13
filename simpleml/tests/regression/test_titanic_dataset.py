@@ -18,7 +18,7 @@ from simpleml.utils.training.create_persistable import DatasetCreator
 dataset_kwargs_template = {
     'project': 'regression-tests',
     'label_columns': ['Survived'],
-    'filepath': 'data/mock/titanic.csv',  # keep relative for consistent hash. assumes entry from root of repo
+    'filepath': 'simpleml/tests/data/mock/titanic.csv',  # keep relative for consistent hash. assumes entry from root of repo
     'format': 'csv',
     'squeeze_return': True,
 }
