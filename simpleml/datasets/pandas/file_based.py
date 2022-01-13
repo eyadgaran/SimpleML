@@ -8,6 +8,7 @@ __author__ = 'Elisha Yadgaran'
 from typing import Dict, Optional
 
 from simpleml.save_patterns.serializers.pandas import PandasPersistenceMethods
+from simpleml.utils.errors import DatasetError
 
 from .base import BasePandasDataset
 
