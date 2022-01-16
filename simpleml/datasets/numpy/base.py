@@ -8,20 +8,27 @@ means unique to pandas.
 
 __author__ = 'Elisha Yadgaran'
 
-import numpy as np
-
+import logging
 from typing import Any, List
 
+import numpy as np
 from simpleml.datasets.base_dataset import Dataset
-from simpleml.utils.errors import DatasetError
 from simpleml.pipelines.validation_split_mixins import Split
+from simpleml.utils.errors import DatasetError
+
+LOGGER = logging.getLogger(__name__)
 
 
 class BaseNumpyDataset(Dataset):
     '''
-    Assumes _external_file is a dictionary of numpy ndarrays
+    Assumes self.dataframe is a dictionary of numpy ndarrays
     '''
     # TODO: rewrite class to index native numpy array directly
+    # Considered unstable for the time being
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        LOGGER.warning('Numpy datasets are currently unstable - usage is discouraged as breaking changes may be introduced')
 
     @property
     def X(self) -> np.ndarray:
