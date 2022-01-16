@@ -51,10 +51,13 @@ class PandasPersistenceMethods(object):
         return pd.read_orc(filepath, **kwargs)
 
     @classmethod
-    def read_json(cls, filepath: str,
+    def read_json(cls,
+                  filepath: str,
+                  orient: str = 'records',
+                  lines: bool = True,
                   **kwargs) -> pd.DataFrame:
         # Automatically handle index
-        df = pd.read_json(filepath, **kwargs)
+        df = pd.read_json(filepath, orient=orient, lines=lines, **kwargs)
         if cls.INDEX_COLUMN in df.columns:
             df = df.set_index(cls.INDEX_COLUMN)
         return df
@@ -221,6 +224,8 @@ class PandasPersistenceMethods(object):
     def to_json(cls, df: pd.DataFrame,
                 filepath: str,
                 overwrite: bool = True,
+                lines: bool = True,
+                orient: str = 'records',
                 **kwargs) -> None:
         if not overwrite:
             # Check if file was already serialized
@@ -228,9 +233,11 @@ class PandasPersistenceMethods(object):
                 return
         # json records do not include index so artificially inject
         if cls.INDEX_COLUMN in df.columns:
-            df.to_json(filepath, **kwargs)
+            df.to_json(filepath, orient=orient, lines=lines ** kwargs)
         else:
-            df.reset_index(drop=False).rename(columns={'index': cls.INDEX_COLUMN}).to_json(filepath, **kwargs)
+            df.reset_index(drop=False).rename(
+                columns={'index': cls.INDEX_COLUMN}
+            ).to_json(filepath, orient=orient, lines=lines, **kwargs)
 
     @staticmethod
     def to_html(df: pd.DataFrame,
