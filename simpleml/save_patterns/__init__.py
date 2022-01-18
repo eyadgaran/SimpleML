@@ -258,10 +258,55 @@ class PandasLibcloudJSONSavePattern(BaseSavePattern):
 Keras Save Patterns
 '''
 
+
+@SavePatternDecorators.register_save_pattern
+class KerasDiskSavedModelSavePattern(BaseSavePattern):
+    '''
+    Save pattern implementation to save keras objects to disk in savedModel format
+    '''
+    SAVE_PATTERN = 'keras_disk_saved_model'
+    serializers = (KerasSavedModelSerializer, FilestoreCopyFolderLocation)
+    deserializers = (FilestorePassthroughLocation, KerasSavedModelSerializer)
+
+
+@SavePatternDecorators.register_save_pattern
+class KerasLibcloudSavedModelSavePattern(BaseSavePattern):
+    '''
+    Save pattern implementation to save keras objects to cloud via apached-libcloud in savedModel format
+    '''
+    SAVE_PATTERN = 'keras_libcloud_saved_model'
+    serializers = (KerasSavedModelSerializer, LibcloudCopyFolderLocation)
+    deserializers = (LibcloudCopyFolderLocation, KerasSavedModelSerializer)
+
+
+@SavePatternDecorators.register_save_pattern
+class KerasDiskH5SavePattern(BaseSavePattern):
+    '''
+    Save pattern implementation to save keras objects to disk in h5 format
+    '''
+    SAVE_PATTERN = 'keras_disk_h5'
+    serializers = (KerasH5Serializer, FilestoreCopyFileLocation)
+    deserializers = (FilestorePassthroughLocation, KerasH5Serializer)
+
+
+@SavePatternDecorators.register_save_pattern
+class KerasLibcloudH5SavePattern(BaseSavePattern):
+    '''
+    Save pattern implementation to save keras objects to cloud via apached-libcloud in h5 format
+    '''
+    SAVE_PATTERN = 'keras_libcloud_h5'
+    serializers = (KerasH5Serializer, LibcloudCopyFileLocation)
+    deserializers = (LibcloudCopyFileLocation, KerasH5Serializer)
+
+
 '''
 Hickle Save Patterns
 '''
 
 '''
 Database Save Patterns
+'''
+
+'''
+Onedrive Save Patterns
 '''
