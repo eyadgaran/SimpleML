@@ -243,7 +243,7 @@ class _DatasetTestHelper(object):
         dataset = self.dummy_dataset
 
         if issubclass(self.dataset_cls, BaseDaskDataset):  # dask
-            unmodified_copy = dataset.dataframe.copy(deep=False)
+            unmodified_copy = dataset.dataframe.copy()
         else:
             unmodified_copy = dataset.dataframe.copy(deep=True)
 
