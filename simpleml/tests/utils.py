@@ -12,7 +12,7 @@ import pandas as pd
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal, assert_series_equal
 from simpleml.datasets.dataset_splits import Split
-from simpleml.imports import ddDataFrame
+from simpleml.imports import ddDataFrame, ddSeries
 from simpleml.pipelines.projected_splits import ProjectedDatasetSplit
 
 # Test Data Paths
@@ -43,6 +43,10 @@ def assert_data_container_equal(a: Any, b: Any):
         _simpleml_frame_equal(a_df, b_df)
     elif isinstance(a, pd.Series) or isinstance(b, pd.Series):
         assert_series_equal(a, b)
+    elif isinstance(a, ddSeries) or isinstance(b, ddSeries):
+        a_df = a.compute()
+        b_df = b.compute()
+        assert_series_equal(a_df, b_df)
     elif isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
         assert_array_equal(a, b)
     elif isinstance(a, (list, int, dict, str, type(None))) or isinstance(b, (list, int, dict, str, type(None))):

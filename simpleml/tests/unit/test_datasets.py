@@ -10,11 +10,16 @@ import unittest
 
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_frame_equal, assert_series_equal
 from simpleml.datasets.base_dataset import Dataset
-from simpleml.datasets.numpy import BaseNumpyDataset
-from simpleml.datasets.pandas.base import (DATAFRAME_SPLIT_COLUMN,
-                                           BasePandasDataset)
+from simpleml.datasets.dask import (BaseDaskDataset, DaskFileBasedDataset,
+                                    DaskPipelineDataset)
+from simpleml.datasets.numpy import BaseNumpyDataset, NumpyPipelineDataset
+from simpleml.datasets.pandas import (BasePandasDataset,
+                                      PandasFileBasedDataset,
+                                      PandasPipelineDataset)
+from simpleml.datasets.pandas.base import DATAFRAME_SPLIT_COLUMN
+from simpleml.imports import dd, ddDataFrame, ddSeries
+from simpleml.tests.utils import assert_data_container_equal
 from simpleml.utils.errors import DatasetError
 
 
@@ -28,6 +33,12 @@ class AbstractDatasetTests(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError):
             dataset.build_dataframe()
+
+        with self.assertRaises(NotImplementedError):
+            dataset.dataframe
+
+        with self.assertRaises(AttributeError):
+            dataset._dataframe
 
         with self.assertRaises(NotImplementedError):
             dataset.X
@@ -48,7 +59,31 @@ class AbstractDatasetTests(unittest.TestCase):
             dataset.get_split_names()
 
 
-class _PandasTestHelper(object):
+class BaseDatasetTests(unittest.TestCase):
+    def test_section_column_handling(self):
+        '''
+        Datasets can be configured with arbitrary columns
+        '''
+        with self.subTest('Y labels'):
+            section = 'y'
+            columns = ['a', 'b']
+            dataset = Dataset(label_columns=columns)
+            self.assertEqual(dataset.get_section_columns(section), columns)
+
+        with self.subTest('Random section'):
+            section = 'abc'
+            columns = ['a', 'b']
+            dataset = Dataset(other_named_split_sections={section: columns})
+            self.assertEqual(dataset.get_section_columns(section), columns)
+
+        with self.subTest('nonexistent section'):
+            section = 'abc'
+            columns = []
+            dataset = Dataset()
+            self.assertEqual(dataset.get_section_columns(section), columns)
+
+
+class _DatasetTestHelper(object):
     '''
     All mixins should run these tests with the appropriate setups per class
 
@@ -69,13 +104,17 @@ class _PandasTestHelper(object):
 
     def test_dataframe_set_validation(self):
         '''
-        Check requirement for pd.DataFrame
+        Check requirement
         '''
         dataset = self.dummy_dataset
         with self.assertRaises(DatasetError):
             dataset.dataframe = 'blah'
 
-        dataset.dataframe = pd.DataFrame()
+        df = pd.DataFrame()
+        if issubclass(self.dataset_cls, BaseDaskDataset):
+            df = dd.from_pandas(df, npartitions=2)
+
+        dataset.dataframe = df
 
     def test_y(self):
         '''
@@ -83,8 +122,8 @@ class _PandasTestHelper(object):
         '''
         dataset = self.dummy_dataset
         get_y = dataset.get(column='y', split=None)
-        self.y_equality_function(self.expected_y, get_y)
-        self.y_equality_function(self.expected_y, dataset.y)
+        assert_data_container_equal(self.expected_y, get_y)
+        assert_data_container_equal(self.expected_y, dataset.y)
 
     def test_x(self):
         '''
@@ -92,8 +131,8 @@ class _PandasTestHelper(object):
         '''
         dataset = self.dummy_dataset
         get_x = dataset.get(column='X', split=None)
-        assert_frame_equal(self.expected_x, get_x)
-        assert_frame_equal(self.expected_x, dataset.X)
+        assert_data_container_equal(self.expected_x, get_x)
+        assert_data_container_equal(self.expected_x, dataset.X)
 
     def test_dataframe(self):
         '''
@@ -101,7 +140,7 @@ class _PandasTestHelper(object):
         '''
         dataset = self.dummy_dataset
         get_dataframe = dataset._dataframe
-        assert_frame_equal(self._data, get_dataframe)
+        assert_data_container_equal(self._data, get_dataframe)
 
     '''
     get tests
@@ -121,7 +160,7 @@ class _PandasTestHelper(object):
         Would otherwise throw a KeyError
         '''
         dataset = self.dummy_dataset
-        dataset._external_file.drop(DATAFRAME_SPLIT_COLUMN, axis=1, inplace=True)
+        dataset._external_file = dataset._external_file.drop(DATAFRAME_SPLIT_COLUMN, axis=1)
         with self.assertRaises(DatasetError):
             dataset.get(column='X', split='Nonsense')
 
@@ -133,9 +172,16 @@ class _PandasTestHelper(object):
         X = dataset.get(column='X', split='NONSENSE')
         y = dataset.get(column='y', split='NONSENSE')
         data = dataset.get(column=None, split='NONSENSE')
-        assert_frame_equal(X, self.expected_x.head(0))
-        self.y_equality_function(y, self.expected_y.head(0))
-        assert_frame_equal(data, self.expected_dataframe.head(0))
+
+        if isinstance(data, ddDataFrame):
+            # head calls return a pd.DataFrame/series
+            assert_data_container_equal(X.compute(), self.expected_x.head(0))
+            assert_data_container_equal(y.compute(), self.expected_y.head(0))
+            assert_data_container_equal(data.compute(), self.expected_dataframe.head(0))
+        else:
+            assert_data_container_equal(X, self.expected_x.head(0))
+            assert_data_container_equal(y, self.expected_y.head(0))
+            assert_data_container_equal(data, self.expected_dataframe.head(0))
 
     def test_get_with_split(self):
         '''
@@ -146,9 +192,9 @@ class _PandasTestHelper(object):
         y = dataset.get(column='y', split='TRAIN')
         data = dataset.get(column=None, split='TRAIN')
 
-        assert_frame_equal(self.expected_train_x, X)
-        self.y_equality_function(self.expected_train_y, y)
-        assert_frame_equal(self.expected_train_dataframe, data)
+        assert_data_container_equal(self.expected_train_x, X)
+        assert_data_container_equal(self.expected_train_y, y)
+        assert_data_container_equal(self.expected_train_dataframe, data)
 
     def test_get_with_null_parameters(self):
         '''
@@ -156,7 +202,7 @@ class _PandasTestHelper(object):
         '''
         dataset = self.dummy_dataset
         get_dataframe = dataset.get(column=None, split=None)
-        assert_frame_equal(self.expected_dataframe, get_dataframe)
+        assert_data_container_equal(self.expected_dataframe, get_dataframe)
 
     '''
     references
@@ -175,9 +221,12 @@ class _PandasTestHelper(object):
         '''
         dataset = self.dummy_dataset
         copy = dataset._dataframe
-        copy.drop(DATAFRAME_SPLIT_COLUMN, axis=1, inplace=True)
+        try:
+            copy.drop(DATAFRAME_SPLIT_COLUMN, axis=1, inplace=True)
+        except TypeError:  # dask
+            copy = copy.drop(DATAFRAME_SPLIT_COLUMN, axis=1)
         with self.assertRaises(AssertionError):
-            assert_frame_equal(dataset._dataframe, copy)
+            assert_data_container_equal(dataset._dataframe, copy)
 
     def test_get_X_mutability(self):
         '''
@@ -192,7 +241,10 @@ class _PandasTestHelper(object):
         - df._is_view is False (True for certain slices)
         '''
         dataset = self.dummy_dataset
-        unmodified_copy = dataset.dataframe.copy(deep=True)
+        try:
+            unmodified_copy = dataset.dataframe.copy(deep=True)
+        except ValueError:  # dask
+            unmodified_copy = dataset.dataframe.copy(deep=False)
 
         for column, split in itertools.product(
             ['X'],
@@ -201,19 +253,25 @@ class _PandasTestHelper(object):
             with self.subTest(column=column, split=split):
                 copy = dataset.get(column=column, split=split)
 
-                # Test for pandas references
-                self.assertIsNone(copy._is_copy)
+                try:
+                    # Test for pandas references
+                    self.assertIsNone(copy._is_copy)
 
-                # Not fully understood behavior causes pandas to return views for certain
-                # operations that morph into copies when modified (appears subject to mem optimizations)
-                self.assertFalse(copy._is_view)
+                    # Not fully understood behavior causes pandas to return views for certain
+                    # operations that morph into copies when modified (appears subject to mem optimizations)
+                    self.assertFalse(copy._is_view)
 
-                # Modify copy and see if the source changed
-                copy.loc[1, 'a'] = 9876
+                    # Modify copy and see if the source changed
+                    # dask doesnt support item assignment
+                    copy.loc[1, 'a'] = 9876
 
-                assert_frame_equal(dataset.dataframe, unmodified_copy)
-                with self.assertRaises(AssertionError):
-                    assert_frame_equal(copy, dataset.get(column=column, split=split))
+                    with self.assertRaises(AssertionError):
+                        assert_data_container_equal(copy, dataset.get(column=column, split=split))
+
+                except AttributeError:
+                    pass
+
+                assert_data_container_equal(dataset.dataframe, unmodified_copy)
 
                 # id pointer
                 self.assertNotEqual(id(dataset._external_file), id(copy))
@@ -228,11 +286,33 @@ class _PandasTestHelper(object):
         '''
         self.assertEqual(self.dummy_dataset.get_feature_names(), ['a', 'b'])
 
+    '''
+    logic
+    '''
 
-class BasePandasDatasetTests(unittest.TestCase, _PandasTestHelper):
+    def test_hash_consistency(self):
+        '''
+        Ensure hash equivalence as long as underlying dataset
+        hasnt changed
+        '''
+        df = pd.DataFrame(np.random.randint(0, 100, size=(100, 4)), columns=list('ABCD'))
+        df_shuffled = df.sample(frac=1)
+        self.assertNotEqual(df.index.tolist(), df_shuffled.index.tolist())
+
+        dataset1 = self.dummy_dataset
+        dataset1._external_file = df
+
+        dataset2 = self.dummy_dataset
+        dataset2._external_file = df_shuffled
+
+        self.assertEqual(dataset1._hash(), dataset2._hash())
+
+
+class BasePandasDatasetTests(unittest.TestCase, _DatasetTestHelper):
     '''
     Tests for the pandas related functionality
     '''
+    dataset_cls = BasePandasDataset
 
     @property
     def expected_dataframe(self):
@@ -271,10 +351,6 @@ class BasePandasDatasetTests(unittest.TestCase, _PandasTestHelper):
         )
 
     @property
-    def y_equality_function(self):
-        return assert_frame_equal
-
-    @property
     def expected_train_dataframe(self):
         return pd.DataFrame(
             [
@@ -312,43 +388,18 @@ class BasePandasDatasetTests(unittest.TestCase, _PandasTestHelper):
             index=[10, 20, 30]
         )
 
-    def test_dataframe_set_validation(self):
-        '''
-        no validation for mixin
-        '''
-
     @property
     def dummy_dataset(self):
-        dataset = BasePandasDataset(label_columns=['label'])
-        dataset._external_file = self._data
+        dataset = self.dataset_cls(label_columns=['label'])
+        dataset.dataframe = self._data
         return dataset
 
 
-class SingleLabelPandasDatasetTests(unittest.TestCase, _PandasTestHelper):
+class SingleLabelPandasDatasetTests(BasePandasDatasetTests):
     '''
     Same tests but overload labels to not squeeze to a numpy array
     '''
-    @property
-    def expected_dataframe(self):
-        return pd.DataFrame(
-            [
-                {'a': 1, 'b': 2, 'label': 3},
-                {'a': 11, 'b': 22, 'label': 33},
-                {'a': 111, 'b': 222, 'label': 333}
-            ],
-            index=[10, 20, 30]
-        )
-
-    @property
-    def expected_x(self):
-        return pd.DataFrame(
-            [
-                {'a': 1, 'b': 2},
-                {'a': 11, 'b': 22},
-                {'a': 111, 'b': 222}
-            ],
-            index=[10, 20, 30]
-        )
+    dataset_cls = BasePandasDataset
 
     @property
     def expected_y(self):
@@ -366,28 +417,6 @@ class SingleLabelPandasDatasetTests(unittest.TestCase, _PandasTestHelper):
         )
 
     @property
-    def y_equality_function(self):
-        return assert_series_equal
-
-    @property
-    def expected_train_dataframe(self):
-        return pd.DataFrame(
-            [
-                {'a': 1, 'b': 2, 'label': 3},
-            ],
-            index=[10]
-        )
-
-    @property
-    def expected_train_x(self):
-        return pd.DataFrame(
-            [
-                {'a': 1, 'b': 2},
-            ],
-            index=[10]
-        )
-
-    @property
     def expected_train_y(self):
         return pd.Series(
             [
@@ -398,32 +427,17 @@ class SingleLabelPandasDatasetTests(unittest.TestCase, _PandasTestHelper):
         )
 
     @property
-    def _data(self):
-        return pd.DataFrame(
-            [
-                {'a': 1, 'b': 2, 'label': 3, DATAFRAME_SPLIT_COLUMN: 'TRAIN'},
-                {'a': 11, 'b': 22, 'label': 33, DATAFRAME_SPLIT_COLUMN: 'VALIDATION'},
-                {'a': 111, 'b': 222, 'label': 333, DATAFRAME_SPLIT_COLUMN: 'TEST'},
-            ],
-            index=[10, 20, 30]
-        )
-
-    def test_dataframe_set_validation(self):
-        '''
-        no validation for mixin
-        '''
-
-    @property
     def dummy_dataset(self):
-        dataset = BasePandasDataset(label_columns=['label'], squeeze_return=True)
-        dataset._external_file = self._data
+        dataset = self.dataset_cls(label_columns=['label'], squeeze_return=True)
+        dataset.dataframe = self._data
         return dataset
 
 
-class MultiLabelPandasDatasetTests(unittest.TestCase, _PandasTestHelper):
+class MultiLabelPandasDatasetTests(BasePandasDatasetTests):
     '''
     Same tests but overload labels to not squeeze to a numpy array
     '''
+    dataset_cls = BasePandasDataset
 
     @property
     def expected_dataframe(self):
@@ -432,17 +446,6 @@ class MultiLabelPandasDatasetTests(unittest.TestCase, _PandasTestHelper):
                 {'a': 1, 'b': 2, 'label1': 3, 'label2': 4},
                 {'a': 11, 'b': 22, 'label1': 33, 'label2': 44},
                 {'a': 111, 'b': 222, 'label1': 333, 'label2': 444}
-            ],
-            index=[10, 20, 30]
-        )
-
-    @property
-    def expected_x(self):
-        return pd.DataFrame(
-            [
-                {'a': 1, 'b': 2},
-                {'a': 11, 'b': 22},
-                {'a': 111, 'b': 222}
             ],
             index=[10, 20, 30]
         )
@@ -459,23 +462,10 @@ class MultiLabelPandasDatasetTests(unittest.TestCase, _PandasTestHelper):
         )
 
     @property
-    def y_equality_function(self):
-        return assert_frame_equal
-
-    @property
     def expected_train_dataframe(self):
         return pd.DataFrame(
             [
                 {'a': 1, 'b': 2, 'label1': 3, 'label2': 4},
-            ],
-            index=[10]
-        )
-
-    @property
-    def expected_train_x(self):
-        return pd.DataFrame(
-            [
-                {'a': 1, 'b': 2},
             ],
             index=[10]
         )
@@ -500,19 +490,208 @@ class MultiLabelPandasDatasetTests(unittest.TestCase, _PandasTestHelper):
             index=[10, 20, 30]
         )
 
-    def test_dataframe_set_validation(self):
-        '''
-        no validation for mixin
-        '''
-
     @property
     def dummy_dataset(self):
-        dataset = BasePandasDataset(label_columns=['label1', 'label2'], sqeeze_return=False)
-        dataset._external_file = self._data
+        dataset = self.dataset_cls(label_columns=['label1', 'label2'], sqeeze_return=False)
+        dataset.dataframe = self._data
         return dataset
 
 
-class BaeNumpyDatasetTests(unittest.TestCase):
+class CSVFileBasedPandasDatasetTests(SingleLabelPandasDatasetTests):
+    dataset_cls = PandasFileBasedDataset
+
+    @property
+    def dummy_dataset(self):
+        dataset = self.dataset_cls(filepath='', format='csv', label_columns=['label'], squeeze_return=True)
+        dataset.dataframe = self._data
+        return dataset
+
+
+class JSONFileBasedPandasDatasetTests(SingleLabelPandasDatasetTests):
+    dataset_cls = PandasFileBasedDataset
+
+    @property
+    def dummy_dataset(self):
+        dataset = self.dataset_cls(filepath='', format='json', label_columns=['label'], squeeze_return=True)
+        dataset.dataframe = self._data
+        return dataset
+
+
+class ParquetFileBasedPandasDatasetTests(SingleLabelPandasDatasetTests):
+    dataset_cls = PandasFileBasedDataset
+
+    @property
+    def dummy_dataset(self):
+        dataset = self.dataset_cls(filepath='', format='parquet', label_columns=['label'], squeeze_return=True)
+        dataset.dataframe = self._data
+        return dataset
+
+
+class PipelinePandasDatasetTests(SingleLabelPandasDatasetTests):
+    dataset_cls = PandasPipelineDataset
+
+    @property
+    def dummy_dataset(self):
+        dataset = self.dataset_cls(label_columns=['label'], squeeze_return=True)
+        dataset.dataframe = self._data
+        return dataset
+
+
+class BaseDaskDatasetTests(BasePandasDatasetTests):
+    '''
+    Tests for the dask related functionality
+    '''
+    dataset_cls = BaseDaskDataset
+
+    @property
+    def expected_dataframe(self):
+        return dd.from_pandas(super().expected_dataframe, npartitions=2)
+
+    @property
+    def expected_x(self):
+        return dd.from_pandas(super().expected_x, npartitions=2)
+
+    @property
+    def expected_y(self):
+        '''
+        Y values are expected to be squeezed
+        '''
+        return dd.from_pandas(super().expected_y, npartitions=2)
+
+    @property
+    def expected_train_dataframe(self):
+        return dd.from_pandas(super().expected_train_dataframe, npartitions=2)
+
+    @property
+    def expected_train_x(self):
+        return dd.from_pandas(super().expected_train_x, npartitions=2)
+
+    @property
+    def expected_train_y(self):
+        return dd.from_pandas(super().expected_train_y, npartitions=2)
+
+    @property
+    def _data(self):
+        return dd.from_pandas(super()._data, npartitions=2)
+
+
+class SingleLabelDaskDatasetTests(SingleLabelPandasDatasetTests):
+    '''
+    Same tests but overload labels to not squeeze to a numpy array
+    '''
+    dataset_cls = BaseDaskDataset
+
+    @property
+    def expected_dataframe(self):
+        return dd.from_pandas(super().expected_dataframe, npartitions=2)
+
+    @property
+    def expected_x(self):
+        return dd.from_pandas(super().expected_x, npartitions=2)
+
+    @property
+    def expected_y(self):
+        '''
+        Y values are expected to be squeezed
+        '''
+        return dd.from_pandas(super().expected_y, npartitions=2)
+
+    @property
+    def expected_train_dataframe(self):
+        return dd.from_pandas(super().expected_train_dataframe, npartitions=2)
+
+    @property
+    def expected_train_x(self):
+        return dd.from_pandas(super().expected_train_x, npartitions=2)
+
+    @property
+    def expected_train_y(self):
+        return dd.from_pandas(super().expected_train_y, npartitions=2)
+
+    @property
+    def _data(self):
+        return dd.from_pandas(super()._data, npartitions=2)
+
+
+class MultiLabelDaskDatasetTests(MultiLabelPandasDatasetTests):
+    '''
+    Same tests but overload labels to not squeeze to a numpy array
+    '''
+    dataset_cls = BaseDaskDataset
+
+    @property
+    def expected_dataframe(self):
+        return dd.from_pandas(super().expected_dataframe, npartitions=2)
+
+    @property
+    def expected_x(self):
+        return dd.from_pandas(super().expected_x, npartitions=2)
+
+    @property
+    def expected_y(self):
+        '''
+        Y values are expected to be squeezed
+        '''
+        return dd.from_pandas(super().expected_y, npartitions=2)
+
+    @property
+    def expected_train_dataframe(self):
+        return dd.from_pandas(super().expected_train_dataframe, npartitions=2)
+
+    @property
+    def expected_train_x(self):
+        return dd.from_pandas(super().expected_train_x, npartitions=2)
+
+    @property
+    def expected_train_y(self):
+        return dd.from_pandas(super().expected_train_y, npartitions=2)
+
+    @property
+    def _data(self):
+        return dd.from_pandas(super()._data, npartitions=2)
+
+
+class CSVFileBasedDaskDatasetTests(SingleLabelDaskDatasetTests):
+    dataset_cls = DaskFileBasedDataset
+
+    @property
+    def dummy_dataset(self):
+        dataset = self.dataset_cls(filepath='', format='csv', label_columns=['label'], squeeze_return=True)
+        dataset.dataframe = self._data
+        return dataset
+
+
+class JSONFileBasedDaskDatasetTests(SingleLabelDaskDatasetTests):
+    dataset_cls = DaskFileBasedDataset
+
+    @property
+    def dummy_dataset(self):
+        dataset = self.dataset_cls(filepath='', format='json', label_columns=['label'], squeeze_return=True)
+        dataset.dataframe = self._data
+        return dataset
+
+
+class ParquetFileBasedDaskDatasetTests(SingleLabelDaskDatasetTests):
+    dataset_cls = DaskFileBasedDataset
+
+    @property
+    def dummy_dataset(self):
+        dataset = self.dataset_cls(filepath='', format='parquet', label_columns=['label'], squeeze_return=True)
+        dataset.dataframe = self._data
+        return dataset
+
+
+class PipelineDaskDatasetTests(SingleLabelDaskDatasetTests):
+    dataset_cls = DaskPipelineDataset
+
+    @property
+    def dummy_dataset(self):
+        dataset = self.dataset_cls(label_columns=['label'], squeeze_return=True)
+        dataset.dataframe = self._data
+        return dataset
+
+
+class BaseNumpyDatasetTests(unittest.TestCase):
     '''
     Some tests for the numpy mixin class
     '''
@@ -577,55 +756,8 @@ class BaeNumpyDatasetTests(unittest.TestCase):
         self.assertEqual(self.dummy_split_dataset.get_feature_names(), ['X'])
 
 
-class DatasetTests(unittest.TestCase):
-    def test_build_dataframe_called(self):
-        pass
-
-    def test_hash_consistency(self):
-        '''
-        Ensure hash equivalence as long as underlying dataset
-        hasnt changed
-        '''
-        df = pd.DataFrame(np.random.randint(0, 100, size=(100, 4)), columns=list('ABCD'))
-        df_shuffled = df.sample(frac=1)
-        self.assertNotEqual(df.index.tolist(), df_shuffled.index.tolist())
-
-        dataset1 = Dataset()
-        dataset1._external_file = df
-
-        dataset2 = Dataset()
-        dataset2._external_file = df_shuffled
-
-        self.assertEqual(dataset1._hash(), dataset2._hash())
-
-    def test_hash(self):
-        '''
-        Compare hash to hard-coded precomputed hash
-        '''
-
-
-class ImplementationTests(unittest.TestCase):
-    '''
-    Implementation tests for new dataset objects - via inheritance (custom `build_dataframe()`)
-    or helper method, like `load_csv()`
-    '''
+class PipelineNumpyDatasetTests(unittest.TestCase):
     pass
-
-
-class PreprocessedImplementationTests(unittest.TestCase):
-    '''
-    Implementation tests for datasets where a dataset pipeline was used
-    first to transform a raw dataset
-    '''
-
-    def pandas_dataframe_with_no_split_pipeline(self):
-        pass
-
-    def pandas_dataframe_with_explicit_split_pipeline(self):
-        pass
-
-    def pandas_dataframe_with_random_split_pipeline(self):
-        pass
 
 
 if __name__ == '__main__':
