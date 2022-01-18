@@ -241,10 +241,11 @@ class _DatasetTestHelper(object):
         - df._is_view is False (True for certain slices)
         '''
         dataset = self.dummy_dataset
-        try:
-            unmodified_copy = dataset.dataframe.copy(deep=True)
-        except ValueError:  # dask
+
+        if issubclass(self.dataset_cls, BaseDaskDataset):  # dask
             unmodified_copy = dataset.dataframe.copy(deep=False)
+        else:
+            unmodified_copy = dataset.dataframe.copy(deep=True)
 
         for column, split in itertools.product(
             ['X'],
