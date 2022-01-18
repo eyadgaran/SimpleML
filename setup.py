@@ -42,11 +42,11 @@ onedrive_dependencies = ["onedrivesdk<2"]  # Python support EOL >2
 dask_dependencies = ["dask[complete]", "pyarrow"]
 test_dependencies = ["coverage"]
 all_dependencies = list(set(
-    postgres_dependencies +
-    deep_learning_dependencies +
-    cloud_dependencies +
-    onedrive_dependencies +
-    dask_dependencies
+    postgres_dependencies
+    + deep_learning_dependencies
+    + cloud_dependencies
+    + onedrive_dependencies
+    + dask_dependencies
 ))
 test_dependencies = all_dependencies + test_dependencies
 

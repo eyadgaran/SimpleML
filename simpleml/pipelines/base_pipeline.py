@@ -4,8 +4,8 @@ Base Module for Pipelines
 
 __author__ = 'Elisha Yadgaran'
 
-import logging
 import inspect
+import logging
 from typing import TYPE_CHECKING, Any, Generator, List, Optional, Union
 
 from future.utils import with_metaclass
@@ -316,7 +316,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         split = self.get_dataset_split(split=TRAIN_SPLIT, return_generator=False)
         supported_fit_params = {}
 
-        # Ensure input compatibility with split object 
+        # Ensure input compatibility with split object
         fit_params = inspect.signature(self.external_pipeline.fit).parameters
         # check if any params are **kwargs (all inputs accepted)
         has_kwarg_params = any([param.kind == param.VAR_KEYWORD for param in fit_params.values()])
@@ -327,7 +327,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
                     LOGGER.warning(f'Unsupported fit param encountered, `{split_arg}`. Dropping...')
                 else:
                     supported_fit_params[split_arg] = val
-                
+
         self.external_pipeline.fit(**supported_fit_params)
         self.fitted = True
 

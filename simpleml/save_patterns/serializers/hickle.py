@@ -5,10 +5,12 @@ Module for Hickle save patterns
 __author__ = 'Elisha Yadgaran'
 
 
-from os.path import isfile, join
+from os import makedirs
+from os.path import dirname, isfile, join
 from typing import Any, Dict
 
 from simpleml.imports import hickle
+from simpleml.registries import FILEPATH_REGISTRY
 from simpleml.save_patterns.base import BaseSerializer
 from simpleml.utils.configuration import HDF5_DIRECTORY
 
