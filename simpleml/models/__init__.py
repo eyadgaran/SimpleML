@@ -22,7 +22,7 @@ from .classifiers.sklearn.base_sklearn_classifier import SklearnClassifier
 from .classifiers.sklearn.dummy import SklearnDummyClassifier
 from .classifiers.sklearn.ensemble import SklearnAdaBoostClassifier, SklearnBaggingClassifier,\
     SklearnExtraTreesClassifier, SklearnGradientBoostingClassifier, SklearnRandomForestClassifier,\
-    SklearnVotingClassifier
+    SklearnVotingClassifier, SklearnHistGradientBoostingClassifier
 from .classifiers.sklearn.gaussian_process import SklearnGaussianProcessClassifier
 from .classifiers.sklearn.linear_model import SklearnLogisticRegression, SklearnLogisticRegressionCV,\
     SklearnPerceptron, SklearnRidgeClassifier, SklearnRidgeClassifierCV, SklearnSGDClassifier

@@ -9,7 +9,7 @@ from .base_sklearn_classifier import SklearnClassifier
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier,\
-    GradientBoostingClassifier, RandomForestClassifier, VotingClassifier
+    GradientBoostingClassifier, RandomForestClassifier, VotingClassifier, HistGradientBoostingClassifier
 import logging
 
 LOGGER = logging.getLogger(__name__)
@@ -104,3 +104,16 @@ class WrappedSklearnVotingClassifier(VotingClassifier, ClassificationExternalMod
 class SklearnVotingClassifier(SklearnClassifier):
     def _create_external_model(self, **kwargs):
         return WrappedSklearnVotingClassifier(**kwargs)
+
+
+'''
+Histogram-based Gradient Boosting Classifier
+'''
+
+class WrappedSklearnHistGradientBoostingClassifier(HistGradientBoostingClassifier, ClassificationExternalModelMixin):
+    # Voting classifier doesnt have an easy way to aggregate feature metadata
+    pass
+
+class SklearnHistGradientBoostingClassifier(SklearnClassifier):
+    def _create_external_model(self, **kwargs):
+        return WrappedSklearnHistGradientBoostingClassifier(**kwargs)
