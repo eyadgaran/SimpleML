@@ -28,10 +28,11 @@ class DaskPersistenceMethods(object):
 
     @classmethod
     def read_csv(cls, filepaths: List[str],
+                 sample_rows: int = 1000,
                  **kwargs) -> ddDataFrame:
         # Automatically handle index (dask cannot read in index) so
         # set based on output format
-        df = dd.read_csv(filepaths, **kwargs)
+        df = dd.read_csv(filepaths, sample_rows=sample_rows, **kwargs)
         if cls.INDEX_COLUMN in df.columns:
             df = df.set_index(cls.INDEX_COLUMN)
         return df
