@@ -60,7 +60,7 @@ setup(
         'sqlalchemy-mixins',
         'sqlalchemy-json',
         'alembic',
-        'numpy',
+        'numpy<1.20.0',  # breaking change to hashing with newer versions
         'cloudpickle',
         'future',
         'configparser',
