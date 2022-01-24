@@ -54,7 +54,7 @@ class HicklePersistenceMethods(object):
         return hickle.load(filepath, **kwargs)
 
 
-class CloudpickleFileSerializer(BaseSerializer):
+class HickleFileSerializer(BaseSerializer):
     @staticmethod
     def serialize(obj: Any,
                   filepath: str,
