@@ -8,8 +8,22 @@ __author__ = 'Elisha Yadgaran'
 
 import logging
 
-
 LOGGER = logging.getLogger(__name__)
+
+
+# class MissingImportMetaclass(type):
+#     '''
+#     TODO: figure out how to dynamically resolve metaclasses with conflicting mixins
+#
+#     Separate metaclass to circumvent cyclical dependency between factory and import
+#     wrapper
+#     '''
+#
+#     def __getattr__(self, attr):
+#         '''
+#         Recursively return ImportWrappers until a method is actually called
+#         '''
+#         return MissingImportFactory(f'{self.name}.{attr}', self.pypi_name, self.simpleml_extra_group)
 
 
 class MissingImportWrapper(object):
@@ -59,7 +73,6 @@ class MissingImportFactory(object):
 
 
 # Import optional dependencies or set to wrapper to avoid import errors
-
 try:
     import psycopg2
 except ImportError:
