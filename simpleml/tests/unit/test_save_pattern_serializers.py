@@ -337,7 +337,7 @@ class DaskCSVSerializerTests(unittest.TestCase):
         pass
 
 
-class DaskJSONSerializer(unittest.TestCase):
+class DaskJSONSerializerTests(unittest.TestCase):
     def test_serialize(self):
         pass
 
@@ -381,7 +381,7 @@ class PandasCSVSerializerTests(unittest.TestCase):
         pass
 
 
-class PandasJSONSerializer(unittest.TestCase):
+class PandasJSONSerializerTests(unittest.TestCase):
     def test_serialize(self):
         pass
 
