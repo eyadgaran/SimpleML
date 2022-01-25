@@ -36,7 +36,7 @@ else:
 
 # Different extras
 postgres_dependencies = ["psycopg2"]
-deep_learning_dependencies = ["tensorflow>=2", "hickle<4"]  # Hickle regression > 4 for scalar values
+deep_learning_dependencies = ["tensorflow>=2", "hickle"]
 cloud_dependencies = ["apache-libcloud", "pycrypto", "sshtunnel"]
 onedrive_dependencies = ["onedrivesdk<2"]  # Python support EOL >2
 dask_dependencies = ["dask[complete]", "pyarrow"]

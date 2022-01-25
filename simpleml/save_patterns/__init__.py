@@ -90,7 +90,7 @@ class CloudpickleDiskSavePattern(BaseSavePattern):
             # legacy behavior for filename without directory info
             filepath = join(PICKLE_DIRECTORY, legacy)
             source_directory = 'filestore'
-            LOGGER.debug('Overwriting legacy filepath param with {filepath} and source_directory with {source_directory}')
+            LOGGER.debug(f'Overwriting legacy filepath param with {filepath} and source_directory with {source_directory}')
 
             kwargs['filepath'] = filepath
             kwargs['source_directory'] = source_directory
@@ -116,7 +116,7 @@ class CloudpickleLibcloudSavePattern(BaseSavePattern):
             # legacy behavior for filename without directory info
             filepath = join(PICKLE_DIRECTORY, legacy)
             source_directory = 'libcloud_root_path'
-            LOGGER.debug('Overwriting legacy filepath param with {filepath} and source_directory with {source_directory}')
+            LOGGER.debug(f'Overwriting legacy filepath param with {filepath} and source_directory with {source_directory}')
 
             kwargs['filepath'] = filepath
             kwargs['source_directory'] = source_directory

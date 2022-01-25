@@ -10,13 +10,13 @@ hashing of numpy arrays.
 # Copyright (c) 2009 Gael Varoquaux
 # License: BSD Style, 3 clauses.
 
-import pickle
+import decimal
 import hashlib
+import io
+import pickle
+import struct
 import sys
 import types
-import struct
-import io
-import decimal
 
 PY3_OR_LATER = sys.version_info[0] >= 3
 try:

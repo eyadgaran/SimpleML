@@ -16,7 +16,6 @@ class Registry(object):
     '''
     Importable class to maintain reference to the global registry
     '''
-    # TODO: add context manager to temporarily overwrite key
 
     def __init__(self):
         self.registry: Dict[str, Type] = {}
