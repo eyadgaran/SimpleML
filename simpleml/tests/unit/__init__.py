@@ -6,12 +6,11 @@ database connection
 __author__ = 'Elisha Yadgaran'
 
 
-import unittest
-import os
 import glob
+import os
+import unittest
 
 from coverage import Coverage
-
 
 DIRECTORY_IMPORT_PATH = 'simpleml.tests.unit'
 DIRECTORY_ABSOLUTE_PATH = os.path.dirname(__file__)
@@ -22,7 +21,10 @@ class UnitTestSuite(unittest.TestSuite):
         # Load all tests in the directory
         loader = unittest.TestLoader()
         module_paths = glob.glob(os.path.join(DIRECTORY_ABSOLUTE_PATH, 'test*.py'), recursive=True)  # /root/abspath/tests/test*.py
-        relative_module_paths = [i[len(DIRECTORY_ABSOLUTE_PATH) + 1:] for i in module_paths]  # find the delta from this filepath test*.py
+        if len(DIRECTORY_ABSOLUTE_PATH) == 0:  # launched from the local directory - no prefix to strip out
+            relative_module_paths = [i[len(DIRECTORY_ABSOLUTE_PATH):] for i in module_paths]  # find the delta from this filepath test*.py
+        else:
+            relative_module_paths = [i[len(DIRECTORY_ABSOLUTE_PATH) + 1:] for i in module_paths]  # find the delta from this filepath test*.py
         module_imports = ['.'.join((DIRECTORY_IMPORT_PATH, i.replace('/', '.')[:-3])) for i in relative_module_paths]  # Import string simpleml.tests.test*
         tests = [loader.loadTestsFromName(i) for i in module_imports]
         super().__init__(tests=tests)

@@ -4,24 +4,26 @@ Base Module for Pipelines
 
 __author__ = 'Elisha Yadgaran'
 
+import inspect
 import logging
+from typing import TYPE_CHECKING, Any, Generator, List, Optional, Union
+
+from future.utils import with_metaclass
+
 import numpy as np
 import pandas as pd
-
-from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
-from sqlalchemy.orm import relationship
-from future.utils import with_metaclass
-from typing import Optional, List, Any, Union, Generator, TYPE_CHECKING
-
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.imports import Sequence
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.save_patterns.decorators import ExternalArtifactDecorators
-from simpleml.registries import PipelineRegistry
 from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
-from simpleml.pipelines.external_pipelines import DefaultPipeline, SklearnPipeline
+from simpleml.pipelines.external_pipelines import (DefaultPipeline,
+                                                   SklearnPipeline)
 from simpleml.pipelines.validation_split_mixins import Split
+from simpleml.registries import PipelineRegistry
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import PipelineError
+from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
+from sqlalchemy.orm import relationship
 
 if TYPE_CHECKING:
     # Cyclical import hack for type hints
@@ -312,8 +314,21 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         # but must be encased in a Split object
         # Explicitly prevent generator fit for pipelines
         split = self.get_dataset_split(split=TRAIN_SPLIT, return_generator=False)
+        supported_fit_params = {}
 
-        self.external_pipeline.fit(**split)
+        # Ensure input compatibility with split object
+        fit_params = inspect.signature(self.external_pipeline.fit).parameters
+        # check if any params are **kwargs (all inputs accepted)
+        has_kwarg_params = any([param.kind == param.VAR_KEYWORD for param in fit_params.values()])
+        # log ignored args
+        if not has_kwarg_params:
+            for split_arg, val in split.items():
+                if split_arg not in fit_params:
+                    LOGGER.warning(f'Unsupported fit param encountered, `{split_arg}`. Dropping...')
+                else:
+                    supported_fit_params[split_arg] = val
+
+        self.external_pipeline.fit(**supported_fit_params)
         self.fitted = True
 
         return self

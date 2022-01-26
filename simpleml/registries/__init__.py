@@ -18,3 +18,6 @@ from simpleml.registries.sqlalchemy_registry import \
 # Registry for save patterns
 SAVE_METHOD_REGISTRY = NamedRegistry()
 LOAD_METHOD_REGISTRY = NamedRegistry()
+
+# Registry for dynamic system filepaths
+FILEPATH_REGISTRY = NamedRegistry()

@@ -223,6 +223,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
             for save_pattern in save_patterns:
                 self.save_external_file(
                     artifact_name=artifact_name,
+                    filepath=f"{save_params['persistable_type']}-{save_params['persistable_id']}-{artifact_name}",
                     save_pattern=save_pattern,
                     obj=obj, **save_params)
 
@@ -245,7 +246,7 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
         if save_cls is None:
             raise SimpleMLError(f'No registered save pattern for {save_pattern}')
 
-        filepath_data = save_cls.save(**save_params)
+        filepath_data = save_cls.save(artifact_name=artifact_name, **save_params)
 
         # Update filepaths
         if self.filepaths is None:
@@ -346,7 +347,10 @@ class Persistable(with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHas
             raise SimpleMLError(f'No artifact saved using save pattern {save_pattern} for {artifact_name}')
 
         filepath_data = artifact[save_pattern]
-        return load_cls.load(filepath_data)
+        if not isinstance(filepath_data, dict):
+            # legacy wrap for old filepath formats
+            filepath_data = {'legacy': filepath_data}
+        return load_cls.load(**filepath_data)
 
     def restore_artifact(self, artifact_name: str, obj: Any) -> None:
         '''

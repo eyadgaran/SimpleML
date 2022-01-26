@@ -24,6 +24,7 @@ from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.persistables.sqlalchemy_types import GUID
 from simpleml.registries import DatasetRegistry
 from simpleml.utils.errors import DatasetError
+from simpleml.datasets.dataset_splits import Split
 
 if TYPE_CHECKING:
     # Cyclical import hack for type hints
@@ -249,6 +250,49 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         # By default dont load data unless it actually gets used
         if self.pipeline:
             self.pipeline.load(load_externals=False)
+
+    @property
+    def X(self) -> Any:
+        '''
+        Return the subset that isn't in the target labels
+        '''
+        raise NotImplementedError
+
+    @property
+    def y(self) -> Any:
+        '''
+        Return the target label columns
+        '''
+        raise NotImplementedError
+
+    def get(self, column: str, split: str) -> Any:
+        '''
+        Unimplemented method to explicitly split X and y
+        Must be implemented by subclasses
+        '''
+        raise NotImplementedError
+
+    def get_feature_names(self) -> List[str]:
+        '''
+        Should return a list of the features in the dataset
+        '''
+        raise NotImplementedError
+
+    def get_split(self, split: str) -> Split:
+        '''
+        Uninplemented method to return a Split object
+
+        Differs from the main get method by wrapping with an internal
+        interface class (`Split`). Agnostic to implementation library
+        and compatible with downstream SimpleML consumers (pipelines, models)
+        '''
+        raise NotImplementedError
+
+    def get_split_names(self) -> List[str]:
+        '''
+        Uninplemented method to return the split names available for the dataset
+        '''
+        raise NotImplementedError
 
 
 class Dataset(AbstractDataset):

@@ -6,6 +6,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 import unittest
+
 from simpleml.imports import MissingImportFactory
 
 
@@ -40,6 +41,14 @@ class ImportHandlingTests(unittest.TestCase):
     def test_missing_import_used_as_callable(self):
         with self.assertRaises(ImportError):
             self.missing_import()
+
+    def test_accessing_attribute(self):
+        '''
+        Import wrappers do not have a metaclass definition to dynamically generate
+        class methods. Expected to return an AttributeError
+        '''
+        with self.assertRaises(AttributeError):
+            self.missing_import.some_method()
 
 
 if __name__ == '__main__':
