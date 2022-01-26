@@ -56,6 +56,15 @@ class TitanicRegressionTest(unittest.TestCase):
         self.compare_hashes(new, old)
         assert_data_container_equal(new._external_file, old._external_file)
 
+    def compare_pipelines(new, old):
+        pass
+
+    def compare_models(new, old):
+        pass
+
+    def compare_metrics(new, old):
+        pass
+
     def test_dask_datasets(self):
         registered_name = 'DaskFileBasedDataset'
         name = 'titanic-regression-{test_name}'
@@ -90,6 +99,23 @@ class TitanicRegressionTest(unittest.TestCase):
 
                 self.compare_datasets(new_dataset, regression_dataset)
 
+    def test_pipeline_consistency(self):
+        pass
+
+    def test_model_consistency(self):
+        pass
+
+    def test_pandas_hashing(self):
+        pass
+
+    def test_none_hashing(self):
+        pass
+
+    def test_dict_hashing(self):
+        pass
+
 
 if __name__ == '__main__':
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
