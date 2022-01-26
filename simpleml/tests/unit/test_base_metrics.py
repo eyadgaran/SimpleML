@@ -6,7 +6,6 @@ __author__ = 'Elisha Yadgaran'
 
 
 import unittest
-
 from unittest.mock import MagicMock
 
 from simpleml.metrics.base_metric import AbstractMetric
@@ -24,7 +23,7 @@ class BaseMetricTests(unittest.TestCase):
         metric.add_model(model_mock)
         metric.add_dataset(dataset_mock)
 
-        expected_hash = '01e376b4ff62e18a00851b7adbb5e1b2'
+        expected_hash = '113b36e67ec318e242e20b2f32bd0615'
         self.assertEqual(metric._hash(), expected_hash)
 
     def test_default_hash_logic_with_new_hash(self):
@@ -40,7 +39,7 @@ class BaseMetricTests(unittest.TestCase):
         metric.add_model(model_mock)
         metric.add_dataset(dataset_mock)
 
-        expected_hash = '01e376b4ff62e18a00851b7adbb5e1b2'
+        expected_hash = '113b36e67ec318e242e20b2f32bd0615'
         self.assertEqual(metric._hash(), expected_hash)
 
     def test_getting_pipeline_split(self):
