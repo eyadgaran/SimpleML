@@ -6,7 +6,7 @@ __author__ = 'Elisha Yadgaran'
 
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, Generator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
 
 from future.utils import with_metaclass
 
@@ -14,16 +14,19 @@ import numpy as np
 import pandas as pd
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.imports import Sequence
+from simpleml.datasets.dataset_splits import Split, SplitContainer
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.pipelines.external_pipelines import (DefaultPipeline,
                                                    SklearnPipeline)
-from simpleml.pipelines.validation_split_mixins import Split
 from simpleml.registries import PipelineRegistry
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import PipelineError
 from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
+
+from .projected_splits import (IdentityProjectedDatasetSplit,
+                               ProjectedDatasetSplit)
 
 if TYPE_CHECKING:
     # Cyclical import hack for type hints
@@ -207,9 +210,26 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
                           split: Optional[str] = None,
                           return_generator: bool = False,
                           return_sequence: bool = False, **kwargs) -> Split:
+    '''
+    Data Accessors
+    '''
+
+    def split_dataset(self) -> None:
+        '''
+        Method to create a cached reference to the projected data (cant use dataset
+        directly in case of mutation concerns)
+
+        Non-split mixin class. Returns full dataset for any split name
+        '''
+        default_split = IdentityProjectedDatasetSplit(dataset=self.dataset, split=None)
+        # use a single reference to avoid duplicating on different key searches
+        self._dataset_splits = SplitContainer(
+            default_factory=lambda: default_split
+        )
+
         '''
         Get specific dataset split
-        Assumes a Split object (`simpleml.pipelines.validation_split_mixins.Split`)
+        Assumes a ProjectedDatasetSplit object (`simpleml.pipelines.projected_splits.ProjectedDatasetSplit`)
         is returned. Inherit or implement similar expected attributes to replace
 
         Uses internal `self._dataset_splits` as the split container - assumes
@@ -286,6 +306,10 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         to play nice with keras and enable thread safe generation.
         '''
         return DatasetSequence(split, batch_size, shuffle, **kwargs)
+    def get_split_names(self) -> List[str]:
+        if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
+            self.split_dataset()
+        return list(self._dataset_splits.keys())
 
     def X(self, split: Optional[str] = None) -> Any:
         '''

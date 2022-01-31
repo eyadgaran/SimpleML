@@ -1,7 +1,7 @@
 '''
 Module for different pipeline split methods for cross validation
 
-    1) No Split -- Just use all the data
+    1) No Split -- Just use all the data - hardcoded as the default for all pipelines
     2) Explicit Split -- dataset class defines the split
     3) Percentage -- random split support for train, validation, test
     4) Chronological -- time based split support for train, validation, test
@@ -10,16 +10,18 @@ Module for different pipeline split methods for cross validation
 
 __author__ = 'Elisha Yadgaran'
 
-import pandas as pd
-
 from abc import ABCMeta, abstractmethod
-from sklearn.model_selection import train_test_split
-from future.utils import with_metaclass
 from typing import Dict, List, Optional, Union
 
-from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
+from future.utils import with_metaclass
+
+import pandas as pd
+from simpleml.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
-from .projected_splits import IdentityProjectedDatasetSplit, IndexBasedProjectedDatasetSplit
+from sklearn.model_selection import train_test_split
+
+from .projected_splits import (IdentityProjectedDatasetSplit,
+                               IndexBasedProjectedDatasetSplit)
 
 
 class SplitMixin(with_metaclass(ABCMeta, object)):
@@ -33,22 +35,6 @@ class SplitMixin(with_metaclass(ABCMeta, object)):
 
     def containerize_split(self, split_dict: Dict[str, Split]) -> SplitContainer:
         return SplitContainer(**split_dict)
-
-    def get_split_names(self) -> List[str]:
-        if not hasattr(self, '_dataset_splits') or self._dataset_splits is None:
-            self.split_dataset()
-        return list(self._dataset_splits.keys())
-
-
-class NoSplitMixin(SplitMixin):
-    def split_dataset(self) -> None:
-        '''
-        Non-split mixin class. Returns full dataset for any split name
-        '''
-        default_split = IdentityProjectedDatasetSplit(dataset=self.dataset, split=None)
-        self._dataset_splits = self.containerize_split({
-            'default_factory': lambda: default_split
-        })
 
 
 class ExplicitSplitMixin(SplitMixin):
