@@ -299,21 +299,10 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         '''
         return self.get_dataset_split(split=split).y
 
-    def fit(self):
+    def _filter_fit_params(self, split: ProjectedDatasetSplit) -> Dict[str, Any]:
         '''
-        Pass through method to external pipeline
+        Helper to filter unsupported fit params from dataset splits
         '''
-        self.assert_dataset('Must set dataset before fitting')
-
-        if self.fitted:
-            LOGGER.warning('Cannot refit pipeline, skipping operation')
-            return self
-
-        # Only use default (train) fold to fit
-        # No constraint on split -- can be a dataframe, ndarray, or generator
-        # but must be encased in a Split object
-        # Explicitly prevent generator fit for pipelines
-        split = self.get_dataset_split(split=TRAIN_SPLIT, return_generator=False)
         supported_fit_params = {}
 
         # Ensure input compatibility with split object
@@ -327,7 +316,26 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
                     LOGGER.warning(f'Unsupported fit param encountered, `{split_arg}`. Dropping...')
                 else:
                     supported_fit_params[split_arg] = val
+        else:
+            supported_fit_params = split
 
+        return supported_fit_params
+
+    def fit(self):
+        '''
+        Pass through method to external pipeline
+        '''
+        self.assert_dataset('Must set dataset before fitting')
+
+        if self.fitted:
+            LOGGER.warning('Cannot refit pipeline, skipping operation')
+            return self
+
+        # Only use default (train) fold to fit
+        # No constraint on split -- can be a dataframe, ndarray, or generator
+        # but must be encased in a Split object
+        split = self.get_dataset_split(split=TRAIN_SPLIT)
+        supported_fit_params = self._filter_fit_params(split)
         self.external_pipeline.fit(**supported_fit_params)
         self.fitted = True
 

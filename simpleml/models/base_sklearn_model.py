@@ -44,5 +44,7 @@ class SklearnModel(LibraryModel):
                     LOGGER.warning(f'Unsupported fit param encountered, `{split_arg}`. Dropping...')
                 else:
                     supported_fit_params[split_arg] = val
+        else:
+            supported_fit_params = split
 
         self.external_model.fit(**supported_fit_params)
