@@ -6,12 +6,12 @@ need to overwrite other methods at the root
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
-from .base_model import LibraryModel
-
 import logging
 from abc import abstractmethod
 
+from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
+
+from .base_model import LibraryModel
 
 LOGGER = logging.getLogger(__name__)
 
@@ -99,11 +99,8 @@ class KerasModel(LibraryModel):
             self._fit_generator()
         else:
             # Explicitly fit only on default (train) split
-            split = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_generator=False, return_sequence=False)
-            # Hack for python <3.5 -- cant use fit(**split, **kwargs)
-            temp_kwargs = self.get_params().copy()
-            temp_kwargs.update(split)
-            self.external_model.fit(**temp_kwargs)
+            split = self.transform(X=None, dataset_split=TRAIN_SPLIT)
+            self.external_model.fit(**split, **self.get_params)
 
     def _fit_generator(self):
         '''

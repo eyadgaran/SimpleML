@@ -30,7 +30,7 @@ class SklearnModel(LibraryModel):
         fit_generator method
         '''
         # Explicitly fit only on default (train) split
-        split = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_generator=False)
+        split = self.transform(X=None, dataset_split=TRAIN_SPLIT)
         supported_fit_params = {}
 
         # Ensure input compatibility with split object
