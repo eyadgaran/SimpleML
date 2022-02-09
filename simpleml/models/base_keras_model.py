@@ -108,22 +108,24 @@ class KerasModel(LibraryModel):
         retrieve them automatically
         '''
         use_keras_sequence = self.config.get('use_sequence_object', False)
+        if use_keras_sequence:
+            iterator_cls = KerasSequenceIterator
+        else:
+            iterator_cls = PythonIterator
 
         # Explicitly fit only on default (train) split
-        training_generator = self.transform(X=None, dataset_split=TRAIN_SPLIT,
-                                            return_generator=True,
-                                            return_sequence=use_keras_sequence,
-                                            **self.config.get('training_generator_params', {}))
+        transformed_training_data = self.transform(X=None, dataset_split=TRAIN_SPLIT)
+        training_generator = iterator_cls(transformed_training_data,
+                                          **self.config.get('training_generator_params', {}))
         if self.config['use_validation_generator']:
-            validation = self.transform(X=None, dataset_split=VALIDATION_SPLIT,
-                                        return_generator=True,
-                                        return_sequence=use_keras_sequence,
-                                        **self.config.get('validation_generator_params', {}))
+            transformed_validation_data = self.transform(X=None, dataset_split=VALIDATION_SPLIT)
+            validation_generator = iterator_cls(transformed_validation_data,
+                                                **self.config.get('validation_generator_params', {}))
         else:
-            validation = None
+            validation_generator = None
 
         self.external_model.fit_generator(
-            training_generator, validation_data=validation, **self.get_params())
+            training_generator, validation_data=validation_generator, **self.get_params())
 
     def set_params(self, **kwargs):
         '''
