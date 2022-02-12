@@ -12,6 +12,7 @@ from abc import abstractmethod
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
 
 from .base_model import LibraryModel
+from .split_iterators import DatasetSequence, PythonIterator
 
 LOGGER = logging.getLogger(__name__)
 
@@ -109,7 +110,7 @@ class KerasModel(LibraryModel):
         '''
         use_keras_sequence = self.config.get('use_sequence_object', False)
         if use_keras_sequence:
-            iterator_cls = KerasSequenceIterator
+            iterator_cls = DatasetSequence
         else:
             iterator_cls = PythonIterator
 
