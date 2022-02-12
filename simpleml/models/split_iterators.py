@@ -6,11 +6,13 @@ Helper classes to iterate splits
 __author__ = 'Elisha Yadgaran'
 
 
-from typing import Tuple, Union
+from typing import Any, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from simpleml.datasets.dataset_splits import Split
 from simpleml.imports import Sequence
+from simpleml.pipelines import Pipeline
 
 
 def split_to_ordered_tuple(split: Split) -> Tuple:
