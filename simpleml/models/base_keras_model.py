@@ -116,12 +116,14 @@ class KerasModel(LibraryModel):
 
         # Explicitly fit only on default (train) split
         transformed_training_data = self.transform(X=None, dataset_split=TRAIN_SPLIT)
-        training_generator = iterator_cls(transformed_training_data,
-                                          **self.config.get('training_generator_params', {}))
+        training_generator_params = self.config.get('training_generator_params', {}).copy()
+        training_generator_params['return_tuple'] = True  # force tuple return for compatibility
+        training_generator = iterator_cls(transformed_training_data, **training_generator_params)
         if self.config['use_validation_generator']:
             transformed_validation_data = self.transform(X=None, dataset_split=VALIDATION_SPLIT)
-            validation_generator = iterator_cls(transformed_validation_data,
-                                                **self.config.get('validation_generator_params', {}))
+            validation_generator_params = self.config.get('validation_generator_params', {}).copy()
+            validation_generator_params['return_tuple'] = True  # force tuple return for compatibility
+            validation_generator = iterator_cls(transformed_validation_data, **validation_generator_params)
         else:
             validation_generator = None
 
