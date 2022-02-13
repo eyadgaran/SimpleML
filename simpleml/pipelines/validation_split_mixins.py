@@ -18,6 +18,7 @@ from future.utils import with_metaclass
 import pandas as pd
 from simpleml.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
+from simpleml.imports import ddDataFrame, ddSeries
 from sklearn.model_selection import train_test_split
 
 from .projected_splits import (IdentityProjectedDatasetSplit,
@@ -73,12 +74,6 @@ class RandomSplitMixin(SplitMixin):
         '''
         super(RandomSplitMixin, self).__init__(**kwargs)
 
-        if train_size is None:
-            train_size = 1.0 - validation_size
-
-        if test_size is None:
-            test_size = 1.0 - train_size - validation_size
-
         # Pipeline Params
         self.config.update({
             'train_size': train_size,
@@ -95,11 +90,13 @@ class RandomSplitMixin(SplitMixin):
         if none exists
         '''
         if isinstance(data, (pd.DataFrame, pd.Series)):
-            return data.index
+            return data.index.tolist()
+        elif isinstance(data, (ddDataFrame, ddSeries)):
+            return data.index.compute().tolist()
 
         else:
             # no named index, use a linear range
-            return range(len(data))
+            return list(range(len(data)))
 
     def split_dataset(self) -> None:
         '''
@@ -116,20 +113,46 @@ class RandomSplitMixin(SplitMixin):
         # use the X split section
         index = self.get_index(self.dataset.X)
 
+        # Convert all sizes to counts to make typing consistent
+        def rate_to_count(i):
+            if isinstance(i, float) and i <= 1.0 and i >= 0.0:
+                return round(i * len(index))
+            return i
+
+        train_size: int = rate_to_count(train_size)
+        validation_size: int = rate_to_count(validation_size)
+        test_size: int = rate_to_count(test_size)
+
+        if train_size is None:
+            # everything not already allocated is attributed to train
+            train_size = len(index) - (validation_size or 0) - (test_size or 0)
+
+        if test_size is None:
+            # remaining unallocated is attributed to test
+            test_size = len(index) - (validation_size or 0) - train_size
+
+        if validation_size is None:
+            validation_size = len(index) - train_size - test_size
+
         if test_size == 0:  # No split necessary
             test_indices = []
             remaining_indices = index
+        elif test_size == len(index):
+            test_indices = index
+            remaining_indices = []
         else:
             remaining_indices, test_indices = train_test_split(
                 index, test_size=test_size, random_state=random_state, shuffle=shuffle)
 
-        calibrated_validation_size = float(validation_size) / (validation_size + train_size)
-        if calibrated_validation_size == 0:  # No split necessary
+        if validation_size == 0:  # No split necessary
             train_indices = remaining_indices
             validation_indices = []
+        elif validation_size == len(remaining_indices):
+            validation_indices = remaining_indices
+            train_indices = []
         else:
             train_indices, validation_indices = train_test_split(
-                remaining_indices, test_size=calibrated_validation_size, random_state=random_state, shuffle=shuffle)
+                remaining_indices, test_size=validation_size, random_state=random_state, shuffle=shuffle)
 
         self._dataset_splits = self.containerize_split({
             TRAIN_SPLIT: IndexBasedProjectedDatasetSplit(dataset=self.dataset, split=None, indices=train_indices),
