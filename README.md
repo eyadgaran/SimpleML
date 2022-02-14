@@ -138,21 +138,18 @@ This block (or any subset) can be executed as many times as desired and will cre
 autoincrementing version (for each "name").
 
 ```python
-from simpleml.datasets import SingleLabelPandasDataset
-from simpleml.pipelines import RandomSplitPipeline
+from simpleml.datasets.pandas import PandasFileBasedDataset
+from simpleml.pipelines.sklearn import RandomSplitSklearnPipeline
 from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
 from simpleml.models import SklearnLogisticRegression
 from simpleml.metrics AccuracyMetric
 from simpleml.constants import TEST_SPLIT
 
 
-# Define Dataset and point to loading file -- Creates a pandas.DataFrame artifact
-class TitanicDataset(SingleLabelPandasDataset):
-    def build_dataframe(self):
-        self.dataframe = self.load_csv('filepath/to/train.csv')
-
 # Create Dataset and save it
-dataset = TitanicDataset(name='titanic', label_columns=['Survived'])
+dataset = PandasFileBasedDataset(name='titanic',
+    filepath='filepath/to/train.csv', format='csv',
+    label_columns=['Survived'], squeeze_return=True)
 dataset.build_dataframe()
 dataset.save()  # this defaults to a pickle serialization
 
@@ -165,7 +162,7 @@ transformers = [
 
 # Create Pipeline and save it - Use basic 80-20 test split
 # Creates an sklearn.pipelines.Pipeline artifact
-pipeline = RandomSplitPipeline(name='titanic', external_pipeline_class='sklearn', transformers=transformers,
+pipeline = RandomSplitSklearnPipeline(name='titanic', transformers=transformers,
                                train_size=0.8, validation_size=0.0, test_size=0.2)
 pipeline.add_dataset(dataset)  # adds a lineage relationship
 pipeline.fit()  # automatically uses relationship and parameters to choose data
@@ -197,8 +194,9 @@ from simpleml.utils import DatasetCreator, PipelineCreator, ModelCreator, Metric
 # Option 1: Explicit object creation (pass in dependencies)
 # ---------------------------------------------------------------------------- #
 # Object defining parameters
-dataset_kwargs = {'name': 'titanic', 'registered_name': 'TitanicDataset', 'label_columns': ['Survived']}
-pipeline_kwargs = {'name': 'titanic', 'registered_name': 'RandomSplitPipeline', 'transformers': transformers, 'train_size': 0.8, 'validation_size': 0.0, 'test_size': 0.2}
+dataset_kwargs = {'name': 'titanic', 'registered_name': 'PandasFileBasedDataset',
+  'filepath': 'filepath/to/train.csv', 'format': 'csv', 'label_columns': ['Survived'], 'squeeze_return': True}
+pipeline_kwargs = {'name': 'titanic', 'registered_name': 'RandomSplitSklearnPipeline', 'transformers': transformers, 'train_size': 0.8, 'validation_size': 0.0, 'test_size': 0.2}
 model_kwargs = {'name': 'titanic', 'registered_name': 'SklearnLogisticRegression'}
 metric_kwargs = {'registered_name': 'AccuracyMetric', 'dataset_split': TEST_SPLIT}
 

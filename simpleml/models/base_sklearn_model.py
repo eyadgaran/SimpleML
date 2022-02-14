@@ -30,7 +30,7 @@ class SklearnModel(LibraryModel):
         fit_generator method
         '''
         # Explicitly fit only on default (train) split
-        split = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_generator=False)
+        split = self.transform(X=None, dataset_split=TRAIN_SPLIT)
         supported_fit_params = {}
 
         # Ensure input compatibility with split object
@@ -44,5 +44,7 @@ class SklearnModel(LibraryModel):
                     LOGGER.warning(f'Unsupported fit param encountered, `{split_arg}`. Dropping...')
                 else:
                     supported_fit_params[split_arg] = val
+        else:
+            supported_fit_params = split
 
         self.external_model.fit(**supported_fit_params)

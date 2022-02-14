@@ -8,6 +8,7 @@
 - Adds hashing support for dask dataframes
 - Refactored persistence ("save_patterns") package into standalone extensible framework
 - Adds context manager support to registries for temporary overwrite
+- Refactor pipelines into library based subclasses
 
 *BREAKING CHANGES*
 - Pandas dataset will default param `squeeze_return` to False (classes expecting to return a series will need to be updated)
@@ -15,6 +16,8 @@
 - Onedrive, Hickle, and database save patterns are removed (functionality is still available but a composed pattern is not predefined. these can be trivially added in user code if needed)
 - Changed pandas hash output to int from numpy.int64 (due to breaking change in NumpyHasher)
 - Changed primitive deterministic hash from pickle to md5
+- Extracted data iterators into utility wrappers. Pipelines no longer have flags to return iterators
+- Random split defaults are computed at runtime instead of precalculated (affects hash)
 
 ### 0.11.0 (2021-10-10)
 - Added support to hasher for initialized objects
