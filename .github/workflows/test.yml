@@ -42,7 +42,7 @@ jobs:
         pip install -e .[test]
     - name:                  Run ${{ matrix.test-suite }} tests
       run:                   |
-        simpleml-${{ matrix.test-suite }}-test
+        coverage run simpleml/tests/${{ matrix.test-suite }}/__init__.py
     - name:                  Coveralls Parallel
       env:
         GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
