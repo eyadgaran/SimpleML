@@ -63,8 +63,8 @@ From inside the notebook we will conduct a very minimal modeling exercise using
 the titanic dataset from kaggle_::
 
     from simpleml.utils import Database
-    from simpleml.datasets import SingleLabelPandasDataset
-    from simpleml.pipelines import RandomSplitPipeline
+    from simpleml.datasets.pandas import PandasFileBasedDataset
+    from simpleml.pipelines.sklearn import RandomSplitSklearnPipeline
     from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
     from simpleml.models import SklearnLogisticRegression
     from simpleml.metrics AccuracyMetric
@@ -74,13 +74,10 @@ the titanic dataset from kaggle_::
     # Initialize Database Connection - Uses Sqlite Default
     Database().initialize(upgrade=True)
 
-    # Define Dataset and point to loading file
-    class TitanicDataset(SingleLabelPandasDataset):
-        def build_dataframe(self):
-            self.dataframe = self.load_csv('filepath/to/train.csv')
-
     # Create Dataset and save it
-    dataset = TitanicDataset(name='titanic', label_columns=['Survived'])
+    dataset = PandasFileBasedDataset(name='titanic',
+          filepath='filepath/to/train.csv', format='csv',
+          label_columns=['Survived'], squeeze_return=True)
     dataset.build_dataframe()
     dataset.save()
 
@@ -92,7 +89,7 @@ the titanic dataset from kaggle_::
     ]
 
     # Create Pipeline and save it - Use basic 80-20 test split
-    pipeline = RandomSplitPipeline(name='titanic', transformers=transformers,
+    pipeline = RandomSplitSklearnPipeline(name='titanic', transformers=transformers,
                                    train_size=0.8, validation_size=0.0, test_size=0.2)
     pipeline.add_dataset(dataset)
     pipeline.fit()

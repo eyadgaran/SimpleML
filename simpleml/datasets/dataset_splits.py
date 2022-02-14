@@ -5,10 +5,11 @@ between persistables
 
 __author__ = 'Elisha Yadgaran'
 
-import pandas as pd
-
 from collections import defaultdict
 from typing import Any
+
+import pandas as pd
+from simpleml.imports import ddDataFrame, ddSeries
 
 
 class Split(dict):
@@ -36,6 +37,10 @@ class Split(dict):
 
         # Pandas objects
         if isinstance(obj, (pd.DataFrame, pd.Series)) and obj.empty:
+            return True
+
+        # Dask objects
+        if isinstance(obj, (ddDataFrame, ddSeries)) and len(obj.index) == 0:
             return True
 
         # Empty built-ins - uses __nonzero__
