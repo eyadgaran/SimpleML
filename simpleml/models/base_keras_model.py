@@ -6,12 +6,13 @@ need to overwrite other methods at the root
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
-from .base_model import LibraryModel
-
 import logging
 from abc import abstractmethod
 
+from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
+
+from .base_model import LibraryModel
+from .split_iterators import DatasetSequence, PythonIterator
 
 LOGGER = logging.getLogger(__name__)
 
@@ -99,11 +100,8 @@ class KerasModel(LibraryModel):
             self._fit_generator()
         else:
             # Explicitly fit only on default (train) split
-            split = self.transform(X=None, dataset_split=TRAIN_SPLIT, return_generator=False, return_sequence=False)
-            # Hack for python <3.5 -- cant use fit(**split, **kwargs)
-            temp_kwargs = self.get_params().copy()
-            temp_kwargs.update(split)
-            self.external_model.fit(**temp_kwargs)
+            split = self.transform(X=None, dataset_split=TRAIN_SPLIT)
+            self.external_model.fit(**split, **self.get_params)
 
     def _fit_generator(self):
         '''
@@ -111,22 +109,26 @@ class KerasModel(LibraryModel):
         retrieve them automatically
         '''
         use_keras_sequence = self.config.get('use_sequence_object', False)
+        if use_keras_sequence:
+            iterator_cls = DatasetSequence
+        else:
+            iterator_cls = PythonIterator
 
         # Explicitly fit only on default (train) split
-        training_generator = self.transform(X=None, dataset_split=TRAIN_SPLIT,
-                                            return_generator=True,
-                                            return_sequence=use_keras_sequence,
-                                            **self.config.get('training_generator_params', {}))
+        transformed_training_data = self.transform(X=None, dataset_split=TRAIN_SPLIT)
+        training_generator_params = self.config.get('training_generator_params', {}).copy()
+        training_generator_params['return_tuple'] = True  # force tuple return for compatibility
+        training_generator = iterator_cls(transformed_training_data, **training_generator_params)
         if self.config['use_validation_generator']:
-            validation = self.transform(X=None, dataset_split=VALIDATION_SPLIT,
-                                        return_generator=True,
-                                        return_sequence=use_keras_sequence,
-                                        **self.config.get('validation_generator_params', {}))
+            transformed_validation_data = self.transform(X=None, dataset_split=VALIDATION_SPLIT)
+            validation_generator_params = self.config.get('validation_generator_params', {}).copy()
+            validation_generator_params['return_tuple'] = True  # force tuple return for compatibility
+            validation_generator = iterator_cls(transformed_validation_data, **validation_generator_params)
         else:
-            validation = None
+            validation_generator = None
 
         self.external_model.fit_generator(
-            training_generator, validation_data=validation, **self.get_params())
+            training_generator, validation_data=validation_generator, **self.get_params())
 
     def set_params(self, **kwargs):
         '''

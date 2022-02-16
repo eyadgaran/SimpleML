@@ -6,12 +6,12 @@ __author__ = 'Elisha Yadgaran'
 
 
 import unittest
-import sqlalchemy
-
 from abc import abstractmethod
 
-from simpleml.registries import MetaRegistry, Registry, SIMPLEML_REGISTRY, NamedRegistry
+import sqlalchemy
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
+from simpleml.registries import (SIMPLEML_REGISTRY, MetaRegistry,
+                                 NamedRegistry, Registry)
 from simpleml.utils.library_versions import safe_lookup
 
 
@@ -68,6 +68,91 @@ class RegistryTests(unittest.TestCase):
         fake_key = 'blaldfakhfaljaf'
         registry = Registry()
         self.assertEqual(registry.get(fake_key), None)
+
+    def test_context_manager(self):
+        registry = Registry()
+
+        # Define Class
+        class FakeClass(object):
+            pass
+
+        class_name = 'FakeClass'
+        original_class = FakeClass
+        self.assertNotIn(class_name, registry.registry)
+
+        # Register
+        registry.register(original_class)
+
+        # Test
+        self.assertIn(class_name, registry.registry)
+        self.assertEqual(original_class, registry.get(class_name))
+
+        # Different class, same name
+        class FakeClass(object):
+            pass
+        new_class = FakeClass
+
+        self.assertNotEqual(original_class, new_class)
+
+        # overwrite for the duration of the context manager
+        with registry.context_register(new_class):
+            self.assertIn(class_name, registry.registry)
+            self.assertEqual(new_class, registry.get(class_name))
+
+        self.assertIn(class_name, registry.registry)
+        self.assertEqual(original_class, registry.get(class_name))
+
+    def test_context_manager_with_error(self):
+        registry = Registry()
+
+        # Define Class
+        class FakeClass(object):
+            pass
+
+        class_name = 'FakeClass'
+        original_class = FakeClass
+        self.assertNotIn(class_name, registry.registry)
+
+        # Register
+        registry.register(original_class)
+
+        # Test
+        self.assertIn(class_name, registry.registry)
+        self.assertEqual(original_class, registry.get(class_name))
+
+        # Different class, same name
+        class FakeClass(object):
+            pass
+        new_class = FakeClass
+
+        self.assertNotEqual(original_class, new_class)
+
+        # overwrite for the duration of the context manager
+        with self.assertRaises(ValueError):
+            with registry.context_register(new_class):
+                self.assertIn(class_name, registry.registry)
+                self.assertEqual(new_class, registry.get(class_name))
+                raise ValueError()
+
+        self.assertIn(class_name, registry.registry)
+        self.assertEqual(original_class, registry.get(class_name))
+
+    def test_context_manager_with_new_key(self):
+        registry = Registry()
+
+        # Define Class
+        class FakeClass(object):
+            pass
+
+        class_name = 'FakeClass'
+        self.assertNotIn(class_name, registry.registry)
+
+        # overwrite for the duration of the context manager
+        with registry.context_register(FakeClass):
+            self.assertIn(class_name, registry.registry)
+            self.assertEqual(FakeClass, registry.get(class_name))
+
+        self.assertNotIn(class_name, registry.registry)
 
 
 class NamedRegistryTests(unittest.TestCase):
@@ -164,6 +249,72 @@ class NamedRegistryTests(unittest.TestCase):
 
         registry.register(name, FakeClass2, allow_duplicates=True)
         self.assertEqual(FakeClass2, registry.get(name))
+
+    def test_context_manager(self):
+        registry = NamedRegistry()
+
+        name = 'test'
+        original_value = 'value'
+        self.assertNotIn(name, registry.registry)
+
+        # Register
+        registry.register(name, original_value)
+
+        # Test
+        self.assertIn(name, registry.registry)
+        self.assertEqual(original_value, registry.get(name))
+
+        new_value = 'changed'
+        self.assertNotEqual(new_value, original_value)
+
+        # overwrite for the duration of the context manager
+        with registry.context_register(name, new_value):
+            self.assertIn(name, registry.registry)
+            self.assertEqual(new_value, registry.get(name))
+
+        self.assertIn(name, registry.registry)
+        self.assertEqual(original_value, registry.get(name))
+
+    def test_context_manager_with_error(self):
+        registry = NamedRegistry()
+
+        name = 'test'
+        original_value = 'value'
+        self.assertNotIn(name, registry.registry)
+
+        # Register
+        registry.register(name, original_value)
+
+        # Test
+        self.assertIn(name, registry.registry)
+        self.assertEqual(original_value, registry.get(name))
+
+        new_value = 'changed'
+        self.assertNotEqual(new_value, original_value)
+
+        # overwrite for the duration of the context manager
+        with self.assertRaises(ValueError):
+            with registry.context_register(name, new_value):
+                self.assertIn(name, registry.registry)
+                self.assertEqual(new_value, registry.get(name))
+                raise ValueError()
+
+        self.assertIn(name, registry.registry)
+        self.assertEqual(original_value, registry.get(name))
+
+    def test_context_manager_with_new_key(self):
+        registry = NamedRegistry()
+
+        name = 'test'
+        value = 'value'
+        self.assertNotIn(name, registry.registry)
+
+        # overwrite for the duration of the context manager
+        with registry.context_register(name, value):
+            self.assertIn(name, registry.registry)
+            self.assertEqual(value, registry.get(name))
+
+        self.assertNotIn(name, registry.registry)
 
 
 class MetaRegistryTests(unittest.TestCase):

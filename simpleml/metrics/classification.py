@@ -60,8 +60,10 @@ class ClassificationMetric(Metric):
         # Only relevant if using a split dataset. No split pipelines will return
         # all data by default on null input, while split ones will return empty splits
         if dataset_split == TRAIN_SPLIT:
+            LOGGER.warning('Metric renaming due to dataset split is deprecated and name will be migrated in a future release')
             name = 'in_sample_' + name
         elif dataset_split == VALIDATION_SPLIT:
+            LOGGER.warning('Metric renaming due to dataset split is deprecated and name will be migrated in a future release')
             name = 'validation_' + name
 
         super(ClassificationMetric, self).__init__(name=name, **kwargs)

@@ -1,18 +1,17 @@
 '''
-Pandas Module for external dataframes
+Pandas Module for datasets
 
-Inherit and extend for particular patterns. It is a bit of a misnomer to use the
-term "dataframe", since there are very few expected attributes and they are by no
-means unique to pandas.
+Inherit and extend for particular patterns
 '''
 
 __author__ = 'Elisha Yadgaran'
 
 import pandas as pd
 
+from itertools import chain
 from typing import List, Union, Optional
 
-from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
+from simpleml.datasets.base_dataset import Dataset
 from simpleml.utils.errors import DatasetError
 from simpleml.pipelines.validation_split_mixins import Split
 
@@ -20,23 +19,21 @@ from simpleml.pipelines.validation_split_mixins import Split
 DATAFRAME_SPLIT_COLUMN: str = 'DATASET_SPLIT'
 
 
-class BasePandasDatasetMixin(AbstractDatasetMixin):
+class BasePandasDataset(Dataset):
     '''
-    Pandas mixin class with control mechanism for `self.dataframe` of
-    type `dataframe`. Mostly assumes pandas syntax, not types, so may be compatible
-    with pandas drop-in replacements. Recommended to implement a parallel mixin
-    for other frameworks though
-
-    In particular:
-        A - type of pd.DataFrame:
-            - query()
-            - columns
-            - drop()
-            - squeeze()
-
-    WARNING: Needs to be used as a base class for datasets because it overwrites
-    the standard dataset dataframe property
+    Pandas base class with control mechanism for `self.dataframe` of
+    type `pd.Dataframe`
     '''
+
+    def __init__(self, squeeze_return: bool = False, **kwargs):
+        '''
+        :param squeeze_return: boolean flag whether to run dataframe.squeeze() on
+            return from self.get() calls. Particularly necessary to align input
+            types with different libraries (e.g. sklearn y with single label)
+        '''
+        super().__init__(**kwargs)
+        self.config['squeeze_return'] = squeeze_return
+
     @property
     def X(self) -> pd.DataFrame:
         '''
@@ -66,12 +63,18 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
     @_dataframe.setter
     def _dataframe(self, df: pd.DataFrame) -> None:
         '''
+        Setter method for self._external_file
+        Allows mixins/subclasses to validate input
+        '''
+        self._external_file = df
+
+    def _validate_dtype(self, df: pd.DataFrame) -> None:
+        '''
         Validating setter method for self._external_file
         Checks input is of type pd.DataFrame
         '''
         if not isinstance(df, pd.DataFrame):
             raise DatasetError('Pandas Datasets must be of type `pd.DataFrame`')
-        self._external_file = df
 
     def get(self, column: Optional[str], split: Optional[str]) -> pd.DataFrame:
         '''
@@ -80,8 +83,11 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
 
         returns empty dataframe for missing combinations of column & split
         '''
-        if column not in ('X', 'y', None):
-            raise ValueError('Only support columns: X, y, None')
+        registered_sections = self.config.get('split_section_map')
+        squeeze_return = self.config.get("squeeze_return")
+
+        if column is not None and column != 'X' and column not in registered_sections:
+            raise ValueError(f'Only support registered sections: {registered_sections}, X, or None')
 
         dataframe = self.dataframe  # copy
 
@@ -89,13 +95,23 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
         if column is None:  # All except internal columns
             return_columns = [col for col in dataframe.columns if col != DATAFRAME_SPLIT_COLUMN]
 
-        elif column == 'y':  # Just label columns
-            return_columns = self.label_columns
+        elif column != 'X':
+            # other passthrough columns
+            return_columns = registered_sections[column]
 
         else:  # X
-            return_columns = [col for col in dataframe.columns if col != DATAFRAME_SPLIT_COLUMN and col not in self.label_columns]
+            all_other_columns = list(chain(*registered_sections.values()))
+            return_columns = [
+                col for col in dataframe.columns
+                if col != DATAFRAME_SPLIT_COLUMN
+                and col not in all_other_columns
+            ]
 
-        return self._get(dataframe=dataframe, columns=return_columns, split=split)
+        result = self._get(dataframe=dataframe, columns=return_columns, split=split)
+        if squeeze_return:
+            return self.squeeze_dataframe(result)
+        else:
+            return result
 
     @staticmethod
     def _get(dataframe: pd.DataFrame, columns: List[str], split: str) -> pd.DataFrame:
@@ -124,8 +140,39 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
 
         return dataframe
 
-    def concatenate_dataframes(self,
-                               dataframes: List[pd.DataFrame],
+    def get_split(self, split: Optional[str]) -> Split:
+        '''
+        Wrapper accessor to return a split object (for internal use)
+        '''
+        registered_sections = self.config.get('split_section_map')
+        return Split(
+            # explicitly get X as the "other" columns
+            X=self.get(column='X', split=split),
+            # should include y and any others if they exist
+            **{section: self.get(split=split, column=section) for section in registered_sections}
+        ).squeeze()
+
+    def get_split_names(self) -> List[str]:
+        '''
+        Helper to expose the splits contained in the dataset
+        '''
+        df = self.dataframe
+        if DATAFRAME_SPLIT_COLUMN in df.columns:
+            return df[DATAFRAME_SPLIT_COLUMN].unique().tolist()
+        else:
+            return []
+
+    def get_feature_names(self) -> List[str]:
+        '''
+        Should return a list of the features in the dataset
+        '''
+        return self.X.columns.tolist()
+
+    '''
+    Generic Pandas Helper Utils
+    '''
+    @staticmethod
+    def concatenate_dataframes(dataframes: List[pd.DataFrame],
                                split_names: List[str]) -> pd.DataFrame:
         '''
         Helper method to merge dataframes into a single one with the split
@@ -147,54 +194,9 @@ class BasePandasDatasetMixin(AbstractDatasetMixin):
         '''
         return pd.concat(list(split.values()), axis=1)
 
-    def get_feature_names(self) -> List[str]:
-        '''
-        Should return a list of the features in the dataset
-        '''
-        return self.X.columns.tolist()
-
     @staticmethod
-    def load_csv(filename: str, **kwargs) -> pd.DataFrame:
-        '''Helper method to read in a csv file'''
-        return pd.read_csv(filename, **kwargs)
-
-
-class MultiLabelPandasDatasetMixin(BasePandasDatasetMixin):
-    '''
-    Multilabel implementation of pandas dataset - same as base for now
-    '''
-    pass
-
-
-class SingleLabelPandasDatasetMixin(BasePandasDatasetMixin):
-    '''
-    Customized label logic for single label (y dimension = 1) datasets
-    '''
-    @property
-    def label_column(self):
-        labels = self.label_columns
-
-        # validate single label status
-        if len(labels) != 1:
-            raise DatasetError(f'SingleLabelPandasDataset requires exactly one label column, {len(labels)} found')
-
-        return labels[0]
-
-    def get(self, column: str, split: str) -> Union[pd.Series, pd.DataFrame]:
+    def squeeze_dataframe(df: pd.DataFrame) -> pd.Series:
         '''
-        Extends PandasDatasetMixin.get with logic to squeeze labels to a
-        series (1D frame)
+        Helper method to run dataframe squeeze and return a series
         '''
-        data = super().get(column=column, split=split)
-
-        if column != 'y':
-            return data
-
-        # Custom logic for "y"
-        # 1D dataframe can squeeze to a series or numpy array
-        # edge case with one row will squeeze to a constant (or series for 2D)
-        if data.shape == (1, 1):  # single row
-            data = pd.Series(data.squeeze(), name=self.label_column, index=data.index)
-        else:
-            data = data.squeeze()
-        return data
+        return df.squeeze(axis=1)

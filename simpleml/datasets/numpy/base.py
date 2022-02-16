@@ -8,31 +8,43 @@ means unique to pandas.
 
 __author__ = 'Elisha Yadgaran'
 
-
+import logging
 from typing import Any, List
 
-from simpleml.datasets.abstract_mixin import AbstractDatasetMixin
+import numpy as np
+from simpleml.datasets.base_dataset import Dataset
+from simpleml.pipelines.validation_split_mixins import Split
+from simpleml.utils.errors import DatasetError
+
+LOGGER = logging.getLogger(__name__)
 
 
-class NumpyDatasetMixin(AbstractDatasetMixin):
+class BaseNumpyDataset(Dataset):
     '''
-    Assumes _external_file is a dictionary of numpy ndarrays
+    Assumes self.dataframe is a dictionary of numpy ndarrays
     '''
+    # TODO: rewrite class to index native numpy array directly
+    # Considered unstable for the time being
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        LOGGER.warning('Numpy datasets are currently unstable - usage is discouraged as breaking changes may be introduced')
+
     @property
-    def X(self) -> Any:
+    def X(self) -> np.ndarray:
         '''
         Return the subset that isn't in the target labels
         '''
         return self.get(column='X', split=None)
 
     @property
-    def y(self) -> Any:
+    def y(self) -> np.ndarray:
         '''
         Return the target label columns
         '''
         return self.get(column='y', split=None)
 
-    def get(self, column: str, split: str) -> Any:
+    def get(self, column: str, split: str) -> np.ndarray:
         '''
         Explicitly split validation splits
         Assumes self.dataframe has a get method to return a dictionary of {'X': X, 'y': y}
@@ -56,6 +68,13 @@ class NumpyDatasetMixin(AbstractDatasetMixin):
 
         else:
             return split_dict.get('X', None)
+
+    def get_split_names(self) -> List[str]:
+        '''
+        Helper to expose the splits contained in the dataset
+        '''
+        # assumes dict like container
+        return list(self.dataframe.keys())
 
     def get_feature_names(self) -> List[str]:
         '''

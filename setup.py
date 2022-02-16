@@ -1,7 +1,8 @@
-from setuptools import setup, find_packages
 import sys
 
-__version__ = '0.10.0'
+from setuptools import find_packages, setup
+
+__version__ = '0.11.0'
 
 
 python_major = sys.version_info.major
@@ -35,11 +36,18 @@ else:
 
 # Different extras
 postgres_dependencies = ["psycopg2"]
-deep_learning_dependencies = ["tensorflow>=2", "hickle<4"]  # Hickle regression > 4 for scalar values
+deep_learning_dependencies = ["tensorflow>=2", "hickle"]
 cloud_dependencies = ["apache-libcloud", "pycrypto", "sshtunnel"]
 onedrive_dependencies = ["onedrivesdk<2"]  # Python support EOL >2
+dask_dependencies = ["dask[complete]", "pyarrow"]
 test_dependencies = ["coverage"]
-all_dependencies = list(set(postgres_dependencies + deep_learning_dependencies + cloud_dependencies + onedrive_dependencies))
+all_dependencies = list(set(
+    postgres_dependencies
+    + deep_learning_dependencies
+    + cloud_dependencies
+    + onedrive_dependencies
+    + dask_dependencies
+))
 test_dependencies = all_dependencies + test_dependencies
 
 setup(
@@ -71,6 +79,7 @@ setup(
         'deep-learning': deep_learning_dependencies,
         'cloud': cloud_dependencies,
         'onedrive': onedrive_dependencies,
+        'dask': dask_dependencies,
         'all': all_dependencies,
         'test': test_dependencies,
     },
@@ -92,11 +101,11 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
-    python_requires='!=2.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=3.6',
+    python_requires='>=3.7',
 )

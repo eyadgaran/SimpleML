@@ -1,8 +1,9 @@
 __author__ = 'Elisha Yadgaran'
 
 
+from typing import Any, Dict, List, Optional
+
 from sklearn.base import TransformerMixin as SklearnTransformerMixin
-from typing import Any, Optional, Dict, List
 
 
 class TransformerMixin(SklearnTransformerMixin):
@@ -13,8 +14,17 @@ class TransformerMixin(SklearnTransformerMixin):
     '''
     object_type: str = 'TRANSFORMER'
 
+    def reset(self) -> None:
+        '''
+        Flag to reset state to initialized values. Expects subclasses to implement
+        '''
+        raise NotImplementedError
+
     def fit(self, X: Any, y: Optional[Any] = None, **kwargs):
         return self
+
+    def partial_fit(self, X: Any, y: Optional[Any] = None, **kwargs):
+        raise NotImplementedError
 
     def transform(self, X: Any, y: Optional[Any] = None, **kwargs) -> Any:
         return X

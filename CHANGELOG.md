@@ -1,5 +1,36 @@
 ## Change Log
 
+### TBD
+- Changed internal dataset structure from mixins to direct inheritance
+- Condensed all pandas dataset types into a single base class
+- Adds support for dask datasets
+- Placeholders for additional dataset libraries
+- Adds hashing support for dask dataframes
+- Refactored persistence ("save_patterns") package into standalone extensible framework
+- Adds context manager support to registries for temporary overwrite
+- Refactor pipelines into library based subclasses
+
+*BREAKING CHANGES*
+- Pandas dataset will default param `squeeze_return` to False (classes expecting to return a series will need to be updated)
+- Numpy dataset is considered unstable and will be redesigned in a future release
+- Onedrive, Hickle, and database save patterns are removed (functionality is still available but a composed pattern is not predefined. these can be trivially added in user code if needed)
+- Changed pandas hash output to int from numpy.int64 (due to breaking change in NumpyHasher)
+- Changed primitive deterministic hash from pickle to md5
+- Extracted data iterators into utility wrappers. Pipelines no longer have flags to return iterators
+- Random split defaults are computed at runtime instead of precalculated (affects hash)
+
+### 0.11.0 (2021-10-10)
+- Added support to hasher for initialized objects
+- Adds support for arbitrary dataset splits and sections
+- Dataset hooks to validate dataframe setting
+- Pipelines no longer cache dataset splits and proxy directly to dataset on every call
+- Introduces pipeline splits as reproducible projections over dataset splits
+- Database utility to recalculate hashes for existing persistables
+
+*BREAKING CHANGES*
+- Hash for an uninitialized class changed from repr(cls) to "cls.__module_.cls.__name_"
+- Database migrations no longer recalculate hashes. That has to be done manually via a utility
+
 ### 0.10.0 (2021-07-09)
 - Dataset external file setter with validation hooks
 - Pandas changes to always return dataframe copies (does not extend to underlying python objects! eg lists, objects, etc)

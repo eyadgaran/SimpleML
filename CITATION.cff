@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using these metadata.
+title: SimpleML
+abstract: An ML Management framework for effortless production applications
+authors:
+  - family-names: Yadgaran
+    given-names: Elisha
+    orcid: "https://orcid.org/0000-0002-0444-6451"
+version: 0.11.0
+date-released: "2021-10-10"
+identifiers:
+  - type: url
+    value: "https://github.com/eyadgaran/SimpleML/releases/tag/0.10.0"
+    description: "The GitHub release URL of tag 0.10.0."
+  - type: url
+    value: "https://github.com/eyadgaran/SimpleML/releases/tag/0.11.0"
+    description: "The GitHub release URL of tag 0.11.0."
+license: BSD-3-Clause
+license-url: "https://github.com/eyadgaran/SimpleML/blob/master/LICENSE"
+repository-code: "https://github.com/eyadgaran/SimpleML"
