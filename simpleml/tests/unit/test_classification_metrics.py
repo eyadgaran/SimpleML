@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 from simpleml.utils.errors import MetricError
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
-from simpleml.metrics.classification import ClassificationMetric
+from simpleml.metrics.classification import ClassificationMetric, BinaryClassificationMetric
 
 
 class BaseClassificationTests(unittest.TestCase):
@@ -164,6 +164,94 @@ class BaseClassificationTests(unittest.TestCase):
                 with self.assertRaises(MetricError):
                     ClassificationMetric.validate_predictions(bad_type)
 
+
+class BinaryClassificationTests(unittest.TestCase):
+    def test_getting_labels(self):
+        pass
+
+    def test_empty_label_validation_logic(self):
+        for bad_type in [None, pd.DataFrame(), pd.Series(), np.array([]), np.ndarray([0, 0])]:
+            with self.subTest(bad_type=bad_type):
+                with self.assertRaises(MetricError):
+                    BinaryClassificationMetric.validate_labels(bad_type)
+
+    def test_nonbinary_label_validation_logic(self):
+        for bad_type in [
+            [1, 2],
+            [0, 1, 2],
+            pd.DataFrame([[0], [1], [2]]),
+            pd.DataFrame([[0, 0], [0, 2], [1, 1]]),  # multi column handling
+            pd.Series([0, 1, 2]),
+            np.array([[0], [1], [2]]),
+            np.array([[0, 0], [0, 2], [1, 1]]),  # multi column handling
+            np.array([0, 1, 2])
+        ]:
+            with self.subTest(bad_type=bad_type):
+                with self.assertRaises(MetricError):
+                    BinaryClassificationMetric.validate_labels(bad_type)
+
+    def test_getting_multi_column_probabilities(self):
+        '''
+        Should cast to single series
+        '''
+        pass
+
+    def test_getting_multi_column_predictions(self):
+        '''
+        Should cast to single series
+        '''
+        pass
+
+    def test_confusion_matrix_logic(self):
+        pass
+
+    def test_curve_deduplication(self):
+        pass
+
+    def test_true_positive_rate_calculation(self):
+        pass
+
+    def test_false_positive_rate_calculation(self):
+        pass
+
+    def test_true_negative_rate_calculation(self):
+        pass
+
+    def test_false_negative_rate_calculation(self):
+        pass
+
+    def test_false_discovery_rate_calculation(self):
+        pass
+
+    def test_false_omission_rate_calculation(self):
+        pass
+
+    def test_positive_predictive_value_calculation(self):
+        pass
+
+    def test_negative_predictive_value_calculation(self):
+        pass
+
+    def test_predicted_positive_rate_calculation(self):
+        pass
+
+    def test_predicted_negative_rate_calculation(self):
+        pass
+
+    def test_accuracy_calculation(self):
+        pass
+
+    def test_f1_calculation(self):
+        pass
+
+    def test_matthews_correlation_coefficient_calculation(self):
+        pass
+
+    def test_informedness_calculation(self):
+        pass
+
+    def test_markedness_calculation(self):
+        pass
 
 
 if __name__ == '__main__':

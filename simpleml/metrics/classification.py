@@ -128,10 +128,32 @@ class BinaryClassificationMetric(ClassificationMetric):
     @staticmethod
     def validate_labels(labels):
         invalid = None
+
+        # empty checks
         if labels is None:
             invalid = True
-        else:
-            invalid = (len(set(labels) - {0, 1}) > 0)
+        elif isinstance(labels, (pd.DataFrame, pd.Series)) and labels.empty:
+            invalid = True
+        elif isinstance(labels, np.ndarray) and labels.size == 0:
+            invalid = True
+
+        # binary value check (0,1) only
+        if not invalid:  # short circuit if null type
+            if isinstance(labels, pd.DataFrame):  # pd.Series can be used as set input directly
+                # manually iterate through columns to take a set of sets
+                set_values = set()
+                for col in labels.columns:
+                    set_values.update(labels[col].unique().tolist())
+            elif isinstance(labels, np.ndarray) and len(labels.shape) > 1:  # single dimension array works as set input directly
+                # manually iterate through columns to take a set of sets
+                set_values = set()
+                for idx in range(0, labels.shape[1]):
+                    set_values.update(set(labels[:, idx]))
+            else:
+                set_values = set(labels)
+
+            # check if set values contains anything besides 0, 1
+            invalid = len(set_values - {0, 1}) > 0
 
         if invalid:
             raise MetricError('Attempting to score a binary metric with labels outside of {0,1}')
@@ -139,17 +161,22 @@ class BinaryClassificationMetric(ClassificationMetric):
     @property
     def probabilities(self):
         probabilities = super(BinaryClassificationMetric, self).probabilities
-        if len(probabilities.shape) > 1 and probabilities.shape[1] > 1:
+        if len(probabilities.shape) > 1 and probabilities.shape[1] == 2:
             # Indicates multiple class probabilities are returned (class_0, class_1)
             probabilities = probabilities[:, 1]
+        elif len(probabilities.shape) > 1 and probabilities.shape[1] > 2:
+            raise MetricError('Binary Classification Metric cannot have more than two probability dimensions (assumed class 0, 1)')
         return probabilities
 
     @property
     def predictions(self):
         predictions = super(BinaryClassificationMetric, self).predictions
-        if len(predictions.shape) > 1 and predictions.shape[1] > 1:
+        if len(predictions.shape) > 1 and predictions.shape[1] == 2:
             # Indicates multiple class predictions are returned (class_0, class_1)
             predictions = predictions[:, 1]
+        elif len(predictions.shape) > 1 and predictions.shape[1] > 2:
+            raise MetricError('Binary Classification Metric cannot have more than two prediction dimensions (assumed class 0, 1)')
+
         return predictions
 
     @property
