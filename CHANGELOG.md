@@ -1,6 +1,6 @@
 ## Change Log
 
-### TBD
+### 0.12.0 (2022-03-03)
 - Changed internal dataset structure from mixins to direct inheritance
 - Condensed all pandas dataset types into a single base class
 - Adds support for dask datasets
