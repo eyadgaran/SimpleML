@@ -10,7 +10,6 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
-
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
 from simpleml.metrics.classification import ClassificationMetric
 from simpleml.utils.errors import MetricError
@@ -113,7 +112,7 @@ class BaseClassificationTests(unittest.TestCase):
         mock_model = MagicMock()
         mock_model.predict_proba.return_value = None
         metric = ClassificationMetric()
-        metric.add_dataset("abc")
+        metric.add_dataset(MagicMock())
         metric.add_model(mock_model)
 
         mock_split.return_value = "123"
@@ -126,7 +125,7 @@ class BaseClassificationTests(unittest.TestCase):
         mock_model = MagicMock()
         mock_model.predict_proba.return_value = np.array([[1, 2], [3, 4]])
         metric = ClassificationMetric()
-        metric.add_dataset("abc")
+        metric.add_dataset(MagicMock())
         metric.add_model(mock_model)
 
         mock_split.return_value = "123"
@@ -138,7 +137,7 @@ class BaseClassificationTests(unittest.TestCase):
         mock_model = MagicMock()
         mock_model.predict.return_value = None
         metric = ClassificationMetric()
-        metric.add_dataset("abc")
+        metric.add_dataset(MagicMock())
         metric.add_model(mock_model)
 
         mock_split.return_value = "123"
@@ -151,7 +150,7 @@ class BaseClassificationTests(unittest.TestCase):
         mock_model = MagicMock()
         mock_model.predict.return_value = np.array([[1, 2], [3, 4]])
         metric = ClassificationMetric()
-        metric.add_dataset("abc")
+        metric.add_dataset(MagicMock())
         metric.add_model(mock_model)
 
         mock_split.return_value = "123"
@@ -171,5 +170,5 @@ class BaseClassificationTests(unittest.TestCase):
                     ClassificationMetric.validate_predictions(bad_type)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main(verbosity=2)
