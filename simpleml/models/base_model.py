@@ -10,6 +10,7 @@ from abc import abstractmethod
 
 import numpy as np
 from simpleml.persistables.base_persistable import Persistable
+from simpleml.pipelines import Pipeline
 from simpleml.registries import ModelRegistry
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import ModelError
@@ -83,7 +84,7 @@ class Model(Persistable, metaclass=ModelRegistry):
         """
         raise NotImplementedError
 
-    def add_pipeline(self, pipeline: 'Pipeline') -> None:
+    def add_pipeline(self, pipeline: Pipeline) -> None:
         '''
         Setter method for dataset pipeline used
         '''
@@ -113,7 +114,7 @@ class Model(Persistable, metaclass=ModelRegistry):
         return pipeline
 
     @pipeline.setter
-    def pipeline(self, pipeline: 'Pipeline') -> None:
+    def pipeline(self, pipeline: Pipeline) -> None:
         '''
         Need to be careful not to set as the orm pipeline
         Cannot load if wrong type because of recursive behavior (will
