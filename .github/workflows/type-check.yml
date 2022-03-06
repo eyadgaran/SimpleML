@@ -17,4 +17,4 @@ jobs:
         pip install mypy
     - name:             mypy
       run:              |
-        mypy simpleml/
+        mypy mypy --install-types --non-interactive simpleml/

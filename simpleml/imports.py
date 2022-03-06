@@ -30,8 +30,7 @@ class MissingImportWrapper(object):
     """
     Wrapper class and callable generator to be used instead of unavailable dependencies
     Errors on reference when not available instead of on import
-    """
-
+    '''
     name: str
     pypi_name: str
     simpleml_extra_group: str

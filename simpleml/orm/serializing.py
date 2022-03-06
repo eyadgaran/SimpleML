@@ -13,18 +13,14 @@ import codecs
 import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
+from typing import Any, Union
 
 import cloudpickle as pickle
 import simplejson as json
 
-try:  # Py2/3 compatibility
-    basestring
-except NameError:
-    basestring = str
-
 
 class JSONSerializer(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj: Any) -> Union[float, int, str]:
         if isinstance(obj, Decimal):
             return float(obj)
         if isinstance(obj, datetime):
@@ -43,8 +39,8 @@ class JSONSerializer(json.JSONEncoder):
 
 def object_hook(data, ignore_dicts=False):
     # if this is a string, check for pickled
-    if isinstance(data, basestring) and len(data) > 19:
-        if data[:19] == "pickle_serialized->":
+    if isinstance(data, str) and len(data) > 19:
+        if data[:19] == 'pickle_serialized->':
             return pickle.loads(codecs.decode(data[19:].encode(), "base64"))
 
     # if this is a list of values, return list of deserialized values
