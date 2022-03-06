@@ -7,8 +7,6 @@ __author__ = "Elisha Yadgaran"
 
 from abc import ABCMeta
 
-from sqlalchemy.ext.declarative import declarative_base
-
 from simpleml.registries.registry import Registry
 
 # Importable registry
@@ -21,21 +19,36 @@ PIPELINE_REGISTRY = Registry()
 MODEL_REGISTRY = Registry()
 METRIC_REGISTRY = Registry()
 
-# Need to explicitly merge metaclasses to avoid conflicts
-MetaBase = type(declarative_base())
 
-
-class MetaRegistry(MetaBase, ABCMeta):
+class PersistableRegistry(ABCMeta):
+    '''
+    Meta class to register SimpleML persistables. expected to be set as
+    metaclass for all persistable types
+    '''
     def __new__(cls, clsname, bases, attrs):
-        newclass = super(MetaRegistry, cls).__new__(cls, clsname, bases, attrs)
+        '''
+        Metaclass implementation. Called on import of referenced subclasses
+        (not called on construction of classes)
+        '''
+        newclass = super(PersistableRegistry, cls).__new__(cls, clsname, bases, attrs)
         SIMPLEML_REGISTRY.register(newclass)
         return newclass
 
-    """
+    def __call__(self, *args, **kwargs):
+        '''
+        Overwrite constructor call to add post init hook
+        (called when constructing referenced subclasses)
+        '''
+        cls = super().__call__(*args, **kwargs)
+        if hasattr(cls, '__post_init__'):
+            cls.__post_init__()
+        return cls
+
+    '''
     TBD on implementing registry as class attribute
 
     def __init__(cls, name, bases, nmspc):
-        super(MetaRegistry, cls).__init__(name, bases, nmspc)
+        super(PersistableRegistry, cls).__init__(name, bases, nmspc)
 
         if not hasattr(cls, 'registry'):
             cls.registry = set()
@@ -50,28 +63,28 @@ class MetaRegistry(MetaBase, ABCMeta):
     """
 
 
-class DatasetRegistry(MetaRegistry):
+class DatasetRegistry(PersistableRegistry):
     def __new__(cls, clsname, bases, attrs):
         newclass = super(DatasetRegistry, cls).__new__(cls, clsname, bases, attrs)
         DATASET_REGISTRY.register(newclass)
         return newclass
 
 
-class PipelineRegistry(MetaRegistry):
+class PipelineRegistry(PersistableRegistry):
     def __new__(cls, clsname, bases, attrs):
         newclass = super(PipelineRegistry, cls).__new__(cls, clsname, bases, attrs)
         PIPELINE_REGISTRY.register(newclass)
         return newclass
 
 
-class ModelRegistry(MetaRegistry):
+class ModelRegistry(PersistableRegistry):
     def __new__(cls, clsname, bases, attrs):
         newclass = super(ModelRegistry, cls).__new__(cls, clsname, bases, attrs)
         MODEL_REGISTRY.register(newclass)
         return newclass
 
 
-class MetricRegistry(MetaRegistry):
+class MetricRegistry(PersistableRegistry):
     def __new__(cls, clsname, bases, attrs):
         newclass = super(MetricRegistry, cls).__new__(cls, clsname, bases, attrs)
         METRIC_REGISTRY.register(newclass)
