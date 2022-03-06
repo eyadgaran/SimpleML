@@ -9,7 +9,7 @@ import hashlib
 import inspect
 import logging
 import struct
-from typing import Any, Type
+from typing import Any, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
