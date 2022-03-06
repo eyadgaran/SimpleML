@@ -7,7 +7,7 @@ __author__ = "Elisha Yadgaran"
 
 import unittest
 
-from simpleml.datasets import Dataset
+from simpleml.orm.persistable import ORMPersistable
 
 
 class MutableJSONTests(unittest.TestCase):
@@ -16,9 +16,8 @@ class MutableJSONTests(unittest.TestCase):
     def test_modifying_json_field(self):
         """
         Top level JSON change
-        """
-        persistable = Dataset(name="top_level_json_modification_test")
-        persistable._external_file = "datadata"
+        '''
+        persistable = ORMPersistable(name='top_level_json_modification_test')
         persistable.save()
 
         persistable.metadata_["new_key"] = "blah"
@@ -28,10 +27,9 @@ class MutableJSONTests(unittest.TestCase):
     def test_modifying_nested_json_field(self):
         """
         Nested JSON change
-        """
-        persistable = Dataset(name="nested_json_modification_test")
-        persistable.metadata_["new_key"] = {}
-        persistable._external_file = "datadata"
+        '''
+        persistable = ORMPersistable(name='nested_json_modification_test')
+        persistable.metadata_['new_key'] = {}
         persistable.save()
 
         persistable.metadata_["new_key"]["sub_key"] = "blah"

@@ -8,7 +8,7 @@ __author__ = "Elisha Yadgaran"
 import unittest
 from unittest.mock import MagicMock
 
-from simpleml.metrics.base_metric import AbstractMetric
+from simpleml.metrics.base_metric import Metric
 
 
 class BaseMetricTests(unittest.TestCase):
@@ -19,7 +19,7 @@ class BaseMetricTests(unittest.TestCase):
         dataset_mock = MagicMock()
         dataset_mock.hash_ = "mock_dataset_hash"
 
-        metric = AbstractMetric()
+        metric = Metric()
         metric.add_model(model_mock)
         metric.add_dataset(dataset_mock)
 
@@ -35,7 +35,7 @@ class BaseMetricTests(unittest.TestCase):
         dataset_mock.hash_ = None
         dataset_mock._hash.return_value = "mock_dataset_hash"
 
-        metric = AbstractMetric()
+        metric = Metric()
         metric.add_model(model_mock)
         metric.add_dataset(dataset_mock)
 
@@ -50,7 +50,7 @@ class BaseMetricTests(unittest.TestCase):
         pipeline_mock.get_dataset_split.return_value = dataset_split_mock
         dataset_split_mock.a = "abc"
 
-        metric = AbstractMetric()
+        metric = Metric()
         metric.add_model(model_mock)
 
         self.assertEqual(
@@ -64,7 +64,7 @@ class BaseMetricTests(unittest.TestCase):
         dataset_mock = MagicMock()
         dataset_mock.get.return_value = "abc"
 
-        metric = AbstractMetric()
+        metric = Metric()
         metric.add_dataset(dataset_mock)
 
         self.assertEqual(

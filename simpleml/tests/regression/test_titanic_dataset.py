@@ -8,13 +8,10 @@ __author__ = "Elisha Yadgaran"
 import unittest
 from os.path import join
 
+from simpleml.orm.initialization import Database
 from simpleml.registries import FILEPATH_REGISTRY
-from simpleml.tests.utils import (
-    ARTIFACTS_PATH,
-    DATABASES_PATH,
-    assert_data_container_equal,
-)
-from simpleml.utils.initialization import Database
+from simpleml.tests.utils import (ARTIFACTS_PATH, DATABASES_PATH,
+                                  assert_data_container_equal)
 from simpleml.utils.scoring.load_persistable import PersistableLoader
 from simpleml.utils.training.create_persistable import DatasetCreator
 

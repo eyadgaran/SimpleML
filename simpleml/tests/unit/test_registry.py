@@ -8,11 +8,8 @@ __author__ = "Elisha Yadgaran"
 import unittest
 from abc import abstractmethod
 
-import sqlalchemy
-
-from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
-from simpleml.registries import SIMPLEML_REGISTRY, MetaRegistry, NamedRegistry, Registry
-from simpleml.utils.library_versions import safe_lookup
+from simpleml.registries import (SIMPLEML_REGISTRY, NamedRegistry,
+                                 PersistableRegistry, Registry)
 
 
 class RegistryTests(unittest.TestCase):
@@ -321,45 +318,14 @@ class NamedRegistryTests(unittest.TestCase):
         self.assertNotIn(name, registry.registry)
 
 
-class MetaRegistryTests(unittest.TestCase):
-    def test_declarative_base_expectation(self):
-        """
-        sqlalchemy api change to early consume registry
-        https://github.com/sqlalchemy/sqlalchemy/blob/a782160de2e66ad6f6cb2630ddc16ced4da1c359/lib/sqlalchemy/orm/decl_api.py#L60
-        changed to throwing an error if called without a declarative_base class
-        """
-
-        def import_error_class():
-            class WILLERRORTEST(metaclass=MetaRegistry):
-                __abstract__ = True
-
-            return WILLERRORTEST
-
-        def import_registered_base_class():
-            class SHOULDWORKTEST(BaseSQLAlchemy, metaclass=MetaRegistry):
-                __abstract__ = True
-
-            return SHOULDWORKTEST
-
-        sqlalchemy_version = safe_lookup("sqlalchemy")
-        if sqlalchemy_version > "1.4.0":
-            with self.assertRaises(sqlalchemy.exc.InvalidRequestError):
-                import_error_class()
-        else:
-            # should work on older versions
-            import_error_class()
-        import_registered_base_class()
-
+class PersistableRegistryTests(unittest.TestCase):
     def test_abstract_method_error(self):
-        class AbstractTestClass(BaseSQLAlchemy, metaclass=MetaRegistry):
-            __abstract__ = True
-
+        class AbstractTestClass(metaclass=PersistableRegistry):
             @abstractmethod
             def blah(self):
                 pass
 
         class FailingTestClass(AbstractTestClass):
-            __abstract__ = True
             pass
 
         with self.assertRaises(TypeError):
@@ -369,9 +335,8 @@ class MetaRegistryTests(unittest.TestCase):
 
     def test_register_on_import(self):
         def import_new_class():
-            class BLAHBLAHTESTCLASS(BaseSQLAlchemy, metaclass=MetaRegistry):
-                __abstract__ = True
-
+            class BLAHBLAHTESTCLASS(metaclass=PersistableRegistry):
+                pass
             return BLAHBLAHTESTCLASS
 
         class_name = "BLAHBLAHTESTCLASS"
