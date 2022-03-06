@@ -34,10 +34,10 @@ class PersistableLoader(object):
 
     @classmethod
     def load_persistable(cls, persistable_class: ORMPersistable, filters: Dict[str, Any]) -> Persistable:
-        persistable = persistable_class.where(**filters).order_by(persistable_class.version.desc()).first()
-        if persistable is not None:
+        record = persistable_class.where(**filters).order_by(persistable_class.version.desc()).first()
+        if record is not None:
+            persistable = record.load(load_externals=False)
             cls.validate_environment(persistable)
-            persistable.load(load_externals=False)
             return persistable
         else:
             raise SimpleMLError(
