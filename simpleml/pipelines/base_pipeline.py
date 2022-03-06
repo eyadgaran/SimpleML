@@ -62,6 +62,8 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
         self._external_file = self._create_external_pipeline(transformers, **kwargs)
         # Initialize fit state -- pass as true to skip fitting transformers
         self.fitted = fitted
+        # initialize null dataset reference
+        self.dataset_id = None
 
     """
     Persistable Management
@@ -95,11 +97,49 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
     def add_dataset(self, dataset: "Dataset") -> None:
         """
         Setter method for dataset used
-        """
+        '''
+        if dataset is None:
+            return
+        self.dataset_id = dataset.id
         self.dataset = dataset
 
-    def assert_dataset(self, msg: str = "") -> None:
-        """
+    @property
+    def dataset(self):
+        '''
+        Use a weakref to bind linked dataset so it doesnt bloat usage
+        returns dataset if still available or tries to fetch otherwise
+        '''
+        # still referenced weakref
+        if hasattr(self, '_dataset') and self._dataset() is not None:
+            return self._dataset()
+
+        # null return if no associated dataset (governed by dataset_id)
+        elif self.dataset_id is None:
+            return None
+
+        # else regenerate weakref
+        LOGGER.info('No referenced object available. Refreshing weakref')
+        dataset = self._load_dataset()
+        self._dataset = weakref.ref(dataset)
+        return dataset
+
+    @dataset.setter
+    def dataset(self, dataset: 'Dataset') -> None:
+        '''
+        Need to be careful not to set as the orm object
+        Cannot load if wrong type because of recursive behavior (will
+        propagate down the whole dependency chain)
+        '''
+        self._dataset = weakref.ref(dataset)
+
+    def _load_dataset(self):
+        '''
+        Helper to fetch the dataset
+        '''
+        return self.orm_cls.load_dataset(self.dataset_id)
+
+    def assert_dataset(self, msg: str = '') -> None:
+        '''
         Helper method to raise an error if dataset isn't present
         """
         if self.dataset is None:

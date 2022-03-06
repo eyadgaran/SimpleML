@@ -23,18 +23,97 @@ class Metric(Persistable, metaclass=MetricRegistry):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        # initialize null references
+        self.dataset_id = None
+        self.model_id = None
 
     def add_dataset(self, dataset: Dataset) -> None:
         """
         Setter method for dataset used
-        """
+        '''
+        if dataset is None:
+            return
+        self.dataset_id = dataset.id
         self.dataset = dataset
+
+    @property
+    def dataset(self):
+        '''
+        Use a weakref to bind linked dataset so it doesnt bloat usage
+        returns dataset if still available or tries to fetch otherwise
+        '''
+        # still referenced weakref
+        if hasattr(self, '_dataset') and self._dataset() is not None:
+            return self._dataset()
+
+        # null return if no associated dataset (governed by dataset_id)
+        elif self.dataset_id is None:
+            return None
+
+        # else regenerate weakref
+        LOGGER.info('No referenced object available. Refreshing weakref')
+        dataset = self._load_dataset()
+        self._dataset = weakref.ref(dataset)
+        return dataset
+
+    @dataset.setter
+    def dataset(self, dataset: Dataset) -> None:
+        '''
+        Need to be careful not to set as the orm object
+        Cannot load if wrong type because of recursive behavior (will
+        propagate down the whole dependency chain)
+        '''
+        self._dataset = weakref.ref(dataset)
+
+    def _load_dataset(self):
+        '''
+        Helper to fetch the dataset
+        '''
+        return self.orm_cls.load_dataset(self.dataset_id)
 
     def add_model(self, model: Model) -> None:
         """
         Setter method for model used
-        """
+        '''
+        if model is None:
+            return
+        self.model_id = model.id
         self.model = model
+
+    @property
+    def model(self):
+        '''
+        Use a weakref to bind linked model so it doesnt bloat usage
+        returns model if still available or tries to fetch otherwise
+        '''
+        # still referenced weakref
+        if hasattr(self, '_model') and self._model() is not None:
+            return self._model()
+
+        # null return if no associated model (governed by model_id)
+        elif self.model_id is None:
+            return None
+
+        # else regenerate weakref
+        LOGGER.info('No referenced object available. Refreshing weakref')
+        model = self._load_model()
+        self._model = weakref.ref(model)
+        return model
+
+    @model.setter
+    def model(self, model: Model) -> None:
+        '''
+        Need to be careful not to set as the orm object
+        Cannot load if wrong type because of recursive behavior (will
+        propagate down the whole dependency chain)
+        '''
+        self._model = weakref.ref(model)
+
+    def _load_model(self):
+        '''
+        Helper to fetch the model
+        '''
+        return self.orm_cls.load_model(self.model_id)
 
     def _hash(self) -> str:
         """

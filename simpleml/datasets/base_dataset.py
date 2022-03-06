@@ -99,6 +99,53 @@ class Dataset(Persistable, metaclass=DatasetRegistry):
             # everything else automatically becomes "X"
         }
 
+        # initialize null pipeline reference
+        self.pipeline_id = None
+
+    def add_pipeline(self, pipeline: 'Pipeline') -> None:
+        '''
+        Setter method for dataset pipeline used
+        '''
+        if pipeline is None:
+            return
+        self.pipeline_id = pipeline.id
+        self.pipeline = pipeline
+
+    @property
+    def pipeline(self):
+        '''
+        Use a weakref to bind linked pipeline so it doesnt bloat usage
+        returns pipeline if still available or tries to fetch otherwise
+        '''
+        # still referenced weakref
+        if hasattr(self, '_pipeline') and self._pipeline() is not None:
+            return self._pipeline()
+
+        # null return if no associated pipeline (governed by pipeline_id)
+        elif self.pipeline_id is None:
+            return None
+
+        # else regenerate weakref
+        LOGGER.info('No referenced object available. Refreshing weakref')
+        pipeline = self._load_pipeline()
+        self._pipeline = weakref.ref(pipeline)
+        return pipeline
+
+    @pipeline.setter
+    def pipeline(self, pipeline: 'Pipeline') -> None:
+        '''
+        Need to be careful not to set as the orm object
+        Cannot load if wrong type because of recursive behavior (will
+        propagate down the whole dependency chain)
+        '''
+        self._pipeline = weakref.ref(pipeline)
+
+    def _load_pipeline(self):
+        '''
+        Helper to fetch the pipeline
+        '''
+        return self.orm_cls.load_pipeline(self.pipeline_id)
+
     @property
     def dataframe(self) -> Any:
         """
@@ -189,12 +236,6 @@ class Dataset(Persistable, metaclass=DatasetRegistry):
         Cant set as abstractmethod because of database lookup dependency
         """
         raise NotImplementedError
-
-    def add_pipeline(self, pipeline: "Pipeline") -> None:
-        """
-        Setter method for dataset pipeline used
-        """
-        self.pipeline = pipeline
 
     def _hash(self) -> str:
         """
