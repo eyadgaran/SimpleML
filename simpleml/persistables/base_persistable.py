@@ -11,33 +11,19 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Type, Union
 
-from future.utils import with_metaclass
-from sqlalchemy import Boolean, Column, Integer, String, func
-
-from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
 from simpleml.persistables.hashing import CustomHasherMixin
-from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
-from simpleml.registries import (
-    LOAD_METHOD_REGISTRY,
-    SAVE_METHOD_REGISTRY,
-    SIMPLEML_REGISTRY,
-    MetaRegistry,
-)
+from simpleml.registries import (LOAD_METHOD_REGISTRY, ORM_REGISTRY,
+                                 SAVE_METHOD_REGISTRY, SIMPLEML_REGISTRY,
+                                 PersistableRegistry)
 from simpleml.utils.errors import SimpleMLError
 from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Persistable(
-    with_metaclass(MetaRegistry, SimplemlCoreSqlalchemy, CustomHasherMixin)
-):
-    """
-    Base class for all SimpleML database objects. Defaults to PostgreSQL
-    but can be swapped out for any supported SQLAlchemy backend.
-
-    Takes advantage of sqlalchemy-mixins to enable active record operations
-    (TableModel.save(), create(), where(), destroy())
+class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
+    '''
+    Base class for all SimpleML persistable objects.
 
     Uses private class attributes for internal artifact registry
     Does not need to be persisted because it gets populated on import
@@ -84,78 +70,77 @@ class Persistable(
 
 
     metadata: Generic JSON store for random attributes
-    """
+    '''
+    object_type = 'PERSISTABLE'
 
-    __abstract__ = True
-
-    # Use random uuid for graceful distributed instantiation
-    # also allows saved objects to include id in filename (before db persistence)
-    id = Column(GUID, primary_key=True, default=uuid.uuid4)
-
-    # Specific metadata for versioning and comparison
-    # Use hash for code/data content for referencing similar objects
-    # Use registered name for internal object pointer - internal code can
-    # still get updated between trainings (hence hash)
-    # TODO: figure out how to hash objects in a way that signifies code content
-    hash_ = Column("hash", String, nullable=False)
-    registered_name = Column(String, nullable=False)
-    author = Column(String, default="default", nullable=False)
-    project = Column(String, default="default", nullable=False)
-    name = Column(String, default="default", nullable=False)
-    version = Column(Integer, nullable=False)
-    version_description = Column(String, default="")
-
-    # Persistence of fitted states
-    has_external_files = Column(Boolean, default=False)
-    filepaths = Column(MutableJSON, default={})
-
-    # Generic store and metadata for all child objects
-    metadata_ = Column("metadata", MutableJSON, default={})
-
-    def __init__(
-        self,
-        name: Optional[str] = None,
-        has_external_files: bool = False,
-        author: Optional[str] = None,
-        project: Optional[str] = None,
-        version_description: Optional[str] = None,
-        save_patterns: Optional[Dict[str, List[str]]] = None,
-        **kwargs,
-    ):
+    def __init__(self,
+                 id: uuid.UUID = None,
+                 hash_: str = None,
+                 name: Optional[str] = 'default',
+                 has_external_files: bool = False,
+                 author: Optional[str] = 'default',
+                 project: Optional[str] = 'default',
+                 version: Optional[int] = None,
+                 version_description: Optional[str] = '',
+                 save_patterns: Optional[Dict[str, List[str]]] = None,
+                 filepaths: Optional[Dict] = None,
+                 metadata_: Optional[Dict] = None,
+                 **kwargs):
         # Initialize values expected to exist at time of instantiation
         self.registered_name: str = self.__class__.__name__
-        self.id: uuid.UUID = uuid.uuid4()
+        self.id: uuid.UUID = id or uuid.uuid4()
         self.author = author
         self.project = project
         self.name = name
         self.has_external_files = has_external_files
         self.version_description = version_description
 
-        if has_external_files and save_patterns is None:
-            raise SimpleMLError(
-                "Persistable has external artifacts, but has not specified any save patterns.\nTry reinitializing persistable with `Persistable(save_patterns={artifact_name: [save_patterns]})`"
-            )
+        # expected null values
+        self.hash_ = hash_
+        self.version = version
+        self.filepaths = filepaths or {}
 
         # Special place for SimpleML internal params
         # Think of as the config to initialize objects
-        self.metadata_: Dict[str, Any] = {}  # Place for any arbitrary metadata
-        self.metadata_[
-            "config"
-        ] = (
-            {}
-        )  # Place for parameters that uniquely configure an instance on initialization
-        self.metadata_[
-            "state"
-        ] = (
-            {}
-        )  # Place for transitory values that may be set post initialization (and want to be persisted)
+        self.metadata_: Dict[str, Any] = metadata_ or {}  # Place for any arbitrary metadata
 
-        # For external loading - initialize to None
-        self.unloaded_artifacts: List[str] = []
+        if 'config' not in self.metadata_:
+            self.metadata_['config'] = {}  # Place for parameters that uniquely configure an instance on initialization
+        if 'state' not in self.metadata_:
+            self.metadata_['state'] = {}  # Place for transitory values that may be set post initialization (and want to be persisted)
+
+        save_patterns = save_patterns or self.state.get('save_patterns')
+        if has_external_files and save_patterns is None:
+            raise SimpleMLError('Persistable has external artifacts, but has not specified any save patterns.\nTry reinitializing persistable with `Persistable(save_patterns={artifact_name: [save_patterns]})`')
+
         # Store save pattern in state metadata as an operational setting, otherwise
         # it could affect the hash and result in a different object per save location
         self.state["save_patterns"] = save_patterns
 
+    def __post_init__(self):
+        self._configure_unmapped_attributes()
+
+    def __post_restore__(self):
+        self._configure_unmapped_attributes()
+
+    def _configure_unmapped_attributes(self):
+        '''
+        Unified entry for unmapped attributes. need to be restored when loading
+        classes
+        '''
+        self.unloaded_artifacts: List[str]
+        # Track the list of artifacts
+        # New persistables without a specified filepath dictionary have type
+        # sqlalchemy.sql.schema.Column - calling list(Column.keys()) would fail
+        if not isinstance(self.filepaths, dict):
+            LOGGER.warning('Load appears to being called on an unsaved Persistable')
+            self.unloaded_artifacts = []
+        else:
+            self.unloaded_artifacts = list(self.filepaths.keys())
+
+    '''
+    metadata accessor properties
+    '''
     @property
     def config(self) -> Dict[str, Any]:
         return self.metadata_["config"]
@@ -168,6 +153,9 @@ class Persistable(
     def library_versions(self) -> Dict[str, str]:
         return self.metadata_.get("library_versions", {})
 
+    '''
+    abstract definitions
+    '''
     @abstractmethod
     def _hash(self):
         """
@@ -176,21 +164,16 @@ class Persistable(
         to assert identity across code definitions
         """
 
+    '''
+    persistence hooks
+    '''
+
     def _get_latest_version(self) -> int:
         """
         Versions should be autoincrementing for each object (constrained over
         friendly name). Executes a database lookup and increments..
-        """
-        last_version = (
-            self.__class__.query_by(func.max(self.__class__.version))
-            .filter(self.__class__.name == self.name)
-            .scalar()
-        )
-
-        if last_version is None:
-            last_version = 0
-
-        return last_version + 1
+        '''
+        return self.orm_cls.get_latest_version(name=self.name)
 
     def save(self) -> None:
         """
@@ -199,20 +182,30 @@ class Persistable(
 
         sqlalchemy_mixins supports active record style TableModel.save()
         so can still call super(Persistable, self).save()
-        """
-        if self.has_external_files:
+        '''
+        if self.has_external_files:  # todo: insert hook to not save on updates
             self.save_external_files()
 
         # Hash contents upon save
-        self.hash_ = self._hash()
+        if self.hash_ is None:
+            self.hash_ = self._hash()
 
         # Get the latest version for this "friendly name"
-        self.version = self._get_latest_version()
+        if self.version is None:
+            self.version = self._get_latest_version()
 
         # Store library versions in case of future loads into unsupported environments
-        self.metadata_["library_versions"] = INSTALLED_LIBRARIES
+        if 'library_versions' not in self.metadata_:
+            self.metadata_['library_versions'] = INSTALLED_LIBRARIES
 
-        super(Persistable, self).save()
+        self.orm_cls.save_record(**self.to_dict())
+
+    @property
+    def orm_cls(self):
+        cls = ORM_REGISTRY.get(self.object_type)
+        if cls is None:
+            raise SimpleMLError(f'No registered ORM class for {self.object_type}')
+        return cls
 
     def save_external_files(self) -> None:
         """
@@ -290,32 +283,22 @@ class Persistable(
         save_attribute = getattr(self, registered_attribute)["save"]
         return getattr(self, save_attribute)
 
-    def load(self, load_externals: bool = True) -> None:
-        """
-        Counter operation for save
-        Needs to load any file and db objects
+    @classmethod
+    def from_dict(cls, **kwargs) -> 'Persistable':
+        '''
+        Parameterize a persistable from a dict. Used in deserialization from ORM
+        objects
+        '''
+        # skip init calls
+        obj = cls.__new__(cls)
+        for attr, value in kwargs.items():
+            setattr(obj, attr, value)
+        # execute __post_restore__ hook
+        obj.__post_restore__()
+        return obj
 
-        Class definition is stored by registered_name param and
-        Pickled objects are stored in external_filename param
-
-        :param load_externals: Boolean flag whether to load the external files
-        useful for relationships that only need class definitions and not data
-        """
-
-        # Lookup appropriate class and reinstantiate
-        self.__class__ = self._load_class()
-
-        # Track the list of artifacts
-        # New persistables without a specified filepath dictionary have type
-        # sqlalchemy.sql.schema.Column - calling list(Column.keys()) would fail
-        if not isinstance(self.filepaths, dict):
-            LOGGER.warning("Load appears to being called on an unsaved Persistable")
-            self.unloaded_artifacts = []
-        else:
-            self.unloaded_artifacts = list(self.filepaths.keys())
-
-        if self.has_external_files and load_externals:
-            self.load_external_files()
+    def to_dict(self):
+        return vars(self)
 
     def load_external_files(self, artifact_name: Optional[str] = None) -> None:
         """
@@ -416,9 +399,3 @@ class Persistable(
         """
         if artifact_name in self.unloaded_artifacts:
             self.load_external_files(artifact_name=artifact_name)
-
-    def _load_class(self) -> "Persistable":
-        """
-        Wrapper function to call global registry of all imported class names
-        """
-        return SIMPLEML_REGISTRY.get(self.registered_name)

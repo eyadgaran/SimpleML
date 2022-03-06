@@ -6,17 +6,13 @@ __author__ = "Elisha Yadgaran"
 
 import inspect
 import logging
+import weakref
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
 
 import pandas as pd
-from future.utils import with_metaclass
-from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
-from sqlalchemy.orm import relationship
-
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.registries import PipelineRegistry
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import PipelineError
@@ -32,12 +28,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 @ExternalArtifactDecorators.register_artifact(
-    artifact_name="pipeline",
-    save_attribute="external_pipeline",
-    restore_attribute="_external_file",
-)
-class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
-    """
+    artifact_name='pipeline', save_attribute='external_pipeline', restore_attribute='_external_file')
+class Pipeline(Persistable, metaclass=PipelineRegistry):
+    '''
     Abstract Base class for all Pipelines objects.
 
     Relies on mixin classes to define the split_dataset method. Will throw
@@ -47,14 +40,8 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     Schema
     -------
     params: pipeline parameter metadata for easy insight into hyperparameters across trainings
-    """
-
-    __abstract__ = True
-
-    # Additional pipeline specific metadata
-    params = Column(MutableJSON, default={})
-
-    object_type: str = "PIPELINE"
+    '''
+    object_type: str = 'PIPELINE'
 
     def __init__(
         self,
@@ -64,11 +51,10 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         **kwargs,
     ):
         # If no save patterns are set, specify a default for disk_pickled
-        if "save_patterns" not in kwargs:
-            kwargs["save_patterns"] = {"pipeline": ["disk_pickled"]}
-        super(AbstractPipeline, self).__init__(
-            has_external_files=has_external_files, **kwargs
-        )
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'pipeline': ['disk_pickled']}
+        super(Pipeline, self).__init__(
+            has_external_files=has_external_files, **kwargs)
 
         # Instantiate pipeline
         if transformers is None:
@@ -170,6 +156,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         self.assert_dataset("Must set dataset before saving")
         self.assert_fitted("Must fit pipeline before saving")
 
+        # log only attributes - can be refreshed on each save (does not take effect on reloading)
         self.params = self.get_params(params_only=True, **kwargs)
         self.metadata_["transformers"] = self.get_transformers()
         self.metadata_["feature_names"] = self.get_feature_names()
@@ -178,25 +165,19 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         if not self.get_transformers():
             self.has_external_files = False
 
-        super(AbstractPipeline, self).save(**kwargs)
+        super().save(**kwargs)
 
-        # Sqlalchemy updates relationship references after save so reload class
-        self.dataset.load(load_externals=False)
-
-    def load(self, **kwargs) -> None:
-        """
+    def __post_restore__(self) -> None:
+        '''
         Extend main load routine to load relationship class
-        """
-        super(AbstractPipeline, self).load(**kwargs)
+        '''
+        super().__post_restore__()
 
         # Create dummy pipeline if one wasnt saved
         if not self.has_external_files:
             self._external_file = self._create_external_pipeline([], **self.params)
 
-        # By default dont load data unless it actually gets used
-        self.dataset.load(load_externals=False)
-
-    """
+    '''
     Data Accessors
     """
 
@@ -359,30 +340,3 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         """
         initial_features = self.dataset.get_feature_names()
         return self.external_pipeline.get_feature_names(feature_names=initial_features)
-
-
-class Pipeline(AbstractPipeline):
-    """
-    Base class for all Pipeline objects.
-
-    -------
-    Schema
-    -------
-    dataset_id: foreign key relation to the dataset used as input
-    """
-
-    __tablename__ = "pipelines"
-
-    dataset_id = Column(
-        GUID, ForeignKey("datasets.id", name="pipelines_dataset_id_fkey")
-    )
-    dataset = relationship(
-        "Dataset", enable_typechecks=False, foreign_keys=[dataset_id]
-    )
-
-    __table_args__ = (
-        # Unique constraint for versioning
-        UniqueConstraint("name", "version", name="pipeline_name_version_unique"),
-        # Index for searching through friendly names
-        Index("pipeline_name_index", "name"),
-    )

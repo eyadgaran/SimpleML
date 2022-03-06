@@ -13,15 +13,11 @@ __author__ = "Elisha Yadgaran"
 
 
 import logging
+import weakref
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-from future.utils import with_metaclass
-from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
-from sqlalchemy.orm import relationship
 
 from simpleml.datasets.dataset_splits import Split
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.persistables.sqlalchemy_types import GUID
 from simpleml.registries import DatasetRegistry
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import DatasetError
@@ -35,13 +31,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 @ExternalArtifactDecorators.register_artifact(
-    artifact_name="dataset",
-    save_attribute="dataframe",
-    restore_attribute="_external_file",
-)
-class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
-    """
-    Abstract Base class for all Dataset objects.
+    artifact_name='dataset', save_attribute='dataframe', restore_attribute='_external_file')
+class Dataset(Persistable, metaclass=DatasetRegistry):
+    '''
+    Base class for all Dataset objects.
 
     Every dataset has a "dataframe" object associated with it that is responsible
     for housing the data. The term dataframe is a bit of a misnomer since it
@@ -61,11 +54,8 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
     Schema
     -------
     No additional columns
-    """
-
-    __abstract__ = True
-
-    object_type: str = "DATASET"
+    '''
+    object_type: str = 'DATASET'
 
     def __init__(
         self,
@@ -82,11 +72,10 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         All other columns in the dataframe will automatically be referenced as "X"
         """
         # If no save patterns are set, specify a default for disk_pickled
-        if "save_patterns" not in kwargs:
-            kwargs["save_patterns"] = {"dataset": ["disk_pickled"]}
-        super(AbstractDataset, self).__init__(
-            has_external_files=has_external_files, **kwargs
-        )
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'dataset': ['disk_pickled']}
+        super().__init__(
+            has_external_files=has_external_files, **kwargs)
 
         # split sections are an optional set of inputs to register split references
         # for later use. defaults to just `X` and `y` but arbitrary inputs can
@@ -245,21 +234,7 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
                 "Not using a dataset pipeline. Correct if this is unintended"
             )
 
-        super(AbstractDataset, self).save(**kwargs)
-
-        # Sqlalchemy updates relationship references after save so reload class
-        if self.pipeline:
-            self.pipeline.load(load_externals=False)
-
-    def load(self, **kwargs) -> None:
-        """
-        Extend main load routine to load relationship class
-        """
-        super(AbstractDataset, self).load(**kwargs)
-
-        # By default dont load data unless it actually gets used
-        if self.pipeline:
-            self.pipeline.load(load_externals=False)
+        super().save(**kwargs)
 
     @property
     def X(self) -> Any:
@@ -303,28 +278,3 @@ class AbstractDataset(with_metaclass(DatasetRegistry, Persistable)):
         Uninplemented method to return the split names available for the dataset
         """
         raise NotImplementedError
-
-
-class Dataset(AbstractDataset):
-    """
-    Base class for all  Dataset objects.
-
-    -------
-    Schema
-    -------
-    pipeline_id: foreign key relation to the dataset pipeline used as input
-    """
-
-    __tablename__ = "datasets"
-
-    pipeline_id = Column(GUID, ForeignKey("pipelines.id"))
-    pipeline = relationship(
-        "Pipeline", enable_typechecks=False, foreign_keys=[pipeline_id]
-    )
-
-    __table_args__ = (
-        # Unique constraint for versioning
-        UniqueConstraint("name", "version", name="dataset_name_version_unique"),
-        # Index for searching through friendly names
-        Index("dataset_name_index", "name"),
-    )

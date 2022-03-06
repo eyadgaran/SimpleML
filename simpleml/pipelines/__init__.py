@@ -8,4 +8,4 @@ __author__ = "Elisha Yadgaran"
 
 
 from . import ordered_dict, sklearn
-from .base_pipeline import AbstractPipeline, Pipeline
+from .base_pipeline import Pipeline

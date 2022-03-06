@@ -1,51 +1,35 @@
+'''
+Base Model module
+'''
+
+__author__ = 'Elisha Yadgaran'
+
 import logging
+import weakref
 from abc import abstractmethod
 
 import numpy as np
-from future.utils import with_metaclass
-from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
-from sqlalchemy.orm import relationship
-
-from simpleml.persistables.base_persistable import GUID, MutableJSON, Persistable
+from simpleml.persistables.base_persistable import Persistable
 from simpleml.registries import ModelRegistry
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import ModelError
-
-__author__ = "Elisha Yadgaran"
-
 
 LOGGER = logging.getLogger(__name__)
 
 
 @ExternalArtifactDecorators.register_artifact(
-    artifact_name="model",
-    save_attribute="external_model",
-    restore_attribute="_external_file",
-)
-class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
-    """
-    Abstract Base class for all Model objects. Defines the required
+    artifact_name='model', save_attribute='external_model', restore_attribute='_external_file')
+class Model(Persistable, metaclass=ModelRegistry):
+    '''
+    Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
     stored in the arbitrary metadata field
 
     Also outlines the expected subclass methods (with NotImplementedError).
     Design choice to not abstract unified API across all libraries since each
     has a different internal mechanism
-
-    -------
-    Schema
-    -------
-    params: model parameter metadata for easy insight into hyperparameters across trainings
-    feature_metadata: metadata insight into resulting features and importances
-    """
-
-    __abstract__ = True
-
-    # Additional model specific metadata
-    params = Column(MutableJSON, default={})
-    feature_metadata = Column(MutableJSON, default={})
-
-    object_type = "MODEL"
+    '''
+    object_type = 'MODEL'
 
     def __init__(
         self, has_external_files=True, external_model_kwargs=None, params=None, **kwargs
@@ -55,11 +39,10 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         most do not support arbitrary **kwargs in the constructors
         """
         # If no save patterns are set, specify a default for disk_pickled
-        if "save_patterns" not in kwargs:
-            kwargs["save_patterns"] = {"model": ["disk_pickled"]}
-        super(AbstractModel, self).__init__(
-            has_external_files=has_external_files, **kwargs
-        )
+        if 'save_patterns' not in kwargs:
+            kwargs['save_patterns'] = {'model': ['disk_pickled']}
+        super(Model, self).__init__(
+            has_external_files=has_external_files, **kwargs)
 
         # Instantiate model
         if external_model_kwargs is None:
@@ -146,22 +129,11 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         self.assert_pipeline("Must set pipeline before saving")
         self.assert_fitted("Must fit model before saving")
 
+        # log only attributes - can be refreshed on each save (does not take effect on reloading)
         self.params = self.get_params(**kwargs)
         self.feature_metadata = self.get_feature_metadata(**kwargs)
 
-        super(AbstractModel, self).save(**kwargs)
-
-        # Sqlalchemy updates relationship references after save so reload class
-        self.pipeline.load(load_externals=False)
-
-    def load(self, **kwargs):
-        """
-        Extend main load routine to load relationship class
-        """
-        super(AbstractModel, self).load(**kwargs)
-
-        # By default dont load data unless it actually gets used
-        self.pipeline.load(load_externals=False)
+        super(Model, self).save(**kwargs)
 
     def fit(self, **kwargs):
         """
@@ -274,35 +246,6 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         return self.external_model.get_feature_metadata(
             features=self.pipeline.get_feature_names(), **kwargs
         )
-
-
-class Model(AbstractModel):
-    """
-    Base class for all Model objects. Defines the required
-    parameters for versioning and all other metadata can be
-    stored in the arbitrary metadata field
-
-    -------
-    Schema
-    -------
-    pipeline_id: foreign key relation to the pipeline used to transform input to the model
-        (training is also dependent on originating dataset but scoring only needs access to the pipeline)
-    """
-
-    __tablename__ = "models"
-
-    # Only dependency is the pipeline (to score in production)
-    pipeline_id = Column(
-        GUID, ForeignKey("pipelines.id", name="models_pipeline_id_fkey")
-    )
-    pipeline = relationship("Pipeline", enable_typechecks=False)
-
-    __table_args__ = (
-        # Unique constraint for versioning
-        UniqueConstraint("name", "version", name="model_name_version_unique"),
-        # Index for searching through friendly names
-        Index("model_name_index", "name"),
-    )
 
 
 class LibraryModel(Model):
