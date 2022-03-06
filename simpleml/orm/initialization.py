@@ -12,10 +12,6 @@ import random
 from os.path import dirname, join, realpath
 from typing import Any, Dict, Optional, Tuple
 
-import simpleml.datasets.base_dataset
-import simpleml.metrics.base_metric
-import simpleml.models.base_model
-import simpleml.pipelines.base_pipeline
 from alembic import command
 from alembic.config import Config
 from alembic.migration import MigrationContext
@@ -23,12 +19,10 @@ from alembic.script import ScriptDirectory
 from simpleml.imports import SSHTunnelForwarder
 
 # Import table models to register in DeclaritiveBase
-from simpleml.persistables.base_sqlalchemy import (
-    BinaryStorageSqlalchemy,
-    DatasetStorageSqlalchemy,
-    SimplemlCoreSqlalchemy,
-)
-from simpleml.persistables.serializing import custom_dumps, custom_loads
+from simpleml.orm.metadata import (BinaryStorageSqlalchemy,
+                                   DatasetStorageSqlalchemy,
+                                   SimplemlCoreSqlalchemy)
+from simpleml.orm.serializing import custom_dumps, custom_loads
 from simpleml.utils.configuration import CONFIG, FILESTORE_DIRECTORY
 from simpleml.utils.errors import SimpleMLError
 from sqlalchemy import create_engine
