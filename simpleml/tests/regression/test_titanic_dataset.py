@@ -44,11 +44,9 @@ class TitanicRegressionTest(unittest.TestCase):
         cls.db.initialize()
 
     def get_regression_artifact(self, persistable_type, **filters):
-        with FILEPATH_REGISTRY.context_register("filestore", ARTIFACTS_PATH):
-            persistable = getattr(PersistableLoader, f"load_{persistable_type}")(
-                **filters
-            )
-            persistable.load(load_externals=True)
+        with FILEPATH_REGISTRY.context_register('filestore', ARTIFACTS_PATH):
+            persistable = getattr(PersistableLoader, f'load_{persistable_type}')(**filters)
+            persistable.load_external_files()
             return persistable
 
     def compare_hashes(self, new, old):
