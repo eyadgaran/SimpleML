@@ -8,11 +8,14 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, Optional, Tuple
 
-from future.utils import with_metaclass
-
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.metrics.base_metric import Metric
 from simpleml.models.base_model import Model
+from simpleml.orm.dataset import ORMDataset
+from simpleml.orm.metric import ORMMetric
+from simpleml.orm.model import ORMModel
+from simpleml.orm.persistable import ORMPersistable
+from simpleml.orm.pipeline import ORMPipeline
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.pipelines.base_pipeline import Pipeline
 from simpleml.registries import SIMPLEML_REGISTRY
@@ -21,7 +24,8 @@ from simpleml.utils.errors import TrainingError
 LOGGER = logging.getLogger(__name__)
 
 
-class PersistableCreator(with_metaclass(ABCMeta, object)):
+class PersistableCreator(object, metaclass=ABCMeta):
+
     @classmethod
     def retrieve_or_create(self, **kwargs) -> Persistable:
         """
@@ -29,16 +33,11 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
         then create a new one if it isn't found
         """
         cls, filters = self.determine_filters(**kwargs)
-        persistable = self.retrieve(cls, filters)
+        orm_persistable = self.retrieve(cls, filters)
 
-        if persistable is not None:
-            LOGGER.info(
-                "Using existing persistable: {}, {}, {}".format(
-                    cls.__tablename__, persistable.name, persistable.version
-                )
-            )
-            persistable.load()
-            return persistable
+        if orm_persistable is not None:
+            LOGGER.info('Using existing persistable: {}, {}, {}'.format(cls.__tablename__, orm_persistable.name, orm_persistable.version))
+            return orm_persistable.load()
 
         else:
             LOGGER.info(
@@ -53,8 +52,8 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
             return persistable
 
     @staticmethod
-    def retrieve(cls, filters: Dict[str, Any]) -> Persistable:
-        """
+    def retrieve(cls, filters: Dict[str, Any]) -> ORMPersistable:
+        '''
         Query database using the table model (cls) and filters for a matching
         persistable
         """
@@ -76,9 +75,8 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
             *dependency_cls.determine_filters(**dependency_kwargs)
         )
         if dependency is None:
-            raise TrainingError("Expected dependency is missing")
-        dependency.load()
-        return dependency
+            raise TrainingError('Expected dependency is missing')
+        return dependency.load()
 
     @classmethod
     def retrieve_dataset(
@@ -227,7 +225,7 @@ class DatasetCreator(PersistableCreator):
                 if "name" in kwargs:
                     filters["name"] = kwargs["name"]
 
-        return Dataset, filters
+        return ORMDataset, filters
 
     @classmethod
     def create(cls, registered_name: str, **kwargs) -> Dataset:
@@ -300,7 +298,7 @@ class PipelineCreator(PersistableCreator):
                 "hash_": new_pipeline._hash(),
             }
 
-        return Pipeline, filters
+        return ORMPipeline, filters
 
     @classmethod
     def create(cls, registered_name: str, **kwargs) -> Pipeline:
@@ -373,7 +371,7 @@ class ModelCreator(PersistableCreator):
                 "hash_": new_model._hash(),
             }
 
-        return Model, filters
+        return ORMModel, filters
 
     @classmethod
     def create(cls, registered_name: str, **kwargs) -> Model:
@@ -451,7 +449,7 @@ class MetricCreator(PersistableCreator):
                 "hash_": new_metric._hash(),
             }
 
-        return Metric, filters
+        return ORMMetric, filters
 
     @classmethod
     def create(cls, registered_name: str, **kwargs) -> Metric:
