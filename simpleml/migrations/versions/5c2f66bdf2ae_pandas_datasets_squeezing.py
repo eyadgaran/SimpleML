@@ -9,11 +9,10 @@ Data only migration
 import logging
 
 from alembic import op
+from simpleml.orm.base_sqlalchemy import BaseSQLAlchemy
+from simpleml.orm.sqlalchemy_types import GUID, MutableJSON
 from sqlalchemy import Column, MetaData, String
 from sqlalchemy.orm import scoped_session, sessionmaker
-
-from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
-from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 
 LOGGER = logging.getLogger(__name__)
 
