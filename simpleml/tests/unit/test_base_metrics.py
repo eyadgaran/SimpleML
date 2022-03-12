@@ -23,7 +23,7 @@ class BaseMetricTests(unittest.TestCase):
         metric.add_model(model_mock)
         metric.add_dataset(dataset_mock)
 
-        expected_hash = "113b36e67ec318e242e20b2f32bd0615"
+        expected_hash = 'a2f51ca6e1984d33e897a87b14b30ebf'
         self.assertEqual(metric._hash(), expected_hash)
 
     def test_default_hash_logic_with_new_hash(self):
@@ -39,7 +39,7 @@ class BaseMetricTests(unittest.TestCase):
         metric.add_model(model_mock)
         metric.add_dataset(dataset_mock)
 
-        expected_hash = "113b36e67ec318e242e20b2f32bd0615"
+        expected_hash = 'a2f51ca6e1984d33e897a87b14b30ebf'
         self.assertEqual(metric._hash(), expected_hash)
 
     def test_getting_pipeline_split(self):
