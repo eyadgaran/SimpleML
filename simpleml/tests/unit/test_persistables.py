@@ -8,51 +8,29 @@ import unittest
 
 from simpleml.persistables.base_persistable import Persistable
 
-
 class PersistableTests(unittest.TestCase):
-    def test_same_class_loads(self):
-        # Original Class
-        class TestClass(Persistable):
-            __abstract__ = True
-
-            def _hash(self):
-                pass
-
-        cl = TestClass()
-
-        # Change class
-        self.assertEqual(cl.__class__, TestClass)
-        self.assertNotEqual(cl.__class__, Persistable)
-        cl.__class__ = Persistable
-        self.assertEqual(cl.__class__, Persistable)
-        self.assertNotEqual(cl.__class__, TestClass)
-
-        # See if it reverts on load
-        cl.load()
-        self.assertEqual(cl.__class__, TestClass)
-        self.assertNotEqual(cl.__class__, Persistable)
-
-    def test_lazy_loading(self):
-        """
-        Test that dependecy loads only when called
-        """
-        # Delete dependency file and check that it works
-        # Then reference dependency and assert error
-
     def test_abstract_hash_error(self):
         """
         Confirm an error is raised if initialized without
         defining the hash
-        """
+        '''
+        with self.assertRaises(TypeError):
+            Persistable()
 
-    def test_loading_without_externals(self):
-        pass
+    def test_save_values(self):
+        '''
+        should overwrite null fields on save and skip if provided
+        '''
 
-    def test_loading_with_externals(self):
-        pass
+   def test_load_from_dict(self):
+       '''
+       should reinitialize object
+       '''
 
-    def test_class_loading(self):
-        pass
+   def test_load_from_to_dict(self):
+       '''
+       full roundtrip to clone
+       '''
 
 
 if __name__ == "__main__":
