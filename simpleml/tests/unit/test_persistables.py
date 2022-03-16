@@ -22,15 +22,15 @@ class PersistableTests(unittest.TestCase):
         should overwrite null fields on save and skip if provided
         '''
 
-   def test_load_from_dict(self):
-       '''
-       should reinitialize object
-       '''
+    def test_load_from_dict(self):
+        '''
+        should reinitialize object
+        '''
 
-   def test_load_from_to_dict(self):
-       '''
-       full roundtrip to clone
-       '''
+    def test_load_from_to_dict(self):
+        '''
+        full roundtrip to clone
+        '''
 
 
 if __name__ == "__main__":
