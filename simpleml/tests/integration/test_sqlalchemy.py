@@ -11,13 +11,20 @@ from simpleml.orm.persistable import ORMPersistable
 
 
 class MutableJSONTests(unittest.TestCase):
-    """Default sqlalchemy behavior treats JSON data as immutable"""
+    '''Default sqlalchemy behavior treats JSON data as immutable'''
+    class JSONTestClass(ORMPersistable):
+        __tablename__ = 'json_tests'
+
+    @classmethod
+    def setUpClass(cls):
+        cls.JSONTestClass.__table__.create()
 
     def test_modifying_json_field(self):
         """
         Top level JSON change
         '''
-        persistable = ORMPersistable(name='top_level_json_modification_test')
+        persistable = cls.JSONTestClass(name='top_level_json_modification_test')
+        persistable.metadata_ = {}
         persistable.save()
 
         persistable.metadata_["new_key"] = "blah"
@@ -28,7 +35,8 @@ class MutableJSONTests(unittest.TestCase):
         """
         Nested JSON change
         '''
-        persistable = ORMPersistable(name='nested_json_modification_test')
+        persistable = cls.JSONTestClass(name='nested_json_modification_test')
+        persistable.metadata_ = {}
         persistable.metadata_['new_key'] = {}
         persistable.save()
 
