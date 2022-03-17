@@ -19,14 +19,9 @@ class MutableJSONTests(unittest.TestCase):
     class JSONTestClass(ORMPersistable):
         __tablename__ = 'json_tests'
 
-    _table_created = False
-
     @classmethod
     def setUpClass(cls):
-        # run only once per test
-        if not cls._table_created:
-            cls.JSONTestClass.__table__.create()
-            cls._table_created = True
+        cls.JSONTestClass.__table__.create(checkfirst=True)
 
     def test_modifying_json_field(self):
         """
