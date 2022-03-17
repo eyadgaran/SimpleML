@@ -9,7 +9,7 @@ import unittest
 import uuid
 
 from simpleml.orm.metadata import SimplemlCoreSqlalchemy
-from simpleml.orm.sqlalchemy_types import MutableJSON
+from simpleml.orm.sqlalchemy_types import GUID, MutableJSON
 from sqlalchemy import Column
 
 
