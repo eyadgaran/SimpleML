@@ -14,10 +14,12 @@ from sqlalchemy import Column
 
 
 class MutableJSONTests(unittest.TestCase):
-    '''Default sqlalchemy behavior treats JSON data as immutable'''
+    """Default sqlalchemy behavior treats JSON data as immutable"""
 
-    class JSONTestClass(ORMPersistable):
-        __tablename__ = 'json_tests'
+    class JSONTestClass(SimplemlCoreSqlalchemy):
+        __tablename__ = "json_tests"
+        id = Column(GUID, primary_key=True, nullable=False, default=uuid.uuid4)
+        json_col = Column(MutableJSON)
 
     @classmethod
     def setUpClass(cls):
