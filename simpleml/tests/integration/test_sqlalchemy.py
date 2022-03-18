@@ -28,7 +28,7 @@ class MutableJSONTests(unittest.TestCase):
     def test_modifying_json_field(self):
         """
         Top level JSON change
-        """
+        '''
         persistable = self.JSONTestClass()
         persistable.json_col = {}
         persistable.save()
@@ -40,7 +40,7 @@ class MutableJSONTests(unittest.TestCase):
     def test_modifying_nested_json_field(self):
         """
         Nested JSON change
-        """
+        '''
         persistable = self.JSONTestClass()
         persistable.json_col = {}
         persistable.json_col["new_key"] = {}
