@@ -7,7 +7,7 @@ __author__ = "Elisha Yadgaran"
 import inspect
 import logging
 import weakref
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import pandas as pd
 from simpleml.constants import TRAIN_SPLIT
@@ -16,6 +16,7 @@ from simpleml.persistables.base_persistable import Persistable
 from simpleml.registries import PipelineRegistry
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import PipelineError
+from simpleml.utils.signature_inspection import signature_kwargs_validator
 
 from .projected_splits import IdentityProjectedDatasetSplit, ProjectedDatasetSplit
 
@@ -266,28 +267,8 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
     def _filter_fit_params(self, split: ProjectedDatasetSplit) -> Dict[str, Any]:
         """
         Helper to filter unsupported fit params from dataset splits
-        """
-        supported_fit_params = {}
-
-        # Ensure input compatibility with split object
-        fit_params = inspect.signature(self.external_pipeline.fit).parameters
-        # check if any params are **kwargs (all inputs accepted)
-        has_kwarg_params = any(
-            [param.kind == param.VAR_KEYWORD for param in fit_params.values()]
-        )
-        # log ignored args
-        if not has_kwarg_params:
-            for split_arg, val in split.items():
-                if split_arg not in fit_params:
-                    LOGGER.warning(
-                        f"Unsupported fit param encountered, `{split_arg}`. Dropping..."
-                    )
-                else:
-                    supported_fit_params[split_arg] = val
-        else:
-            supported_fit_params = split
-
-        return supported_fit_params
+        '''
+        return signature_kwargs_validator(self.external_pipeline.fit, **split)
 
     def fit(self):
         """
