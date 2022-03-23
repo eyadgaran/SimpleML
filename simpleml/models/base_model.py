@@ -54,10 +54,10 @@ class Model(Persistable, metaclass=ModelRegistry):
         super(Model, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
-        # Instantiate model
+        # Prep params for model instantiation. lazy init (first reference will create it)
         if external_model_kwargs is None:
             external_model_kwargs = {}
-        self._external_file = self._create_external_model(**external_model_kwargs)
+        self._external_model_init_kwargs = external_model_kwargs
         if params is not None:
             self.set_params(**params)
 
@@ -81,8 +81,15 @@ class Model(Persistable, metaclass=ModelRegistry):
 
         Wrapper around whatever underlying class is desired
         (eg sklearn or keras)
-        """
-        self.load_if_unloaded("model")
+        '''
+        self.load_if_unloaded('model')
+
+        # lazy build
+        if not hasattr(self, '_external_file'):
+            self._external_file = self._create_external_model(**self._external_model_init_kwargs)
+            # clear temp vars
+            del self._external_model_init_kwargs
+
         return self._external_file
 
     def _create_external_model(self, **kwargs):

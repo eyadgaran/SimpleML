@@ -56,10 +56,12 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
         super(Pipeline, self).__init__(
             has_external_files=has_external_files, **kwargs)
 
-        # Instantiate pipeline
+        # prep instantiation of pipeline - lazy build
         if transformers is None:
             transformers: List[Any] = []
-        self._external_file = self._create_external_pipeline(transformers, **kwargs)
+        self._transformers = transformers
+        self._external_pipeline_init_kwargs = kwargs
+
         # Initialize fit state -- pass as true to skip fitting transformers
         self.fitted = fitted
         # initialize null dataset reference
@@ -84,8 +86,16 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
 
         Wrapper around whatever underlying class is desired
         (eg sklearn or native)
-        """
-        self.load_if_unloaded("pipeline")
+        '''
+        self.load_if_unloaded('pipeline')
+
+        # lazy build
+        if not hasattr(self, '_external_file'):
+            self._external_file = self._create_external_pipeline(self._transformers, **self._external_pipeline_init_kwargs)
+            # clear temp vars
+            del self._transformers
+            del self._external_pipeline_init_kwargs
+
         return self._external_file
 
     def _create_external_pipeline(self, *args, **kwargs):

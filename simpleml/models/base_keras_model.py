@@ -19,16 +19,18 @@ LOGGER = logging.getLogger(__name__)
 
 
 class KerasModel(LibraryModel):
-    def __init__(
-        self,
-        use_training_generator=False,
-        training_generator_params=None,
-        use_validation_generator=False,
-        validation_generator_params=None,
-        use_sequence_object=False,
-        **kwargs,
-    ):
-        """
+    '''
+    Base Keras model class. Keras objects are incrementally structured until
+    fit. Also dont have separable params. Class hijacks params to store fit params
+    instead (enables full specification on init for reproducibility)
+    '''
+
+    def __init__(self,
+                 use_training_generator=False, training_generator_params=None,
+                 use_validation_generator=False, validation_generator_params=None,
+                 use_sequence_object=False,
+                 **kwargs):
+        '''
         Pass default save method as Keras's persistence pattern
 
         :param use_training_generator: Whether to propagate use of a generator object
