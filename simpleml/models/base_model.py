@@ -5,8 +5,10 @@ Base Model module
 __author__ = 'Elisha Yadgaran'
 
 import logging
+import uuid
 import weakref
 from abc import abstractmethod
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 from simpleml.persistables.base_persistable import Persistable
@@ -32,13 +34,20 @@ class Model(Persistable, metaclass=ModelRegistry):
     '''
     object_type = 'MODEL'
 
-    def __init__(
-        self, has_external_files=True, external_model_kwargs=None, params=None, **kwargs
-    ):
-        """
+    def __init__(self,
+                 has_external_files: bool = True,
+                 external_model_kwargs: Optional[Dict[str, Any]] = None,
+                 params: Optional[Dict[str, Any]] = None,
+                 fitted: bool = False,
+                 pipeline_id: Optional[Union[str, uuid.uuid4]] = None,
+                 **kwargs):
+        '''
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
-        """
+
+        Two supported patterns - full initialization in constructor or stepwise configured
+        before fit and save
+        '''
         # If no save patterns are set, specify a default for disk_pickled
         if 'save_patterns' not in kwargs:
             kwargs['save_patterns'] = {'model': ['disk_pickled']}
@@ -53,9 +62,9 @@ class Model(Persistable, metaclass=ModelRegistry):
             self.set_params(**params)
 
         # Initialize as unfitted
-        self.fitted = False
+        self.fitted = fitted
         # initialize null pipeline reference
-        self.pipeline_id = None
+        self.pipeline_id = pipeline_id
 
     @property
     def fitted(self):

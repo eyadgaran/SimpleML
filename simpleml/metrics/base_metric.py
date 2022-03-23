@@ -2,8 +2,9 @@ __author__ = "Elisha Yadgaran"
 
 
 import logging
+import uuid
 import weakref
-from typing import Any
+from typing import Any, Optional, Union
 
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.models.base_model import Model
@@ -20,12 +21,15 @@ class Metric(Persistable, metaclass=MetricRegistry):
     '''
     object_type: str = 'METRIC'
 
-    def __init__(self, **kwargs):
+    def __init__(self,
+                 dataset_id: Optional[Union[str, uuid.uuid4]] = None,
+                 model_id: Optional[Union[str, uuid.uuid4]] = None,
+                 **kwargs):
         super().__init__(**kwargs)
 
         # initialize null references
-        self.dataset_id = None
-        self.model_id = None
+        self.dataset_id = dataset_id
+        self.model_id = model_id
 
     def add_dataset(self, dataset: Dataset) -> None:
         """

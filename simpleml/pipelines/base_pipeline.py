@@ -4,10 +4,10 @@ Base Module for Pipelines
 
 __author__ = "Elisha Yadgaran"
 
-import inspect
 import logging
+import uuid
 import weakref
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import pandas as pd
 from simpleml.constants import TRAIN_SPLIT
@@ -44,13 +44,12 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
     '''
     object_type: str = 'PIPELINE'
 
-    def __init__(
-        self,
-        has_external_files: bool = True,
-        transformers: Optional[List[Any]] = None,
-        fitted: bool = False,
-        **kwargs,
-    ):
+    def __init__(self,
+                 has_external_files: bool = True,
+                 transformers: Optional[List[Any]] = None,
+                 fitted: bool = False,
+                 dataset_id: Optional[Union[str, uuid.uuid4]] = None,
+                 **kwargs):
         # If no save patterns are set, specify a default for disk_pickled
         if 'save_patterns' not in kwargs:
             kwargs['save_patterns'] = {'pipeline': ['disk_pickled']}
@@ -64,7 +63,7 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
         # Initialize fit state -- pass as true to skip fitting transformers
         self.fitted = fitted
         # initialize null dataset reference
-        self.dataset_id = None
+        self.dataset_id = dataset_id
 
     """
     Persistable Management

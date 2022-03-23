@@ -13,8 +13,9 @@ __author__ = "Elisha Yadgaran"
 
 
 import logging
+import uuid
 import weakref
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from simpleml.datasets.dataset_splits import Split
 from simpleml.persistables.base_persistable import Persistable
@@ -57,14 +58,13 @@ class Dataset(Persistable, metaclass=DatasetRegistry):
     '''
     object_type: str = 'DATASET'
 
-    def __init__(
-        self,
-        has_external_files: bool = True,
-        label_columns: Optional[List[str]] = None,
-        other_named_split_sections: Optional[Dict[str, List[str]]] = None,
-        **kwargs,
-    ):
-        """
+    def __init__(self,
+                 has_external_files: bool = True,
+                 label_columns: Optional[List[str]] = None,
+                 other_named_split_sections: Optional[Dict[str, List[str]]] = None,
+                 pipeline_id: Optional[Union[str, uuid.uuid4]] = None,
+                 **kwargs):
+        '''
         param label_columns: Optional list of column names to register as the "y" split section
         param other_named_split_sections: Optional map of section names to lists of column names for
             other arbitrary split columns -- must match expected consumer signatures (e.g. sample_weights)
@@ -100,7 +100,7 @@ class Dataset(Persistable, metaclass=DatasetRegistry):
         }
 
         # initialize null pipeline reference
-        self.pipeline_id = None
+        self.pipeline_id = pipeline_id
 
     def add_pipeline(self, pipeline: 'Pipeline') -> None:
         '''
