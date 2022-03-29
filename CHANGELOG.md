@@ -1,5 +1,8 @@
 ## Change Log
 
+### 0.13.0 (2022-03-28)
+- Path existence check for pandas serialization
+
 ### 0.12.0 (2022-03-03)
 - Changed internal dataset structure from mixins to direct inheritance
 - Condensed all pandas dataset types into a single base class
