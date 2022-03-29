@@ -6,7 +6,8 @@ __author__ = 'Elisha Yadgaran'
 
 
 from io import StringIO
-from os.path import isfile, join
+from os import makedirs
+from os.path import dirname, isfile, join
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -181,6 +182,9 @@ class PandasPersistenceMethods(object):
                   filepath: str,
                   overwrite: bool = True,
                   **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -192,6 +196,9 @@ class PandasPersistenceMethods(object):
                filepath: str,
                overwrite: bool = True,
                **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -200,20 +207,18 @@ class PandasPersistenceMethods(object):
 
     @staticmethod
     def to_clipboard(df: pd.DataFrame,
-                     filepath: str,
                      overwrite: bool = True,
                      **kwargs) -> None:
-        if not overwrite:
-            # Check if file was already serialized
-            if isfile(filepath):
-                return
-        df.to_clipboard(filepath, **kwargs)
+        df.to_clipboard(**kwargs)
 
     @staticmethod
     def to_excel(df: pd.DataFrame,
                  filepath: str,
                  overwrite: bool = True,
                  **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -227,6 +232,9 @@ class PandasPersistenceMethods(object):
                 lines: bool = True,
                 orient: str = 'records',
                 **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -244,6 +252,9 @@ class PandasPersistenceMethods(object):
                 filepath: str,
                 overwrite: bool = True,
                 **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -255,6 +266,9 @@ class PandasPersistenceMethods(object):
                filepath: str,
                overwrite: bool = True,
                **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -266,6 +280,9 @@ class PandasPersistenceMethods(object):
                  filepath: str,
                  overwrite: bool = True,
                  **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -277,6 +294,9 @@ class PandasPersistenceMethods(object):
                    filepath: str,
                    overwrite: bool = True,
                    **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -288,6 +308,9 @@ class PandasPersistenceMethods(object):
                    filepath: str,
                    overwrite: bool = True,
                    **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -299,6 +322,9 @@ class PandasPersistenceMethods(object):
                  filepath: str,
                  overwrite: bool = True,
                  **kwargs) -> None:
+        # make sure the directory exists
+        makedirs(dirname(filepath), exist_ok=True)
+
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
