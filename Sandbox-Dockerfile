@@ -1,0 +1,35 @@
+FROM python:3.7
+
+WORKDIR /sandbox
+
+
+# Install SimpleML
+ARG TRAVIS_TAG
+RUN pip install simpleml[all]==$TRAVIS_TAG
+
+
+# Install Jupyter Dependencies
+RUN pip install jupyter
+
+
+# Mark Volumes - Mount these to persist database/binaries and notebooks
+VOLUME /root/.simpleml
+VOLUME /sandbox/notebooks
+
+
+# Add examples for reference
+WORKDIR /sandbox/examples
+COPY examples/*.ipynb ./
+
+
+# Add Datasets
+WORKDIR /sandbox/datasets
+
+
+# Create Workspace for User Notebooks
+WORKDIR /sandbox/notebooks
+
+
+# Entrypoint
+WORKDIR /sandbox
+ENTRYPOINT ["jupyter", "notebook", "--ip=0.0.0.0", "--no-browser", "--allow-root"]
