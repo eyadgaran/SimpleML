@@ -10,8 +10,11 @@ from os.path import join
 
 from simpleml.orm.initialization import Database
 from simpleml.registries import FILEPATH_REGISTRY
-from simpleml.tests.utils import (ARTIFACTS_PATH, DATABASES_PATH,
-                                  assert_data_container_equal)
+from simpleml.tests.utils import (
+    ARTIFACTS_PATH,
+    DATABASES_PATH,
+    assert_data_container_equal,
+)
 from simpleml.utils.scoring.load_persistable import PersistableLoader
 from simpleml.utils.training.create_persistable import DatasetCreator
 
@@ -44,8 +47,10 @@ class TitanicRegressionTest(unittest.TestCase):
         cls.db.initialize()
 
     def get_regression_artifact(self, persistable_type, **filters):
-        with FILEPATH_REGISTRY.context_register('filestore', ARTIFACTS_PATH):
-            persistable = getattr(PersistableLoader, f'load_{persistable_type}')(**filters)
+        with FILEPATH_REGISTRY.context_register("filestore", ARTIFACTS_PATH):
+            persistable = getattr(PersistableLoader, f"load_{persistable_type}")(
+                **filters
+            )
             persistable.load_external_files()
             return persistable
 
