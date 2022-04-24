@@ -193,7 +193,7 @@ at construction and not subject to user changes) the metadata automatically gene
 identify existing artifacts without having to recreate them.
 
 ```python
-from simpleml.utils import DatasetCreator, PipelineCreator, ModelCreator, MetricCreator
+from simpleml.utils import DatasetCreator, MetricCreator, ModelCreator, PipelineCreator
 
 # ---------------------------------------------------------------------------- #
 # Option 1: Explicit object creation (pass in dependencies)
