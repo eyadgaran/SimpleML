@@ -145,3 +145,5 @@ except ImportError:
     dd = MissingImportFactory("dask.dataframe", "dask", "dask")
     ddDataFrame = MissingImportFactory("dask.dataframe.DataFrame", "dask", "dask")
     ddSeries = MissingImportFactory("dask.dataframe.Series", "dask", "dask")
+    db = MissingImportFactory("dask.bag", "dask", "dask")
+    dbBag = MissingImportFactory("dask.bag.Bag", "dask", "dask")

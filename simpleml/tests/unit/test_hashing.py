@@ -450,7 +450,7 @@ class CustomHasherTests(unittest.TestCase):
                 "f": pd.DataFrame([1]),
             }
 
-            expected_final_hash = "86e34938e508c4e41143331423d35135"
+            expected_final_hash = "53c5ed97bbc39773039fee067bbaf154"
             with self.subTest():
                 self.assertEqual(
                     CustomHasherMixin.custom_hasher(data), expected_final_hash
@@ -517,11 +517,11 @@ class CustomHasherTests(unittest.TestCase):
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'function'>",
                     # source inspection pulls the line the function is defined on with all whitespace
                     # depending on source, this could be more variables than just the function
-                    "DEBUG:simpleml.persistables.hashing:Hashing input:                 'd': lambda: 0,\n",
+                    """DEBUG:simpleml.persistables.hashing:Hashing input:                 "d": lambda: 0,\n""",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                    "DEBUG:simpleml.persistables.hashing:Hashing output: c9a7e524abd9d6db4108a4314e7082d7, <class 'str'>",
-                    "DEBUG:simpleml.persistables.hashing:Hashing output: c9a7e524abd9d6db4108a4314e7082d7, <class 'str'>",
-                    "DEBUG:simpleml.persistables.hashing:Hashing output: ae338bc5442a052f122182363859534b, <class 'str'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing output: 8ea258d3c421cfc77ddf3c8665388147, <class 'str'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing output: 8ea258d3c421cfc77ddf3c8665388147, <class 'str'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing output: 740a5a62af87a72436dab3e4c8e50807, <class 'str'>",
                     # data
                     f"DEBUG:simpleml.persistables.hashing:Hashing input: ('e', {data['e']})",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",

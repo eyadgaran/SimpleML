@@ -8,6 +8,7 @@ import unittest
 
 from simpleml.persistables.base_persistable import Persistable
 
+
 class PersistableTests(unittest.TestCase):
     def test_abstract_hash_error(self):
         """
