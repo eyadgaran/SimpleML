@@ -12,6 +12,7 @@ import logging
 from typing import Any, List
 
 import numpy as np
+
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.pipelines.validation_split_mixins import Split
 from simpleml.utils.errors import DatasetError

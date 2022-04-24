@@ -13,18 +13,18 @@ __author__ = 'Elisha Yadgaran'
 
 
 import logging
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from future.utils import with_metaclass
-from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index
+from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
-from typing import Dict, List, Optional, Any, TYPE_CHECKING
 
+from simpleml.datasets.dataset_splits import Split
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.persistables.sqlalchemy_types import GUID
 from simpleml.registries import DatasetRegistry
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import DatasetError
-from simpleml.datasets.dataset_splits import Split
 
 if TYPE_CHECKING:
     # Cyclical import hack for type hints

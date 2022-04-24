@@ -9,11 +9,16 @@ import unittest
 
 import numpy as np
 import pandas as pd
+
 from simpleml.datasets.dataset_splits import Split
 from simpleml.imports import dd
 from simpleml.pipelines.validation_split_mixins import (
-    ChronologicalSplitMixin, ExplicitSplitMixin, KFoldSplitMixin,
-    RandomSplitMixin, SplitMixin)
+    ChronologicalSplitMixin,
+    ExplicitSplitMixin,
+    KFoldSplitMixin,
+    RandomSplitMixin,
+    SplitMixin,
+)
 from simpleml.tests.utils import assert_data_container_equal
 
 

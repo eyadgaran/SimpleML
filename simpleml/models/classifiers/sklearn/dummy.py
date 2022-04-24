@@ -5,11 +5,11 @@ Wrapper module around `sklearn.dummy`
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_sklearn_classifier import SklearnClassifier
-from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
-
 from sklearn.dummy import DummyClassifier
 
+from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
+
+from .base_sklearn_classifier import SklearnClassifier
 
 '''
 Dummy classifier

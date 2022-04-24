@@ -5,8 +5,9 @@ Revises:
 Create Date: 2019-02-17 21:46:53.755263
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
+
 import simpleml
 
 # revision identifiers, used by Alembic.

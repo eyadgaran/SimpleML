@@ -8,9 +8,7 @@ __author__ = 'Elisha Yadgaran'
 
 
 import logging
-
 from typing import Any, Dict
-
 
 LOGGER = logging.getLogger(__name__)
 

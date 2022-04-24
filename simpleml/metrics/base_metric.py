@@ -2,18 +2,17 @@ __author__ = 'Elisha Yadgaran'
 
 
 import logging
-
-from future.utils import with_metaclass
-from sqlalchemy import Column, ForeignKey, UniqueConstraint, Index, func
-from sqlalchemy.orm import relationship
 from typing import Any
 
-from simpleml.persistables.base_persistable import Persistable, GUID, MutableJSON
+from future.utils import with_metaclass
+from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint, func
+from sqlalchemy.orm import relationship
+
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.models.base_model import Model
+from simpleml.persistables.base_persistable import GUID, MutableJSON, Persistable
 from simpleml.registries import MetricRegistry
 from simpleml.utils.errors import MetricError
-
 
 LOGGER = logging.getLogger(__name__)
 

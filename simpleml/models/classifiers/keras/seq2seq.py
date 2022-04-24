@@ -4,11 +4,12 @@ Seq2Seq Keras classifiers
 
 __author__ = 'Elisha Yadgaran'
 
-from simpleml.models.classifiers.keras.model import KerasModelClassifier
-
 from abc import abstractmethod
+
 import numpy as np
 import pandas as pd
+
+from simpleml.models.classifiers.keras.model import KerasModelClassifier
 
 
 class KerasSeq2SeqClassifier(KerasModelClassifier):

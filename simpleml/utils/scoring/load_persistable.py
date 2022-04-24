@@ -6,17 +6,15 @@ stored.
 __author__ = 'Elisha Yadgaran'
 
 import logging
-
 from typing import Any, Dict
 
-from simpleml.persistables.base_persistable import Persistable
 from simpleml.datasets.base_dataset import Dataset
-from simpleml.pipelines.base_pipeline import Pipeline
-from simpleml.models.base_model import Model
 from simpleml.metrics.base_metric import Metric
+from simpleml.models.base_model import Model
+from simpleml.persistables.base_persistable import Persistable
+from simpleml.pipelines.base_pipeline import Pipeline
 from simpleml.utils.errors import SimpleMLError
 from simpleml.utils.library_versions import INSTALLED_LIBRARIES
-
 
 LOGGER = logging.getLogger(__name__)
 

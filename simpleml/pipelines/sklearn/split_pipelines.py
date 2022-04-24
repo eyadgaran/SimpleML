@@ -8,8 +8,10 @@ __author__ = 'Elisha Yadgaran'
 from typing import Any, List
 
 from simpleml.pipelines.sklearn.base import SklearnPipeline
-from simpleml.pipelines.validation_split_mixins import (ExplicitSplitMixin,
-                                                        RandomSplitMixin)
+from simpleml.pipelines.validation_split_mixins import (
+    ExplicitSplitMixin,
+    RandomSplitMixin,
+)
 
 
 class RandomSplitSklearnPipeline(RandomSplitMixin, SklearnPipeline):

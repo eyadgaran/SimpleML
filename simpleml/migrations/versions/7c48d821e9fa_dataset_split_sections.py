@@ -7,13 +7,13 @@ Create Date: 2021-08-31 19:48:21.732924
 Data only migration
 """
 import logging
+
 from alembic import op
-from sqlalchemy import MetaData, Column
+from sqlalchemy import Column, MetaData
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
-
+from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 
 LOGGER = logging.getLogger(__name__)
 

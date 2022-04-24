@@ -5,19 +5,18 @@ Module with helper classes to create new persistables
 __author__ = 'Elisha Yadgaran'
 
 import logging
-
 from abc import ABCMeta, abstractmethod
+from typing import Any, Dict, Optional, Tuple
+
 from future.utils import with_metaclass
-from typing import Dict, Any, Optional, Tuple
 
-from simpleml.registries import SIMPLEML_REGISTRY
-from simpleml.persistables.base_persistable import Persistable
 from simpleml.datasets.base_dataset import Dataset
-from simpleml.pipelines.base_pipeline import Pipeline
-from simpleml.models.base_model import Model
 from simpleml.metrics.base_metric import Metric
+from simpleml.models.base_model import Model
+from simpleml.persistables.base_persistable import Persistable
+from simpleml.pipelines.base_pipeline import Pipeline
+from simpleml.registries import SIMPLEML_REGISTRY
 from simpleml.utils.errors import TrainingError
-
 
 LOGGER = logging.getLogger(__name__)
 

@@ -13,21 +13,34 @@ from os.path import isfile, join
 
 import cloudpickle
 import pandas as pd
+
 from simpleml.imports import dd, ddDataFrame, hickle
 from simpleml.save_patterns.serializers.cloudpickle import (
-    CloudpickleFileSerializer, CloudpickleInMemorySerializer,
-    CloudpicklePersistenceMethods)
-from simpleml.save_patterns.serializers.dask import (DaskCSVSerializer,
-                                                     DaskJSONSerializer,
-                                                     DaskParquetSerializer,
-                                                     DaskPersistenceMethods)
+    CloudpickleFileSerializer,
+    CloudpickleInMemorySerializer,
+    CloudpicklePersistenceMethods,
+)
+from simpleml.save_patterns.serializers.dask import (
+    DaskCSVSerializer,
+    DaskJSONSerializer,
+    DaskParquetSerializer,
+    DaskPersistenceMethods,
+)
 from simpleml.save_patterns.serializers.hickle import (
-    HickleFileSerializer, HicklePersistenceMethods)
+    HickleFileSerializer,
+    HicklePersistenceMethods,
+)
 from simpleml.save_patterns.serializers.pandas import (
-    PandasCSVSerializer, PandasJSONSerializer, PandasParquetSerializer,
-    PandasPersistenceMethods)
+    PandasCSVSerializer,
+    PandasJSONSerializer,
+    PandasParquetSerializer,
+    PandasPersistenceMethods,
+)
 from simpleml.save_patterns.serializers.pickle import (
-    PickleFileSerializer, PickleInMemorySerializer, PicklePersistenceMethods)
+    PickleFileSerializer,
+    PickleInMemorySerializer,
+    PicklePersistenceMethods,
+)
 
 TEMP_DIRECTORY = tempfile.gettempdir()
 RANDOM_RUN = random.randint(10000, 99999)

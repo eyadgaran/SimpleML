@@ -6,12 +6,13 @@ Create Date: 2020-05-31 18:37:02.849204
 
 """
 import logging
+
 from alembic import op
-from sqlalchemy import MetaData, Column
+from sqlalchemy import Column, MetaData
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
+from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 
 LOGGER = logging.getLogger(__name__)
 

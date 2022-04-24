@@ -6,15 +6,14 @@ Inherit and extend for particular patterns
 
 __author__ = 'Elisha Yadgaran'
 
+from itertools import chain
+from typing import List, Optional, Union
+
 import pandas as pd
 
-from itertools import chain
-from typing import List, Union, Optional
-
 from simpleml.datasets.base_dataset import Dataset
-from simpleml.utils.errors import DatasetError
 from simpleml.pipelines.validation_split_mixins import Split
-
+from simpleml.utils.errors import DatasetError
 
 DATAFRAME_SPLIT_COLUMN: str = 'DATASET_SPLIT'
 

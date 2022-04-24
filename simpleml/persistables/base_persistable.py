@@ -5,22 +5,26 @@ Base class for all database tracked records, called "Persistables"
 __author__ = 'Elisha Yadgaran'
 
 
-import uuid
 import logging
-
+import uuid
 from abc import abstractmethod
-from future.utils import with_metaclass
 from collections import defaultdict
-from typing import Dict, Union, Optional, Any, Type, List
-from sqlalchemy import Column, func, String, Boolean, Integer
+from typing import Any, Dict, List, Optional, Type, Union
 
-from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
+from future.utils import with_metaclass
+from sqlalchemy import Boolean, Column, Integer, String, func
+
 from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
 from simpleml.persistables.hashing import CustomHasherMixin
-from simpleml.registries import MetaRegistry, SIMPLEML_REGISTRY, SAVE_METHOD_REGISTRY, LOAD_METHOD_REGISTRY
-from simpleml.utils.library_versions import INSTALLED_LIBRARIES
+from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
+from simpleml.registries import (
+    LOAD_METHOD_REGISTRY,
+    SAVE_METHOD_REGISTRY,
+    SIMPLEML_REGISTRY,
+    MetaRegistry,
+)
 from simpleml.utils.errors import SimpleMLError
-
+from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 
 LOGGER = logging.getLogger(__name__)
 

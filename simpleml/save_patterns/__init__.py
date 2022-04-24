@@ -48,21 +48,34 @@ from simpleml.utils.configuration import PICKLE_DIRECTORY
 
 # Auto import all submodules to ensure registration on library import
 from .base import BaseSavePattern, BaseSerializer
-from .decorators import (SavePatternDecorators, deregister_save_pattern,
-                         register_save_pattern)
-from .locations.disk import (FilestoreCopyFileLocation,
-                             FilestoreCopyFilesLocation,
-                             FilestoreCopyFolderLocation,
-                             FilestorePassthroughLocation)
-from .locations.libcloud import (LibcloudCopyFileLocation,
-                                 LibcloudCopyFilesLocation,
-                                 LibcloudCopyFolderLocation)
+from .decorators import (
+    SavePatternDecorators,
+    deregister_save_pattern,
+    register_save_pattern,
+)
+from .locations.disk import (
+    FilestoreCopyFileLocation,
+    FilestoreCopyFilesLocation,
+    FilestoreCopyFolderLocation,
+    FilestorePassthroughLocation,
+)
+from .locations.libcloud import (
+    LibcloudCopyFileLocation,
+    LibcloudCopyFilesLocation,
+    LibcloudCopyFolderLocation,
+)
 from .serializers.cloudpickle import CloudpickleFileSerializer
-from .serializers.dask import (DaskCSVSerializer, DaskJSONSerializer,
-                               DaskParquetSerializer)
+from .serializers.dask import (
+    DaskCSVSerializer,
+    DaskJSONSerializer,
+    DaskParquetSerializer,
+)
 from .serializers.keras import KerasH5Serializer, KerasSavedModelSerializer
-from .serializers.pandas import (PandasCSVSerializer, PandasJSONSerializer,
-                                 PandasParquetSerializer)
+from .serializers.pandas import (
+    PandasCSVSerializer,
+    PandasJSONSerializer,
+    PandasParquetSerializer,
+)
 
 LOGGER = logging.getLogger(__name__)
 

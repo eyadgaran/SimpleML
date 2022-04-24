@@ -81,7 +81,7 @@ except ImportError:
 try:
     import tensorflow as tf
     import tf.keras as keras
-    from tf.keras.models import Sequential, Model, load_model
+    from tf.keras.models import Model, Sequential, load_model
     from tf.keras.utils import Sequence
 except ImportError:
     tf = MissingImportFactory('tensorflow', 'tensorflow', 'deep-learning')
@@ -107,8 +107,8 @@ except ImportError:
     SSHTunnelForwarder = MissingImportFactory('sshtunnel.SSHTunnelForwarder', 'sshtunnel', 'cloud')
 
 try:
-    from libcloud.storage.types import Provider
     from libcloud.storage.providers import get_driver
+    from libcloud.storage.types import Provider
 except ImportError:
     Provider = MissingImportFactory('libcloud.storage.types.Provider', 'apache-libcloud', 'cloud')
     get_driver = MissingImportFactory('libcloud.storage.providers.get_driver', 'apache-libcloud', 'cloud')

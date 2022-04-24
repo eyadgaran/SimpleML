@@ -23,18 +23,17 @@ This module is organized by metric and prediction dependencies:
 __author__ = 'Elisha Yadgaran'
 
 
+import logging
+from abc import abstractmethod
+from typing import Any, Optional
+
 import numpy as np
 import pandas as pd
-import logging
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, roc_auc_score
 
-from sklearn.metrics import confusion_matrix, roc_auc_score, accuracy_score, f1_score
-from abc import abstractmethod
-from typing import Optional, Any
-
+from simpleml.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
 from simpleml.metrics.base_metric import Metric
-from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT, TEST_SPLIT
 from simpleml.utils.errors import MetricError
-
 
 LOGGER = logging.getLogger(__name__)
 

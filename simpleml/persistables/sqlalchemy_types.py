@@ -2,10 +2,13 @@
 Platform independent sqlalchemy types
 '''
 
-from sqlalchemy.types import TypeDecorator, CHAR, JSON as SQLJSON, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy_json import mutable_json_type
 import uuid
+
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.types import CHAR
+from sqlalchemy.types import JSON as SQLJSON
+from sqlalchemy.types import Text, TypeDecorator
+from sqlalchemy_json import mutable_json_type
 
 
 class GUID(TypeDecorator):

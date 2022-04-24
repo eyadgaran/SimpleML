@@ -4,8 +4,9 @@ Persistable related tests
 
 __author__ = 'Elisha Yadgaran'
 
-from simpleml.persistables.base_persistable import Persistable
 import unittest
+
+from simpleml.persistables.base_persistable import Persistable
 
 
 class PersistableTests(unittest.TestCase):

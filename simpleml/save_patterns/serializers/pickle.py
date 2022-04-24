@@ -6,14 +6,13 @@ __author__ = 'Elisha Yadgaran'
 
 
 import pickle
-
 from os import makedirs
-from os.path import join, isfile, dirname
-from typing import Optional, Any, Dict
+from os.path import dirname, isfile, join
+from typing import Any, Dict, Optional
 
-from simpleml.utils.configuration import PICKLE_DIRECTORY
 from simpleml.registries import FILEPATH_REGISTRY
 from simpleml.save_patterns.base import BaseSerializer
+from simpleml.utils.configuration import PICKLE_DIRECTORY
 
 
 class PicklePersistenceMethods(object):

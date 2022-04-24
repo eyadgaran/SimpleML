@@ -9,9 +9,9 @@ import unittest
 from abc import abstractmethod
 
 import sqlalchemy
+
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
-from simpleml.registries import (SIMPLEML_REGISTRY, MetaRegistry,
-                                 NamedRegistry, Registry)
+from simpleml.registries import SIMPLEML_REGISTRY, MetaRegistry, NamedRegistry, Registry
 from simpleml.utils.library_versions import safe_lookup
 
 

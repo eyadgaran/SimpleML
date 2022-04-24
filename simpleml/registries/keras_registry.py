@@ -6,8 +6,8 @@ __author__ = 'Elisha Yadgaran'
 
 
 from abc import ABCMeta
-from simpleml.registries.registry import Registry
 
+from simpleml.registries.registry import Registry
 
 # Importable registry for all custom keras objects
 # Keras has an annoying persistence pattern that only supports native class references

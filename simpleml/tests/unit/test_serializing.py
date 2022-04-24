@@ -4,8 +4,9 @@ Serializing related tests
 
 __author__ = 'Elisha Yadgaran'
 
-from simpleml.persistables.serializing import custom_dumps, custom_loads
 import unittest
+
+from simpleml.persistables.serializing import custom_dumps, custom_loads
 
 
 class TestClass(object):

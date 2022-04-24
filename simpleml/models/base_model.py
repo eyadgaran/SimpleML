@@ -1,16 +1,15 @@
 import logging
 from abc import abstractmethod
 
-from future.utils import with_metaclass
-
 import numpy as np
-from simpleml.persistables.base_persistable import (GUID, MutableJSON,
-                                                    Persistable)
+from future.utils import with_metaclass
+from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
+from sqlalchemy.orm import relationship
+
+from simpleml.persistables.base_persistable import GUID, MutableJSON, Persistable
 from simpleml.registries import ModelRegistry
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import ModelError
-from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
-from sqlalchemy.orm import relationship
 
 __author__ = 'Elisha Yadgaran'
 

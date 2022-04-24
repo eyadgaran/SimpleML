@@ -5,15 +5,15 @@ Module for Cloudpickle save patterns
 __author__ = 'Elisha Yadgaran'
 
 
+from os import makedirs
+from os.path import dirname, isfile, join
+from typing import Any, Dict, Optional
+
 import cloudpickle as pickle
 
-from os import makedirs
-from os.path import join, isfile, dirname
-from typing import Optional, Any, Dict
-
-from simpleml.utils.configuration import PICKLE_DIRECTORY
 from simpleml.registries import FILEPATH_REGISTRY
 from simpleml.save_patterns.base import BaseSerializer
+from simpleml.utils.configuration import PICKLE_DIRECTORY
 
 
 class CloudpicklePersistenceMethods(object):

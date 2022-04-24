@@ -5,12 +5,20 @@ Wrapper module around `sklearn.linear_model`
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_sklearn_classifier import SklearnClassifier
+import logging
+
+from sklearn.linear_model import (
+    LogisticRegression,
+    LogisticRegressionCV,
+    Perceptron,
+    RidgeClassifier,
+    RidgeClassifierCV,
+    SGDClassifier,
+)
+
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
-from sklearn.linear_model import LogisticRegression, LogisticRegressionCV, Perceptron,\
-    RidgeClassifier, RidgeClassifierCV, SGDClassifier
-import logging
+from .base_sklearn_classifier import SklearnClassifier
 
 LOGGER = logging.getLogger(__name__)
 

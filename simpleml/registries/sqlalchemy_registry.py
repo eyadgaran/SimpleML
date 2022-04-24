@@ -6,9 +6,10 @@ __author__ = 'Elisha Yadgaran'
 
 
 from abc import ABCMeta
-from sqlalchemy.ext.declarative import declarative_base
-from simpleml.registries.registry import Registry
 
+from sqlalchemy.ext.declarative import declarative_base
+
+from simpleml.registries.registry import Registry
 
 # Importable registry
 # Instantiate specific persistable registries for easy lookup of object types

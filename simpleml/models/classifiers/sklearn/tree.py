@@ -5,11 +5,13 @@ Wrapper module around `sklearn.tree`
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_sklearn_classifier import SklearnClassifier
-from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
+import logging
 
 from sklearn.tree import DecisionTreeClassifier, ExtraTreeClassifier
-import logging
+
+from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
+
+from .base_sklearn_classifier import SklearnClassifier
 
 LOGGER = logging.getLogger(__name__)
 

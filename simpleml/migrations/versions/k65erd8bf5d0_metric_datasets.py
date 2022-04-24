@@ -8,15 +8,18 @@ Create Date: 2020-11-04 20:31:02.849204
 import logging
 
 from alembic import op
+from sqlalchemy import Column, ForeignKey, MetaData, String
+from sqlalchemy.orm import relationship, scoped_session, sessionmaker
+
 from simpleml.metrics.classification import ClassificationMetric
 from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
 from simpleml.persistables.hashing import CustomHasherMixin
 from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
-from simpleml.pipelines.validation_split_mixins import (ExplicitSplitMixin,
-                                                        RandomSplitMixin)
+from simpleml.pipelines.validation_split_mixins import (
+    ExplicitSplitMixin,
+    RandomSplitMixin,
+)
 from simpleml.registries import SIMPLEML_REGISTRY
-from sqlalchemy import Column, ForeignKey, MetaData, String
-from sqlalchemy.orm import relationship, scoped_session, sessionmaker
 
 LOGGER = logging.getLogger(__name__)
 

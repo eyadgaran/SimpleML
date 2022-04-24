@@ -10,13 +10,19 @@ import unittest
 
 import numpy as np
 import pandas as pd
+
 from simpleml.datasets.base_dataset import Dataset
-from simpleml.datasets.dask import (BaseDaskDataset, DaskFileBasedDataset,
-                                    DaskPipelineDataset)
+from simpleml.datasets.dask import (
+    BaseDaskDataset,
+    DaskFileBasedDataset,
+    DaskPipelineDataset,
+)
 from simpleml.datasets.numpy import BaseNumpyDataset, NumpyPipelineDataset
-from simpleml.datasets.pandas import (BasePandasDataset,
-                                      PandasFileBasedDataset,
-                                      PandasPipelineDataset)
+from simpleml.datasets.pandas import (
+    BasePandasDataset,
+    PandasFileBasedDataset,
+    PandasPipelineDataset,
+)
 from simpleml.datasets.pandas.base import DATAFRAME_SPLIT_COLUMN
 from simpleml.imports import dd, ddDataFrame, ddSeries
 from simpleml.tests.utils import assert_data_container_equal

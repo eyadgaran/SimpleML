@@ -6,11 +6,13 @@ Central place to actually run any migrations. Can be invoked in a few ways:
 '''
 
 from __future__ import with_statement
+
 from logging.config import fileConfig
+
 from alembic import context
 
-from simpleml.utils.initialization import Database
 from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
+from simpleml.utils.initialization import Database
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

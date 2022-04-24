@@ -6,11 +6,10 @@ __author__ = 'Elisha Yadgaran'
 
 
 import logging
-from typing import Type, Optional, Callable, Union
+from typing import Callable, Optional, Type, Union
 
+from simpleml.registries import LOAD_METHOD_REGISTRY, SAVE_METHOD_REGISTRY
 from simpleml.utils.errors import SimpleMLError
-from simpleml.registries import SAVE_METHOD_REGISTRY, LOAD_METHOD_REGISTRY
-
 
 LOGGER = logging.getLogger(__name__)
 

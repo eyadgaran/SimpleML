@@ -9,17 +9,22 @@ import unittest
 from abc import ABC, abstractmethod
 
 import pandas as pd
+
 from simpleml.datasets.dask.base import BaseDaskDataset
 from simpleml.datasets.dataset_splits import Split
 from simpleml.datasets.pandas.base import BasePandasDataset
 from simpleml.imports import dd
-from simpleml.pipelines.ordered_dict import (ExplicitSplitOrderedDictPipeline,
-                                             OrderedDictPipeline,
-                                             RandomSplitOrderedDictPipeline)
+from simpleml.pipelines.ordered_dict import (
+    ExplicitSplitOrderedDictPipeline,
+    OrderedDictPipeline,
+    RandomSplitOrderedDictPipeline,
+)
 from simpleml.pipelines.projected_splits import ProjectedDatasetSplit
-from simpleml.pipelines.sklearn import (ExplicitSplitSklearnPipeline,
-                                        RandomSplitSklearnPipeline,
-                                        SklearnPipeline)
+from simpleml.pipelines.sklearn import (
+    ExplicitSplitSklearnPipeline,
+    RandomSplitSklearnPipeline,
+    SklearnPipeline,
+)
 from simpleml.tests.utils import assert_split_equal
 from simpleml.transformers import Transformer
 

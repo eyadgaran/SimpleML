@@ -13,16 +13,18 @@ __author__ = 'Elisha Yadgaran'
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Optional, Union
 
-from future.utils import with_metaclass
-
 import pandas as pd
+from future.utils import with_metaclass
+from sklearn.model_selection import train_test_split
+
 from simpleml.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
 from simpleml.imports import ddDataFrame, ddSeries
-from sklearn.model_selection import train_test_split
 
-from .projected_splits import (IdentityProjectedDatasetSplit,
-                               IndexBasedProjectedDatasetSplit)
+from .projected_splits import (
+    IdentityProjectedDatasetSplit,
+    IndexBasedProjectedDatasetSplit,
+)
 
 
 class SplitMixin(with_metaclass(ABCMeta, object)):

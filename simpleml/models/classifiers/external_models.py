@@ -1,6 +1,6 @@
-from simpleml.models.external_models import ExternalModelMixin
 import logging
 
+from simpleml.models.external_models import ExternalModelMixin
 
 __author__ = 'Elisha Yadgaran'
 

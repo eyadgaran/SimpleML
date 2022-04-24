@@ -6,15 +6,15 @@ returned from pipelines
 __author__ = 'Elisha Yadgaran'
 
 
-import pandas as pd
-import numpy as np
-
-from typing import Optional
 from abc import ABCMeta, abstractmethod
+from typing import Optional
 
-from simpleml.imports import ddDataFrame, ddSeries
+import numpy as np
+import pandas as pd
+
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.datasets.dataset_splits import Split
+from simpleml.imports import ddDataFrame, ddSeries
 
 
 class ProjectedDatasetSplit(metaclass=ABCMeta):

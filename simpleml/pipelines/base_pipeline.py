@@ -8,9 +8,11 @@ import inspect
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
 
-from future.utils import with_metaclass
-
 import pandas as pd
+from future.utils import with_metaclass
+from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
+from sqlalchemy.orm import relationship
+
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
 from simpleml.persistables.base_persistable import Persistable
@@ -18,11 +20,8 @@ from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.registries import PipelineRegistry
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import PipelineError
-from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
-from sqlalchemy.orm import relationship
 
-from .projected_splits import (IdentityProjectedDatasetSplit,
-                               ProjectedDatasetSplit)
+from .projected_splits import IdentityProjectedDatasetSplit, ProjectedDatasetSplit
 
 if TYPE_CHECKING:
     # Cyclical import hack for type hints

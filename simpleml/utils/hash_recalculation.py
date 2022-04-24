@@ -5,17 +5,16 @@ Util to recalculate persistable hashes
 __author__ = 'Elisha Yadgaran'
 
 import logging
-
-from typing import Optional, List
 from queue import SimpleQueue
+from typing import List, Optional
 
-from simpleml.registries import SIMPLEML_REGISTRY
-from simpleml.persistables.hashing import CustomHasherMixin
-from simpleml.persistables.base_persistable import Persistable
 from simpleml.datasets.base_dataset import Dataset
-from simpleml.pipelines.base_pipeline import Pipeline
-from simpleml.models.base_model import Model
 from simpleml.metrics.base_metric import Metric
+from simpleml.models.base_model import Model
+from simpleml.persistables.base_persistable import Persistable
+from simpleml.persistables.hashing import CustomHasherMixin
+from simpleml.pipelines.base_pipeline import Pipeline
+from simpleml.registries import SIMPLEML_REGISTRY
 
 LOGGER = logging.getLogger(__name__)
 

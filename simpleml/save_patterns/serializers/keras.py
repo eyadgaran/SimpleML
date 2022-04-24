@@ -11,8 +11,10 @@ from typing import Any, Dict
 from simpleml.imports import load_model
 from simpleml.registries import FILEPATH_REGISTRY, KERAS_REGISTRY
 from simpleml.save_patterns.base import BaseSerializer
-from simpleml.utils.configuration import (HDF5_DIRECTORY,
-                                          TENSORFLOW_SAVED_MODEL_DIRECTORY)
+from simpleml.utils.configuration import (
+    HDF5_DIRECTORY,
+    TENSORFLOW_SAVED_MODEL_DIRECTORY,
+)
 
 
 class KerasPersistenceMethods(object):

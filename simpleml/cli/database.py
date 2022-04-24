@@ -6,11 +6,11 @@ __author__ = 'Elisha Yadgaran'
 
 
 import logging
+
 import click
 
-from simpleml.utils.initialization import Database
 from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
-
+from simpleml.utils.initialization import Database
 
 LOGGER = logging.getLogger(__name__)
 

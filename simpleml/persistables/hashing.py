@@ -14,6 +14,7 @@ from typing import Any, Type
 import numpy as np
 import pandas as pd
 from pandas.util import hash_pandas_object
+
 from simpleml._external.joblib import hash as pickle_hash
 from simpleml.imports import ddDataFrame
 

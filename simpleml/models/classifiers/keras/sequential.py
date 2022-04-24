@@ -4,11 +4,10 @@ Uses Keras's API to create a sequential classifier
 
 __author__ = 'Elisha Yadgaran'
 
-from simpleml.models.classifiers.keras.base_keras_classifier import KerasClassifier
-from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
-
 # Import optional dependencies
 from simpleml.imports import Sequential
+from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
+from simpleml.models.classifiers.keras.base_keras_classifier import KerasClassifier
 
 
 class WrappedKerasSequentialClassifier(Sequential, ClassificationExternalModelMixin):

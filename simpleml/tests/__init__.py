@@ -42,9 +42,9 @@ import unittest
 
 from coverage import Coverage
 
-from simpleml.tests.unit import load_tests as unit_test_loader
 from simpleml.tests.integration import load_tests as integration_test_loader
 from simpleml.tests.regression import load_tests as regression_test_loader
+from simpleml.tests.unit import load_tests as unit_test_loader
 
 
 def load_tests(*args, **kwargs):

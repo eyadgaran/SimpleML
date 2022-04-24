@@ -10,6 +10,7 @@ from typing import Any, Tuple, Union
 
 import numpy as np
 import pandas as pd
+
 from simpleml.datasets.dataset_splits import Split
 from simpleml.imports import Sequence
 from simpleml.pipelines import Pipeline

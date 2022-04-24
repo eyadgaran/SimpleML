@@ -8,11 +8,11 @@ __author__ = 'Elisha Yadgaran'
 import unittest
 from random import randint
 
-from simpleml.persistables.base_persistable import Persistable
 from simpleml.datasets import Dataset
-from simpleml.pipelines import Pipeline
-from simpleml.models import Model
 from simpleml.metrics import Metric
+from simpleml.models import Model
+from simpleml.persistables.base_persistable import Persistable
+from simpleml.pipelines import Pipeline
 
 
 class PersistablePersistenceTests():

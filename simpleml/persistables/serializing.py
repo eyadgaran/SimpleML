@@ -9,12 +9,13 @@ subsequently deserialize on load
 __author__ = 'Elisha Yadgaran'
 
 
-import simplejson as json
-import cloudpickle as pickle
 import codecs
 import sys
-from decimal import Decimal
 from datetime import datetime, timedelta
+from decimal import Decimal
+
+import cloudpickle as pickle
+import simplejson as json
 
 try:  # Py2/3 compatibility
     basestring

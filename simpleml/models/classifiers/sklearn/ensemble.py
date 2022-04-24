@@ -5,12 +5,21 @@ Wrapper module around `sklearn.ensemble`
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_sklearn_classifier import SklearnClassifier
+import logging
+
+from sklearn.ensemble import (
+    AdaBoostClassifier,
+    BaggingClassifier,
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    HistGradientBoostingClassifier,
+    RandomForestClassifier,
+    VotingClassifier,
+)
+
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
-from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier,\
-    GradientBoostingClassifier, RandomForestClassifier, VotingClassifier, HistGradientBoostingClassifier
-import logging
+from .base_sklearn_classifier import SklearnClassifier
 
 LOGGER = logging.getLogger(__name__)
 

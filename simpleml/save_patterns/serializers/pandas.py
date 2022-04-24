@@ -11,10 +11,14 @@ from os.path import dirname, isfile, join
 from typing import Any, Dict, Optional
 
 import pandas as pd
+
 from simpleml.registries import FILEPATH_REGISTRY
 from simpleml.save_patterns.base import BaseSerializer
-from simpleml.utils.configuration import (CSV_DIRECTORY, JSON_DIRECTORY,
-                                          PARQUET_DIRECTORY)
+from simpleml.utils.configuration import (
+    CSV_DIRECTORY,
+    JSON_DIRECTORY,
+    PARQUET_DIRECTORY,
+)
 
 
 class PandasPersistenceMethods(object):

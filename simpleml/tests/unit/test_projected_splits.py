@@ -6,15 +6,19 @@ __author__ = 'Elisha Yadgaran'
 
 
 import unittest
-import pandas as pd
-import numpy as np
-
-from unittest.mock import MagicMock, patch, PropertyMock
 from abc import ABCMeta, abstractmethod
+from unittest.mock import MagicMock, PropertyMock, patch
+
+import numpy as np
+import pandas as pd
 
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.datasets.dataset_splits import Split
-from simpleml.pipelines.projected_splits import ProjectedDatasetSplit, IdentityProjectedDatasetSplit, IndexBasedProjectedDatasetSplit
+from simpleml.pipelines.projected_splits import (
+    IdentityProjectedDatasetSplit,
+    IndexBasedProjectedDatasetSplit,
+    ProjectedDatasetSplit,
+)
 
 
 class AbstractProjectedDatasetSplitTests(unittest.TestCase):

@@ -9,9 +9,11 @@ import unittest
 
 from simpleml.registries import LOAD_METHOD_REGISTRY, SAVE_METHOD_REGISTRY
 from simpleml.save_patterns.base import BaseSavePattern, BaseSerializer
-from simpleml.save_patterns.decorators import (SavePatternDecorators,
-                                               deregister_save_pattern,
-                                               register_save_pattern)
+from simpleml.save_patterns.decorators import (
+    SavePatternDecorators,
+    deregister_save_pattern,
+    register_save_pattern,
+)
 
 
 class SavePatternRegistrationTests(unittest.TestCase):

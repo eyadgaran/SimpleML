@@ -5,33 +5,37 @@ database management
 
 __author__ = 'Elisha Yadgaran'
 
-import os
-import logging
-import random
 import atexit
+import logging
+import os
+import random
+from os.path import dirname, join, realpath
+from typing import Any, Dict, Optional, Tuple
 
-from sqlalchemy import create_engine
-from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.engine.url import URL, make_url
 from alembic import command
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from os.path import realpath, dirname, join
-from typing import Optional, Dict, Any, Tuple
+from sqlalchemy import create_engine
+from sqlalchemy.engine.url import URL, make_url
+from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.orm import scoped_session, sessionmaker
 
-# Import table models to register in DeclaritiveBase
-from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy, DatasetStorageSqlalchemy, BinaryStorageSqlalchemy
 import simpleml.datasets.base_dataset
-import simpleml.pipelines.base_pipeline
-import simpleml.models.base_model
 import simpleml.metrics.base_metric
-from simpleml.persistables.serializing import custom_dumps, custom_loads
-from simpleml.utils.errors import SimpleMLError
-from simpleml.utils.configuration import CONFIG, FILESTORE_DIRECTORY
+import simpleml.models.base_model
+import simpleml.pipelines.base_pipeline
 from simpleml.imports import SSHTunnelForwarder
 
+# Import table models to register in DeclaritiveBase
+from simpleml.persistables.base_sqlalchemy import (
+    BinaryStorageSqlalchemy,
+    DatasetStorageSqlalchemy,
+    SimplemlCoreSqlalchemy,
+)
+from simpleml.persistables.serializing import custom_dumps, custom_loads
+from simpleml.utils.configuration import CONFIG, FILESTORE_DIRECTORY
+from simpleml.utils.errors import SimpleMLError
 
 LOGGER = logging.getLogger(__name__)
 

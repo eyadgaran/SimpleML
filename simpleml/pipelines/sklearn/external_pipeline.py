@@ -7,8 +7,9 @@ __author__ = 'Elisha Yadgaran'
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from simpleml.pipelines.external_pipelines import ExternalPipelineMixin
 from sklearn.pipeline import Pipeline
+
+from simpleml.pipelines.external_pipelines import ExternalPipelineMixin
 
 
 class SklearnExternalPipeline(Pipeline, ExternalPipelineMixin):

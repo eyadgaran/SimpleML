@@ -6,14 +6,14 @@ __author__ = 'Elisha Yadgaran'
 
 
 import unittest
-import pandas as pd
-import numpy as np
-
 from unittest.mock import MagicMock, patch
 
-from simpleml.utils.errors import MetricError
+import numpy as np
+import pandas as pd
+
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
 from simpleml.metrics.classification import ClassificationMetric
+from simpleml.utils.errors import MetricError
 
 
 class BaseClassificationTests(unittest.TestCase):

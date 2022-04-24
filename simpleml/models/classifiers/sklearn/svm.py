@@ -5,11 +5,13 @@ Wrapper module around `sklearn.svm`
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_sklearn_classifier import SklearnClassifier
+import logging
+
+from sklearn.svm import SVC, LinearSVC, NuSVC
+
 from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
 
-from sklearn.svm import LinearSVC, NuSVC, SVC
-import logging
+from .base_sklearn_classifier import SklearnClassifier
 
 LOGGER = logging.getLogger(__name__)
 

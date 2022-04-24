@@ -13,9 +13,13 @@ from typing import Any, Dict, List, Optional, Union
 from simpleml.imports import dd, ddDataFrame
 from simpleml.registries import FILEPATH_REGISTRY
 from simpleml.save_patterns.base import BaseSerializer
-from simpleml.utils.configuration import (CSV_DIRECTORY, HDF5_DIRECTORY,
-                                          JSON_DIRECTORY, ORC_DIRECTORY,
-                                          PARQUET_DIRECTORY)
+from simpleml.utils.configuration import (
+    CSV_DIRECTORY,
+    HDF5_DIRECTORY,
+    JSON_DIRECTORY,
+    ORC_DIRECTORY,
+    PARQUET_DIRECTORY,
+)
 
 
 class DaskPersistenceMethods(object):

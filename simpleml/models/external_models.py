@@ -7,8 +7,9 @@ Inherit and extend for particular models
 __author__ = 'Elisha Yadgaran'
 
 
-from simpleml.registries import KerasRegistry
 from future.utils import with_metaclass
+
+from simpleml.registries import KerasRegistry
 
 
 class ExternalModelMixin(with_metaclass(KerasRegistry, object)):

@@ -5,11 +5,11 @@ Wrapper module around `sklearn.multioutput`
 __author__ = 'Elisha Yadgaran'
 
 
-from .base_sklearn_classifier import SklearnClassifier
-from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
-
 from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
 
+from simpleml.models.classifiers.external_models import ClassificationExternalModelMixin
+
+from .base_sklearn_classifier import SklearnClassifier
 
 '''
 Classifier Chain

@@ -6,10 +6,9 @@ __author__ = 'Elisha Yadgaran'
 
 import logging
 
+from sqlalchemy import DDL, Column, DateTime, MetaData, event, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, DateTime, func, event, MetaData, DDL
 from sqlalchemy_mixins import AllFeaturesMixin
-
 
 Base = declarative_base()
 LOGGER = logging.getLogger(__name__)

@@ -14,8 +14,11 @@ import random
 import unittest
 
 from coverage import Coverage
-from simpleml.persistables.base_sqlalchemy import (DatasetStorageSqlalchemy,
-                                                   SimplemlCoreSqlalchemy)
+
+from simpleml.persistables.base_sqlalchemy import (
+    DatasetStorageSqlalchemy,
+    SimplemlCoreSqlalchemy,
+)
 from simpleml.utils.configuration import FILESTORE_DIRECTORY
 from simpleml.utils.initialization import Database
 from simpleml.utils.postgres import create_database, drop_database
