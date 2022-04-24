@@ -521,7 +521,7 @@ class CustomHasherTests(unittest.TestCase):
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
                     "DEBUG:simpleml.persistables.hashing:Hashing output: 8ea258d3c421cfc77ddf3c8665388147, <class 'str'>",
                     "DEBUG:simpleml.persistables.hashing:Hashing output: 8ea258d3c421cfc77ddf3c8665388147, <class 'str'>",
-                    "DEBUG:simpleml.persistables.hashing:Hashing output: ae338bc5442a052f122182363859534b, <class 'str'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing output: 740a5a62af87a72436dab3e4c8e50807, <class 'str'>",
                     # data
                     f"DEBUG:simpleml.persistables.hashing:Hashing input: ('e', {data['e']})",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'tuple'>",
