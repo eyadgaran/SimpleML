@@ -8,6 +8,7 @@ __author__ = "Elisha Yadgaran"
 import unittest
 
 import pandas as pd
+
 from simpleml._external.joblib import hash as deterministic_hash
 from simpleml.persistables.hashing import CustomHasherMixin
 
