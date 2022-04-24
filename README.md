@@ -138,7 +138,9 @@ This block (or any subset) can be executed as many times as desired and will cre
 autoincrementing version (for each "name").
 
 ```python
+from simpleml.constants import TEST_SPLIT
 from simpleml.datasets.pandas import PandasFileBasedDataset
+from simpleml.metrics import AccuracyMetric
 from simpleml.models import SklearnLogisticRegression
 from simpleml.pipelines.sklearn import RandomSplitSklearnPipeline
 from simpleml.transformers import (
@@ -146,9 +148,6 @@ from simpleml.transformers import (
     FillWithValue,
     SklearnDictVectorizer,
 )
-
-from simpleml.metrics AccuracyMetric
-from simpleml.constants import TEST_SPLIT
 
 
 # Create Dataset and save it
