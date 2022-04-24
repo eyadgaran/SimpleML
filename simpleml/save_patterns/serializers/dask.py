@@ -6,11 +6,12 @@ __author__ = "Elisha Yadgaran"
 
 
 import glob
+import json
 from os import makedirs
 from os.path import dirname, isfile, join
 from typing import Any, Dict, List, Optional, Union
 
-from simpleml.imports import dd, ddDataFrame
+from simpleml.imports import db, dbBag, dd, ddDataFrame
 from simpleml.registries import FILEPATH_REGISTRY
 from simpleml.save_patterns.base import BaseSerializer
 from simpleml.utils.configuration import (
@@ -27,9 +28,18 @@ class DaskPersistenceMethods(object):
     Base class for internal dask serialization/deserialization options
 
     Wraps dd.Dataframe methods with sensible defaults
+    Uses dask bag alternatives for optimizations (notably for read parallelization
+    and memory handling)
     """
 
     INDEX_COLUMN = "simpleml_index"
+
+    @staticmethod
+    def read_text(*args, **kwargs) -> dbBag:
+        """
+        Dask Bag wrapper to read text and return a bag
+        """
+        return db.read_text(*args, **kwargs)
 
     @classmethod
     def read_csv(
@@ -55,9 +65,16 @@ class DaskPersistenceMethods(object):
         return dd.read_orc(filepath, **kwargs)
 
     @classmethod
-    def read_json(cls, filepaths: List[str], **kwargs) -> ddDataFrame:
+    def read_json(cls, filepaths: List[str], persist=False, **kwargs) -> ddDataFrame:
+        """
+        Uses dask bag implementation to optimize read
+        :param persist: bool, flag to return a processing future instead of lazy compute later
+        """
         # Automatically handle index
-        df = dd.read_json(filepaths, **kwargs)
+        # df = dd.read_json(filepaths, **kwargs)
+        df = cls.read_text(filepaths, **kwargs).map(json.loads).to_dataframe()
+        if persist:
+            df = df.persist()
         if cls.INDEX_COLUMN in df.columns:
             df = df.set_index(cls.INDEX_COLUMN)
         return df

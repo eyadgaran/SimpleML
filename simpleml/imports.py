@@ -32,6 +32,10 @@ class MissingImportWrapper(object):
     Errors on reference when not available instead of on import
     """
 
+    name: str
+    pypi_name: str
+    simpleml_extra_group: str
+
     def __init__(self, *args, **kwargs):
         self.raise_error()
 
@@ -82,9 +86,9 @@ except ImportError:
 
 try:
     import tensorflow as tf
-    import tf.keras as keras
-    from tf.keras.models import Model, Sequential, load_model
-    from tf.keras.utils import Sequence
+    import tensorflow.keras as keras
+    from tensorflow.keras.models import Model, Sequential, load_model
+    from tensorflow.keras.utils import Sequence
 except ImportError:
     tf = MissingImportFactory("tensorflow", "tensorflow", "deep-learning")
     keras = MissingImportFactory("tensorflow.keras", "tensorflow", "deep-learning")
@@ -134,7 +138,12 @@ try:
 
     ddDataFrame = dd.DataFrame
     ddSeries = dd.Series
+    import dask.bag as db
+
+    dbBag = db.Bag
 except ImportError:
     dd = MissingImportFactory("dask.dataframe", "dask", "dask")
     ddDataFrame = MissingImportFactory("dask.dataframe.DataFrame", "dask", "dask")
     ddSeries = MissingImportFactory("dask.dataframe.Series", "dask", "dask")
+    db = MissingImportFactory("dask.bag", "dask", "dask")
+    dbBag = MissingImportFactory("dask.bag.Bag", "dask", "dask")
