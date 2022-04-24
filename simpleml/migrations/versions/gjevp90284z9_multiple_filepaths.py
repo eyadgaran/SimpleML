@@ -8,10 +8,11 @@ Create Date: 2020-05-31 18:37:02.849204
 import logging
 
 from alembic import op
-from simpleml.orm.base_sqlalchemy import BaseSQLAlchemy
-from simpleml.orm.sqlalchemy_types import GUID, MutableJSON
 from sqlalchemy import Column, MetaData
 from sqlalchemy.orm import scoped_session, sessionmaker
+
+from simpleml.orm.base_sqlalchemy import BaseSQLAlchemy
+from simpleml.orm.sqlalchemy_types import GUID, MutableJSON
 
 LOGGER = logging.getLogger(__name__)
 

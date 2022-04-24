@@ -35,8 +35,10 @@ class SklearnExternalPipeline(Pipeline, ExternalPipelineMixin):
         index = [i for i, j in enumerate(self.steps) if j[0] == name][0]
         self.steps.pop(index)
 
-    def get_params(self, params_only: Optional[bool] = False, **kwargs) -> Dict[str, Any]:
-        '''
+    def get_params(
+        self, params_only: Optional[bool] = False, **kwargs
+    ) -> Dict[str, Any]:
+        """
         Wrapper around sklearn implementation to drop non parameter returns
         :param params_only: boolean to filter down to actual transformer parameters
         """

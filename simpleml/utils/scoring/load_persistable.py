@@ -33,8 +33,14 @@ class PersistableLoader(object):
     """
 
     @classmethod
-    def load_persistable(cls, persistable_class: ORMPersistable, filters: Dict[str, Any]) -> Persistable:
-        record = persistable_class.where(**filters).order_by(persistable_class.version.desc()).first()
+    def load_persistable(
+        cls, persistable_class: ORMPersistable, filters: Dict[str, Any]
+    ) -> Persistable:
+        record = (
+            persistable_class.where(**filters)
+            .order_by(persistable_class.version.desc())
+            .first()
+        )
         if record is not None:
             persistable = record.load(load_externals=False)
             cls.validate_environment(persistable)

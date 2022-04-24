@@ -10,6 +10,7 @@ import weakref
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import pandas as pd
+
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
 from simpleml.persistables.base_persistable import Persistable
@@ -29,9 +30,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 @ExternalArtifactDecorators.register_artifact(
-    artifact_name='pipeline', save_attribute='external_pipeline', restore_attribute='_external_file')
+    artifact_name="pipeline",
+    save_attribute="external_pipeline",
+    restore_attribute="_external_file",
+)
 class Pipeline(Persistable, metaclass=PipelineRegistry):
-    '''
+    """
     Abstract Base class for all Pipelines objects.
 
     Relies on mixin classes to define the split_dataset method. Will throw
@@ -41,20 +45,22 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
     Schema
     -------
     params: pipeline parameter metadata for easy insight into hyperparameters across trainings
-    '''
-    object_type: str = 'PIPELINE'
+    """
 
-    def __init__(self,
-                 has_external_files: bool = True,
-                 transformers: Optional[List[Any]] = None,
-                 fitted: bool = False,
-                 dataset_id: Optional[Union[str, uuid.uuid4]] = None,
-                 **kwargs):
+    object_type: str = "PIPELINE"
+
+    def __init__(
+        self,
+        has_external_files: bool = True,
+        transformers: Optional[List[Any]] = None,
+        fitted: bool = False,
+        dataset_id: Optional[Union[str, uuid.uuid4]] = None,
+        **kwargs,
+    ):
         # If no save patterns are set, specify a default for disk_pickled
-        if 'save_patterns' not in kwargs:
-            kwargs['save_patterns'] = {'pipeline': ['disk_pickled']}
-        super(Pipeline, self).__init__(
-            has_external_files=has_external_files, **kwargs)
+        if "save_patterns" not in kwargs:
+            kwargs["save_patterns"] = {"pipeline": ["disk_pickled"]}
+        super(Pipeline, self).__init__(has_external_files=has_external_files, **kwargs)
 
         # prep instantiation of pipeline - lazy build
         if transformers is None:
@@ -86,12 +92,14 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
 
         Wrapper around whatever underlying class is desired
         (eg sklearn or native)
-        '''
-        self.load_if_unloaded('pipeline')
+        """
+        self.load_if_unloaded("pipeline")
 
         # lazy build
-        if not hasattr(self, '_external_file'):
-            self._external_file = self._create_external_pipeline(self._transformers, **self._external_pipeline_init_kwargs)
+        if not hasattr(self, "_external_file"):
+            self._external_file = self._create_external_pipeline(
+                self._transformers, **self._external_pipeline_init_kwargs
+            )
             # clear temp vars
             del self._transformers
             del self._external_pipeline_init_kwargs
@@ -107,7 +115,7 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
     def add_dataset(self, dataset: "Dataset") -> None:
         """
         Setter method for dataset used
-        '''
+        """
         if dataset is None:
             return
         self.dataset_id = dataset.id
@@ -115,12 +123,12 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
 
     @property
     def dataset(self):
-        '''
+        """
         Use a weakref to bind linked dataset so it doesnt bloat usage
         returns dataset if still available or tries to fetch otherwise
-        '''
+        """
         # still referenced weakref
-        if hasattr(self, '_dataset') and self._dataset() is not None:
+        if hasattr(self, "_dataset") and self._dataset() is not None:
             return self._dataset()
 
         # null return if no associated dataset (governed by dataset_id)
@@ -128,28 +136,28 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
             return None
 
         # else regenerate weakref
-        LOGGER.info('No referenced object available. Refreshing weakref')
+        LOGGER.info("No referenced object available. Refreshing weakref")
         dataset = self._load_dataset()
         self._dataset = weakref.ref(dataset)
         return dataset
 
     @dataset.setter
-    def dataset(self, dataset: 'Dataset') -> None:
-        '''
+    def dataset(self, dataset: "Dataset") -> None:
+        """
         Need to be careful not to set as the orm object
         Cannot load if wrong type because of recursive behavior (will
         propagate down the whole dependency chain)
-        '''
+        """
         self._dataset = weakref.ref(dataset)
 
     def _load_dataset(self):
-        '''
+        """
         Helper to fetch the dataset
-        '''
+        """
         return self.orm_cls.load_dataset(self.dataset_id)
 
-    def assert_dataset(self, msg: str = '') -> None:
-        '''
+    def assert_dataset(self, msg: str = "") -> None:
+        """
         Helper method to raise an error if dataset isn't present
         """
         if self.dataset is None:
@@ -218,16 +226,16 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
         super().save(**kwargs)
 
     def __post_restore__(self) -> None:
-        '''
+        """
         Extend main load routine to load relationship class
-        '''
+        """
         super().__post_restore__()
 
         # Create dummy pipeline if one wasnt saved
         if not self.has_external_files:
             self._external_file = self._create_external_pipeline([], **self.params)
 
-    '''
+    """
     Data Accessors
     """
 
@@ -276,7 +284,7 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
     def _filter_fit_params(self, split: ProjectedDatasetSplit) -> Dict[str, Any]:
         """
         Helper to filter unsupported fit params from dataset splits
-        '''
+        """
         return signature_kwargs_validator(self.external_pipeline.fit, **split)
 
     def fit(self):

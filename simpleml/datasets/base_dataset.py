@@ -32,9 +32,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 @ExternalArtifactDecorators.register_artifact(
-    artifact_name='dataset', save_attribute='dataframe', restore_attribute='_external_file')
+    artifact_name="dataset",
+    save_attribute="dataframe",
+    restore_attribute="_external_file",
+)
 class Dataset(Persistable, metaclass=DatasetRegistry):
-    '''
+    """
     Base class for all Dataset objects.
 
     Every dataset has a "dataframe" object associated with it that is responsible
@@ -55,16 +58,19 @@ class Dataset(Persistable, metaclass=DatasetRegistry):
     Schema
     -------
     No additional columns
-    '''
-    object_type: str = 'DATASET'
+    """
 
-    def __init__(self,
-                 has_external_files: bool = True,
-                 label_columns: Optional[List[str]] = None,
-                 other_named_split_sections: Optional[Dict[str, List[str]]] = None,
-                 pipeline_id: Optional[Union[str, uuid.uuid4]] = None,
-                 **kwargs):
-        '''
+    object_type: str = "DATASET"
+
+    def __init__(
+        self,
+        has_external_files: bool = True,
+        label_columns: Optional[List[str]] = None,
+        other_named_split_sections: Optional[Dict[str, List[str]]] = None,
+        pipeline_id: Optional[Union[str, uuid.uuid4]] = None,
+        **kwargs,
+    ):
+        """
         param label_columns: Optional list of column names to register as the "y" split section
         param other_named_split_sections: Optional map of section names to lists of column names for
             other arbitrary split columns -- must match expected consumer signatures (e.g. sample_weights)
@@ -72,10 +78,9 @@ class Dataset(Persistable, metaclass=DatasetRegistry):
         All other columns in the dataframe will automatically be referenced as "X"
         """
         # If no save patterns are set, specify a default for disk_pickled
-        if 'save_patterns' not in kwargs:
-            kwargs['save_patterns'] = {'dataset': ['disk_pickled']}
-        super().__init__(
-            has_external_files=has_external_files, **kwargs)
+        if "save_patterns" not in kwargs:
+            kwargs["save_patterns"] = {"dataset": ["disk_pickled"]}
+        super().__init__(has_external_files=has_external_files, **kwargs)
 
         # split sections are an optional set of inputs to register split references
         # for later use. defaults to just `X` and `y` but arbitrary inputs can
@@ -102,10 +107,10 @@ class Dataset(Persistable, metaclass=DatasetRegistry):
         # initialize null pipeline reference
         self.pipeline_id = pipeline_id
 
-    def add_pipeline(self, pipeline: 'Pipeline') -> None:
-        '''
+    def add_pipeline(self, pipeline: "Pipeline") -> None:
+        """
         Setter method for dataset pipeline used
-        '''
+        """
         if pipeline is None:
             return
         self.pipeline_id = pipeline.id
@@ -113,12 +118,12 @@ class Dataset(Persistable, metaclass=DatasetRegistry):
 
     @property
     def pipeline(self):
-        '''
+        """
         Use a weakref to bind linked pipeline so it doesnt bloat usage
         returns pipeline if still available or tries to fetch otherwise
-        '''
+        """
         # still referenced weakref
-        if hasattr(self, '_pipeline') and self._pipeline() is not None:
+        if hasattr(self, "_pipeline") and self._pipeline() is not None:
             return self._pipeline()
 
         # null return if no associated pipeline (governed by pipeline_id)
@@ -126,24 +131,24 @@ class Dataset(Persistable, metaclass=DatasetRegistry):
             return None
 
         # else regenerate weakref
-        LOGGER.info('No referenced object available. Refreshing weakref')
+        LOGGER.info("No referenced object available. Refreshing weakref")
         pipeline = self._load_pipeline()
         self._pipeline = weakref.ref(pipeline)
         return pipeline
 
     @pipeline.setter
-    def pipeline(self, pipeline: 'Pipeline') -> None:
-        '''
+    def pipeline(self, pipeline: "Pipeline") -> None:
+        """
         Need to be careful not to set as the orm object
         Cannot load if wrong type because of recursive behavior (will
         propagate down the whole dependency chain)
-        '''
+        """
         self._pipeline = weakref.ref(pipeline)
 
     def _load_pipeline(self):
-        '''
+        """
         Helper to fetch the pipeline
-        '''
+        """
         return self.orm_cls.load_pipeline(self.pipeline_id)
 
     @property

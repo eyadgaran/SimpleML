@@ -6,16 +6,18 @@ __author__ = "Elisha Yadgaran"
 
 
 from simpleml.registries.keras_registry import KERAS_REGISTRY, KerasRegistry
-from simpleml.registries.persistable_registry import (DATASET_REGISTRY,
-                                                      METRIC_REGISTRY,
-                                                      MODEL_REGISTRY,
-                                                      PIPELINE_REGISTRY,
-                                                      SIMPLEML_REGISTRY,
-                                                      DatasetRegistry,
-                                                      MetricRegistry,
-                                                      ModelRegistry,
-                                                      PersistableRegistry,
-                                                      PipelineRegistry)
+from simpleml.registries.persistable_registry import (
+    DATASET_REGISTRY,
+    METRIC_REGISTRY,
+    MODEL_REGISTRY,
+    PIPELINE_REGISTRY,
+    SIMPLEML_REGISTRY,
+    DatasetRegistry,
+    MetricRegistry,
+    ModelRegistry,
+    PersistableRegistry,
+    PipelineRegistry,
+)
 from simpleml.registries.registry import NamedRegistry, Registry
 
 # Registry for save patterns

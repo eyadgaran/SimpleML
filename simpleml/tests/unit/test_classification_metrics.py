@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
+
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
 from simpleml.metrics.classification import ClassificationMetric
 from simpleml.utils.errors import MetricError
@@ -170,5 +171,5 @@ class BaseClassificationTests(unittest.TestCase):
                     ClassificationMetric.validate_predictions(bad_type)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

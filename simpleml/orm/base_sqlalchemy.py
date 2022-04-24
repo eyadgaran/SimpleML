@@ -1,23 +1,22 @@
-'''
+"""
 Base class for sqlalchemy table models. Defaults some opinionated fields for
 all inherited tables.
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 import logging
 
+from sqlalchemy import Column, DateTime, event, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, DateTime, func, event
 from sqlalchemy_mixins import AllFeaturesMixin
-
 
 Base = declarative_base()
 LOGGER = logging.getLogger(__name__)
 
 
 class BaseSQLAlchemy(Base, AllFeaturesMixin):
-    '''
+    """
     Base class for sqlalchemy table models. Defaults some opinionated fields for
     all inherited tables.
 
@@ -37,10 +36,13 @@ class BaseSQLAlchemy(Base, AllFeaturesMixin):
     -------
     created_timestamp: Server time on insert
     modified_timestamp: Server time on update
-    '''
+    """
+
     __abstract__ = True
 
-    created_timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_timestamp = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
     modified_timestamp = Column(DateTime(timezone=True), server_onupdate=func.now())
 
     @classmethod
@@ -54,7 +56,7 @@ class BaseSQLAlchemy(Base, AllFeaturesMixin):
 
 # Sqlalchemy registered listener to update fields on all table model changes
 # (only registered in code so external db modifications will not trigger)
-@event.listens_for(BaseSQLAlchemy, 'before_update', propagate=True)
+@event.listens_for(BaseSQLAlchemy, "before_update", propagate=True)
 def _receive_before_update(mapper, connection, target):
     """Listen for updates and update `modified_timestamp` column."""
     target.modified_timestamp = func.now()

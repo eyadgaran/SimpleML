@@ -1,8 +1,8 @@
-'''
+"""
 Base Model module
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 import logging
 import uuid
@@ -11,6 +11,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
+
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.pipelines import Pipeline
 from simpleml.registries import ModelRegistry
@@ -21,9 +22,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 @ExternalArtifactDecorators.register_artifact(
-    artifact_name='model', save_attribute='external_model', restore_attribute='_external_file')
+    artifact_name="model",
+    save_attribute="external_model",
+    restore_attribute="_external_file",
+)
 class Model(Persistable, metaclass=ModelRegistry):
-    '''
+    """
     Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
     stored in the arbitrary metadata field
@@ -31,28 +35,30 @@ class Model(Persistable, metaclass=ModelRegistry):
     Also outlines the expected subclass methods (with NotImplementedError).
     Design choice to not abstract unified API across all libraries since each
     has a different internal mechanism
-    '''
-    object_type = 'MODEL'
+    """
 
-    def __init__(self,
-                 has_external_files: bool = True,
-                 external_model_kwargs: Optional[Dict[str, Any]] = None,
-                 params: Optional[Dict[str, Any]] = None,
-                 fitted: bool = False,
-                 pipeline_id: Optional[Union[str, uuid.uuid4]] = None,
-                 **kwargs):
-        '''
+    object_type = "MODEL"
+
+    def __init__(
+        self,
+        has_external_files: bool = True,
+        external_model_kwargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        fitted: bool = False,
+        pipeline_id: Optional[Union[str, uuid.uuid4]] = None,
+        **kwargs,
+    ):
+        """
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
 
         Two supported patterns - full initialization in constructor or stepwise configured
         before fit and save
-        '''
+        """
         # If no save patterns are set, specify a default for disk_pickled
-        if 'save_patterns' not in kwargs:
-            kwargs['save_patterns'] = {'model': ['disk_pickled']}
-        super(Model, self).__init__(
-            has_external_files=has_external_files, **kwargs)
+        if "save_patterns" not in kwargs:
+            kwargs["save_patterns"] = {"model": ["disk_pickled"]}
+        super(Model, self).__init__(has_external_files=has_external_files, **kwargs)
 
         # Prep params for model instantiation. lazy init (first reference will create it)
         if external_model_kwargs is None:
@@ -81,12 +87,14 @@ class Model(Persistable, metaclass=ModelRegistry):
 
         Wrapper around whatever underlying class is desired
         (eg sklearn or keras)
-        '''
-        self.load_if_unloaded('model')
+        """
+        self.load_if_unloaded("model")
 
         # lazy build
-        if not hasattr(self, '_external_file'):
-            self._external_file = self._create_external_model(**self._external_model_init_kwargs)
+        if not hasattr(self, "_external_file"):
+            self._external_file = self._create_external_model(
+                **self._external_model_init_kwargs
+            )
             # clear temp vars
             del self._external_model_init_kwargs
 
@@ -101,9 +109,9 @@ class Model(Persistable, metaclass=ModelRegistry):
         raise NotImplementedError
 
     def add_pipeline(self, pipeline: Pipeline) -> None:
-        '''
+        """
         Setter method for dataset pipeline used
-        '''
+        """
         if pipeline is None:
             return
         self.pipeline_id = pipeline.id
@@ -111,12 +119,12 @@ class Model(Persistable, metaclass=ModelRegistry):
 
     @property
     def pipeline(self):
-        '''
+        """
         Use a weakref to bind linked pipeline so it doesnt bloat usage
         returns pipeline if still available or tries to fetch otherwise
-        '''
+        """
         # still referenced weakref
-        if hasattr(self, '_pipeline') and self._pipeline() is not None:
+        if hasattr(self, "_pipeline") and self._pipeline() is not None:
             return self._pipeline()
 
         # null return if no associated pipeline (governed by pipeline_id)
@@ -124,28 +132,28 @@ class Model(Persistable, metaclass=ModelRegistry):
             return None
 
         # else regenerate weakref
-        LOGGER.info('No referenced object available. Refreshing weakref')
+        LOGGER.info("No referenced object available. Refreshing weakref")
         pipeline = self._load_pipeline()
         self._pipeline = weakref.ref(pipeline)
         return pipeline
 
     @pipeline.setter
     def pipeline(self, pipeline: Pipeline) -> None:
-        '''
+        """
         Need to be careful not to set as the orm pipeline
         Cannot load if wrong type because of recursive behavior (will
         propagate down the whole dependency chain)
-        '''
+        """
         self._pipeline = weakref.ref(pipeline)
 
     def _load_pipeline(self):
-        '''
+        """
         Helper to fetch the pipeline
-        '''
+        """
         return self.orm_cls.load_pipeline(self.pipeline_id)
 
-    def assert_pipeline(self, msg=''):
-        '''
+    def assert_pipeline(self, msg=""):
+        """
         Helper method to raise an error if pipeline isn't present and configured
         """
         if self.pipeline is None or not self.pipeline.fitted:

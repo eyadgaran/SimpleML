@@ -194,9 +194,6 @@ class PandasPersistenceMethods(object):
     def to_pickle(
         df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -207,9 +204,6 @@ class PandasPersistenceMethods(object):
     def to_csv(
         cls, df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -217,16 +211,19 @@ class PandasPersistenceMethods(object):
         df.to_csv(filepath, index_label=cls.INDEX_COLUMN, **kwargs)
 
     @staticmethod
-    def to_clipboard(df: pd.DataFrame, overwrite: bool = True, **kwargs) -> None:
-        df.to_clipboard(**kwargs)
+    def to_clipboard(
+        df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
+    ) -> None:
+        if not overwrite:
+            # Check if file was already serialized
+            if isfile(filepath):
+                return
+        df.to_clipboard(filepath, **kwargs)
 
     @staticmethod
     def to_excel(
         df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -243,9 +240,6 @@ class PandasPersistenceMethods(object):
         orient: str = "records",
         **kwargs,
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -262,9 +256,6 @@ class PandasPersistenceMethods(object):
     def to_html(
         df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -275,9 +266,6 @@ class PandasPersistenceMethods(object):
     def to_xml(
         df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -288,9 +276,6 @@ class PandasPersistenceMethods(object):
     def to_latex(
         df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -301,9 +286,6 @@ class PandasPersistenceMethods(object):
     def to_feather(
         df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -314,9 +296,6 @@ class PandasPersistenceMethods(object):
     def to_parquet(
         df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -327,9 +306,6 @@ class PandasPersistenceMethods(object):
     def to_stata(
         df: pd.DataFrame, filepath: str, overwrite: bool = True, **kwargs
     ) -> None:
-        # make sure the directory exists
-        makedirs(dirname(filepath), exist_ok=True)
-
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):

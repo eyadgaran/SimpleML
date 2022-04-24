@@ -28,8 +28,10 @@ class SklearnPipeline(Pipeline):
     ) -> SklearnExternalPipeline:
         """
         Initialize a scikit-learn pipeline object
-        '''
-        supported_kwargs = signature_kwargs_validator(SklearnExternalPipeline.__init__, **kwargs)
+        """
+        supported_kwargs = signature_kwargs_validator(
+            SklearnExternalPipeline.__init__, **kwargs
+        )
 
         return SklearnExternalPipeline(
             transformers,

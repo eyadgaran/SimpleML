@@ -17,9 +17,10 @@ class BaseSavePattern(object):
     """
     Base class for save patterns (registered wrappers for the collection of
     serializers and deserializers)
-    '''
-    serializers: Tuple[Type['BaseSerializer']] = tuple()
-    deserializers: Tuple[Type['BaseSerializer']] = tuple()
+    """
+
+    serializers: Tuple[Type["BaseSerializer"]] = tuple()
+    deserializers: Tuple[Type["BaseSerializer"]] = tuple()
 
     @classmethod
     def save(cls, **kwargs) -> Dict[str, str]:

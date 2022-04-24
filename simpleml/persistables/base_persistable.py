@@ -12,9 +12,13 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Type, Union
 
 from simpleml.persistables.hashing import CustomHasherMixin
-from simpleml.registries import (LOAD_METHOD_REGISTRY, ORM_REGISTRY,
-                                 SAVE_METHOD_REGISTRY, SIMPLEML_REGISTRY,
-                                 PersistableRegistry)
+from simpleml.registries import (
+    LOAD_METHOD_REGISTRY,
+    ORM_REGISTRY,
+    SAVE_METHOD_REGISTRY,
+    SIMPLEML_REGISTRY,
+    PersistableRegistry,
+)
 from simpleml.utils.errors import SimpleMLError
 from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 
@@ -22,7 +26,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
-    '''
+    """
     Base class for all SimpleML persistable objects.
 
     Uses private class attributes for internal artifact registry
@@ -70,22 +74,25 @@ class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
 
 
     metadata: Generic JSON store for random attributes
-    '''
-    object_type = 'PERSISTABLE'
+    """
 
-    def __init__(self,
-                 id: uuid.UUID = None,
-                 hash_: str = None,
-                 name: Optional[str] = 'default',
-                 has_external_files: bool = False,
-                 author: Optional[str] = 'default',
-                 project: Optional[str] = 'default',
-                 version: Optional[int] = None,
-                 version_description: Optional[str] = '',
-                 save_patterns: Optional[Dict[str, List[str]]] = None,
-                 filepaths: Optional[Dict] = None,
-                 metadata_: Optional[Dict] = None,
-                 **kwargs):
+    object_type = "PERSISTABLE"
+
+    def __init__(
+        self,
+        id: uuid.UUID = None,
+        hash_: str = None,
+        name: Optional[str] = "default",
+        has_external_files: bool = False,
+        author: Optional[str] = "default",
+        project: Optional[str] = "default",
+        version: Optional[int] = None,
+        version_description: Optional[str] = "",
+        save_patterns: Optional[Dict[str, List[str]]] = None,
+        filepaths: Optional[Dict] = None,
+        metadata_: Optional[Dict] = None,
+        **kwargs,
+    ):
         # Initialize values expected to exist at time of instantiation
         self.registered_name: str = self.__class__.__name__
         self.id: uuid.UUID = id or uuid.uuid4()
@@ -102,16 +109,28 @@ class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
 
         # Special place for SimpleML internal params
         # Think of as the config to initialize objects
-        self.metadata_: Dict[str, Any] = metadata_ or {}  # Place for any arbitrary metadata
+        self.metadata_: Dict[str, Any] = (
+            metadata_ or {}
+        )  # Place for any arbitrary metadata
 
-        if 'config' not in self.metadata_:
-            self.metadata_['config'] = {}  # Place for parameters that uniquely configure an instance on initialization
-        if 'state' not in self.metadata_:
-            self.metadata_['state'] = {}  # Place for transitory values that may be set post initialization (and want to be persisted)
+        if "config" not in self.metadata_:
+            self.metadata_[
+                "config"
+            ] = (
+                {}
+            )  # Place for parameters that uniquely configure an instance on initialization
+        if "state" not in self.metadata_:
+            self.metadata_[
+                "state"
+            ] = (
+                {}
+            )  # Place for transitory values that may be set post initialization (and want to be persisted)
 
-        save_patterns = save_patterns or self.state.get('save_patterns')
+        save_patterns = save_patterns or self.state.get("save_patterns")
         if has_external_files and save_patterns is None:
-            raise SimpleMLError('Persistable has external artifacts, but has not specified any save patterns.\nTry reinitializing persistable with `Persistable(save_patterns={artifact_name: [save_patterns]})`')
+            raise SimpleMLError(
+                "Persistable has external artifacts, but has not specified any save patterns.\nTry reinitializing persistable with `Persistable(save_patterns={artifact_name: [save_patterns]})`"
+            )
 
         # Store save pattern in state metadata as an operational setting, otherwise
         # it could affect the hash and result in a different object per save location
@@ -124,23 +143,24 @@ class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
         self._configure_unmapped_attributes()
 
     def _configure_unmapped_attributes(self):
-        '''
+        """
         Unified entry for unmapped attributes. need to be restored when loading
         classes
-        '''
+        """
         self.unloaded_artifacts: List[str]
         # Track the list of artifacts
         # New persistables without a specified filepath dictionary have type
         # sqlalchemy.sql.schema.Column - calling list(Column.keys()) would fail
         if not isinstance(self.filepaths, dict):
-            LOGGER.warning('Load appears to being called on an unsaved Persistable')
+            LOGGER.warning("Load appears to being called on an unsaved Persistable")
             self.unloaded_artifacts = []
         else:
             self.unloaded_artifacts = list(self.filepaths.keys())
 
-    '''
+    """
     metadata accessor properties
-    '''
+    """
+
     @property
     def config(self) -> Dict[str, Any]:
         return self.metadata_["config"]
@@ -153,9 +173,10 @@ class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
     def library_versions(self) -> Dict[str, str]:
         return self.metadata_.get("library_versions", {})
 
-    '''
+    """
     abstract definitions
-    '''
+    """
+
     @abstractmethod
     def _hash(self):
         """
@@ -164,15 +185,15 @@ class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
         to assert identity across code definitions
         """
 
-    '''
+    """
     persistence hooks
-    '''
+    """
 
     def _get_latest_version(self) -> int:
         """
         Versions should be autoincrementing for each object (constrained over
         friendly name). Executes a database lookup and increments..
-        '''
+        """
         return self.orm_cls.get_latest_version(name=self.name)
 
     def save(self) -> None:
@@ -182,7 +203,7 @@ class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
 
         sqlalchemy_mixins supports active record style TableModel.save()
         so can still call super(Persistable, self).save()
-        '''
+        """
         if self.has_external_files:  # todo: insert hook to not save on updates
             self.save_external_files()
 
@@ -195,8 +216,8 @@ class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
             self.version = self._get_latest_version()
 
         # Store library versions in case of future loads into unsupported environments
-        if 'library_versions' not in self.metadata_:
-            self.metadata_['library_versions'] = INSTALLED_LIBRARIES
+        if "library_versions" not in self.metadata_:
+            self.metadata_["library_versions"] = INSTALLED_LIBRARIES
 
         self.orm_cls.save_record(**self.to_dict())
 
@@ -204,7 +225,7 @@ class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
     def orm_cls(self):
         cls = ORM_REGISTRY.get(self.object_type)
         if cls is None:
-            raise SimpleMLError(f'No registered ORM class for {self.object_type}')
+            raise SimpleMLError(f"No registered ORM class for {self.object_type}")
         return cls
 
     def save_external_files(self) -> None:
@@ -284,11 +305,11 @@ class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
         return getattr(self, save_attribute)
 
     @classmethod
-    def from_dict(cls, **kwargs) -> 'Persistable':
-        '''
+    def from_dict(cls, **kwargs) -> "Persistable":
+        """
         Parameterize a persistable from a dict. Used in deserialization from ORM
         objects
-        '''
+        """
         # skip init calls
         obj = cls.__new__(cls)
         for attr, value in kwargs.items():

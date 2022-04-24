@@ -2,13 +2,14 @@ from typing import Callable
 
 import numpy as np
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 class ClassificationMixin(object):
     """
     Mixin class for classification methods
-    '''
+    """
+
     # expected base methods
     assert_fitted: Callable
     transform: Callable

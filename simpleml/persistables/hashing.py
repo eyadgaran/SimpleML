@@ -171,8 +171,10 @@ class CustomHasherMixin(object):
         return hash_output
 
     @staticmethod
-    def md5_hasher(object_to_hash: Union[Tuple[float, str, int], float, str, int]) -> str:
-        '''
+    def md5_hasher(
+        object_to_hash: Union[Tuple[float, str, int], float, str, int]
+    ) -> str:
+        """
         Generate a simple deterministic hash with md5 - only supports basic dtypes
         """
         if isinstance(object_to_hash, tuple):

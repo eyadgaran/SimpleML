@@ -1,19 +1,18 @@
-'''
+"""
 Metadata bases specific to each session (subclasses represent tables affected by the
 same session -- ie base.metadata.create_all()/drop_all()/upgrade())
 
 Each class used as part of a session needs to be initialized directly
-'''
+"""
 
 __author__ = "Elisha Yadgaran"
 
 
 import logging
 
-from sqlalchemy import event, MetaData, DDL
+from sqlalchemy import DDL, MetaData, event
 
 from .base_sqlalchemy import BaseSQLAlchemy
-
 
 LOGGER = logging.getLogger(__name__)
 

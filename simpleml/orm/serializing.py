@@ -40,7 +40,7 @@ class JSONSerializer(json.JSONEncoder):
 def object_hook(data, ignore_dicts=False):
     # if this is a string, check for pickled
     if isinstance(data, str) and len(data) > 19:
-        if data[:19] == 'pickle_serialized->':
+        if data[:19] == "pickle_serialized->":
             return pickle.loads(codecs.decode(data[19:].encode(), "base64"))
 
     # if this is a list of values, return list of deserialized values

@@ -8,8 +8,12 @@ __author__ = "Elisha Yadgaran"
 import unittest
 from abc import abstractmethod
 
-from simpleml.registries import (SIMPLEML_REGISTRY, NamedRegistry,
-                                 PersistableRegistry, Registry)
+from simpleml.registries import (
+    SIMPLEML_REGISTRY,
+    NamedRegistry,
+    PersistableRegistry,
+    Registry,
+)
 
 
 class RegistryTests(unittest.TestCase):
@@ -337,6 +341,7 @@ class PersistableRegistryTests(unittest.TestCase):
         def import_new_class():
             class BLAHBLAHTESTCLASS(metaclass=PersistableRegistry):
                 pass
+
             return BLAHBLAHTESTCLASS
 
         class_name = "BLAHBLAHTESTCLASS"

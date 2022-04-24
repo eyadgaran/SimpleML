@@ -10,6 +10,7 @@ from __future__ import with_statement
 from logging.config import fileConfig
 
 from alembic import context
+
 from simpleml.orm.initialization import Database
 from simpleml.orm.metadata import SimplemlCoreSqlalchemy
 

@@ -1,8 +1,8 @@
-'''
+"""
 Base class for all database tracked records, called "Persistables"
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import logging
@@ -11,19 +11,20 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Type, Union
 
+from sqlalchemy import Boolean, Column, Integer, String, func, inspect
+from sqlalchemy.orm.relationships import RelationshipProperty
+
 from simpleml.orm.metadata import SimplemlCoreSqlalchemy
 from simpleml.orm.sqlalchemy_types import GUID, MutableJSON
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.registries import SIMPLEML_REGISTRY
 from simpleml.utils.errors import SimpleMLError
-from sqlalchemy import Boolean, Column, Integer, String, func, inspect
-from sqlalchemy.orm.relationships import RelationshipProperty
 
 LOGGER = logging.getLogger(__name__)
 
 
 class ORMPersistable(SimplemlCoreSqlalchemy):
-    '''
+    """
     Base class for all SimpleML database objects.
     dialect can be swapped out for any supported SQLAlchemy backend.
 
@@ -75,7 +76,7 @@ class ORMPersistable(SimplemlCoreSqlalchemy):
 
 
     metadata: Generic JSON store for random attributes
-    '''
+    """
 
     __abstract__ = True
 
@@ -88,7 +89,7 @@ class ORMPersistable(SimplemlCoreSqlalchemy):
     # Use registered name for internal object pointer - internal code can
     # still get updated between trainings (hence hash)
     # TODO: figure out how to hash objects in a way that signifies code content
-    hash_ = Column('hash', String, nullable=False)
+    hash_ = Column("hash", String, nullable=False)
     registered_name = Column(String, nullable=False)
     author = Column(String, nullable=False)
     project = Column(String, nullable=False)
@@ -101,28 +102,28 @@ class ORMPersistable(SimplemlCoreSqlalchemy):
     filepaths = Column(MutableJSON)
 
     # Generic store and metadata for all child objects
-    metadata_ = Column('metadata', MutableJSON)
+    metadata_ = Column("metadata", MutableJSON)
 
     @classmethod
     def save_record(cls, id: str, **kwargs) -> None:
-        '''
+        """
         save overloads parent method that is called by helper methods for create/update
-        '''
+        """
         attributes = inspect(cls).attrs.keys()
 
         # check if existing record
         record = cls.find(id)
         # create
         if record is None:
-            LOGGER.debug(f'No existing record matching id {id}. Creating new one')
+            LOGGER.debug(f"No existing record matching id {id}. Creating new one")
             cls.create(id=id, **{k: v for k, v in kwargs.items() if k in attributes})
         # update
         else:
-            LOGGER.debug(f'Found existing record matching id {id}. Updating values')
+            LOGGER.debug(f"Found existing record matching id {id}. Updating values")
             record.update(**{k: v for k, v in kwargs.items() if k in attributes})
 
     def load(self, load_externals: bool = False) -> Persistable:
-        '''
+        """
         Counter operation for save
         Needs to load any file and db objects
 
@@ -131,7 +132,7 @@ class ORMPersistable(SimplemlCoreSqlalchemy):
 
         :param load_externals: Boolean flag whether to load the external files
         useful for relationships that only need class definitions and not data
-        '''
+        """
 
         # Lookup appropriate class and reinstantiate
         cls = self._load_class()
@@ -144,26 +145,30 @@ class ORMPersistable(SimplemlCoreSqlalchemy):
         return persistable
 
     def _load_class(self) -> Persistable:
-        '''
+        """
         Wrapper function to call global registry of all imported class names
-        '''
+        """
         cls = SIMPLEML_REGISTRY.get(self.registered_name)
         if cls is None:
-            raise SimpleMLError(f'Could not find registered class for {self.registered_name}')
+            raise SimpleMLError(
+                f"Could not find registered class for {self.registered_name}"
+            )
         return cls
 
     def to_dict(self):
-        '''
+        """
         Utility method to inspect the orm model and return a dictionary of
         attributes -> values
 
         Uses the mapped attribute name, not the column name (e.g. hash_ vs hash).
         excludes relationships (to support lazy loading)
-        '''
+        """
         attributes = inspect(self).mapper.all_orm_descriptors
-        non_relationship_attrs = [attr for attr, v in attributes.items()
-                                  if not hasattr(v, "prop")
-                                  or not isinstance(v.prop, RelationshipProperty)]
+        non_relationship_attrs = [
+            attr
+            for attr, v in attributes.items()
+            if not hasattr(v, "prop") or not isinstance(v.prop, RelationshipProperty)
+        ]
 
         # handle type conversions from sqlalchemy types
         # def type_formatter(attr):
@@ -175,15 +180,13 @@ class ORMPersistable(SimplemlCoreSqlalchemy):
 
     @classmethod
     def get_latest_version(cls, name: str) -> int:
-        '''
+        """
         Versions should be autoincrementing for each object (constrained over
         friendly name). Executes a database lookup and increments..
-        '''
-        last_version = cls.query_by(
-            func.max(cls.version)
-        ).filter(
-            cls.name == name
-        ).scalar()
+        """
+        last_version = (
+            cls.query_by(func.max(cls.version)).filter(cls.name == name).scalar()
+        )
 
         if last_version is None:
             last_version = 0
@@ -191,6 +194,6 @@ class ORMPersistable(SimplemlCoreSqlalchemy):
         return last_version + 1
 
     @staticmethod
-    def load_reference(reference_cls: 'ORMPersistable', id: str) -> Persistable:
+    def load_reference(reference_cls: "ORMPersistable", id: str) -> Persistable:
         record = reference_cls.find(id)
         return record.load()

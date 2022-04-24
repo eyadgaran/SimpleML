@@ -10,7 +10,7 @@ from simpleml.orm.serializing import custom_dumps, custom_loads
 
 
 class TestClass(object):
-    '''Something not natively JSON serializable'''
+    """Something not natively JSON serializable"""
 
     def __init__(self, a, b, c, d):
         self.a = a

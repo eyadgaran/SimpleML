@@ -15,8 +15,10 @@ from simpleml.metrics.classification import ClassificationMetric
 from simpleml.orm.base_sqlalchemy import BaseSQLAlchemy
 from simpleml.orm.sqlalchemy_types import GUID, MutableJSON
 from simpleml.persistables.hashing import CustomHasherMixin
-from simpleml.pipelines.validation_split_mixins import (ExplicitSplitMixin,
-                                                        RandomSplitMixin)
+from simpleml.pipelines.validation_split_mixins import (
+    ExplicitSplitMixin,
+    RandomSplitMixin,
+)
 from simpleml.registries import SIMPLEML_REGISTRY
 
 LOGGER = logging.getLogger(__name__)

@@ -21,30 +21,31 @@ METRIC_REGISTRY = Registry()
 
 
 class PersistableRegistry(ABCMeta):
-    '''
+    """
     Meta class to register SimpleML persistables. expected to be set as
     metaclass for all persistable types
-    '''
+    """
+
     def __new__(cls, clsname, bases, attrs):
-        '''
+        """
         Metaclass implementation. Called on import of referenced subclasses
         (not called on construction of classes)
-        '''
+        """
         newclass = super(PersistableRegistry, cls).__new__(cls, clsname, bases, attrs)
         SIMPLEML_REGISTRY.register(newclass)
         return newclass
 
     def __call__(self, *args, **kwargs):
-        '''
+        """
         Overwrite constructor call to add post init hook
         (called when constructing referenced subclasses)
-        '''
+        """
         cls = super().__call__(*args, **kwargs)
-        if hasattr(cls, '__post_init__'):
+        if hasattr(cls, "__post_init__"):
             cls.__post_init__()
         return cls
 
-    '''
+    """
     TBD on implementing registry as class attribute
 
     def __init__(cls, name, bases, nmspc):

@@ -25,7 +25,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class PersistableCreator(object, metaclass=ABCMeta):
-
     @classmethod
     def retrieve_or_create(self, **kwargs) -> Persistable:
         """
@@ -36,7 +35,11 @@ class PersistableCreator(object, metaclass=ABCMeta):
         orm_persistable = self.retrieve(cls, filters)
 
         if orm_persistable is not None:
-            LOGGER.info('Using existing persistable: {}, {}, {}'.format(cls.__tablename__, orm_persistable.name, orm_persistable.version))
+            LOGGER.info(
+                "Using existing persistable: {}, {}, {}".format(
+                    cls.__tablename__, orm_persistable.name, orm_persistable.version
+                )
+            )
             return orm_persistable.load()
 
         else:
@@ -53,7 +56,7 @@ class PersistableCreator(object, metaclass=ABCMeta):
 
     @staticmethod
     def retrieve(cls, filters: Dict[str, Any]) -> ORMPersistable:
-        '''
+        """
         Query database using the table model (cls) and filters for a matching
         persistable
         """
@@ -75,7 +78,7 @@ class PersistableCreator(object, metaclass=ABCMeta):
             *dependency_cls.determine_filters(**dependency_kwargs)
         )
         if dependency is None:
-            raise TrainingError('Expected dependency is missing')
+            raise TrainingError("Expected dependency is missing")
         return dependency.load()
 
     @classmethod

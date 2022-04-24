@@ -16,19 +16,22 @@ from alembic import command
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from simpleml.imports import SSHTunnelForwarder
-
-# Import table models to register in DeclaritiveBase
-from simpleml.orm.metadata import (BinaryStorageSqlalchemy,
-                                   DatasetStorageSqlalchemy,
-                                   SimplemlCoreSqlalchemy)
-from simpleml.orm.serializing import custom_dumps, custom_loads
-from simpleml.utils.configuration import CONFIG, FILESTORE_DIRECTORY
-from simpleml.utils.errors import SimpleMLError
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL, make_url
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import scoped_session, sessionmaker
+
+from simpleml.imports import SSHTunnelForwarder
+
+# Import table models to register in DeclaritiveBase
+from simpleml.orm.metadata import (
+    BinaryStorageSqlalchemy,
+    DatasetStorageSqlalchemy,
+    SimplemlCoreSqlalchemy,
+)
+from simpleml.orm.serializing import custom_dumps, custom_loads
+from simpleml.utils.configuration import CONFIG, FILESTORE_DIRECTORY
+from simpleml.utils.errors import SimpleMLError
 
 LOGGER = logging.getLogger(__name__)
 
