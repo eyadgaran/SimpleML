@@ -8,7 +8,6 @@ __author__ = "Elisha Yadgaran"
 import unittest
 
 import pandas as pd
-
 from simpleml._external.joblib import hash as deterministic_hash
 from simpleml.persistables.hashing import CustomHasherMixin
 
@@ -450,7 +449,7 @@ class CustomHasherTests(unittest.TestCase):
                 "f": pd.DataFrame([1]),
             }
 
-            expected_final_hash = "86e34938e508c4e41143331423d35135"
+            expected_final_hash = "53c5ed97bbc39773039fee067bbaf154"
             with self.subTest():
                 self.assertEqual(
                     CustomHasherMixin.custom_hasher(data), expected_final_hash
@@ -517,7 +516,7 @@ class CustomHasherTests(unittest.TestCase):
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'function'>",
                     # source inspection pulls the line the function is defined on with all whitespace
                     # depending on source, this could be more variables than just the function
-                    "DEBUG:simpleml.persistables.hashing:Hashing input:                 'd': lambda: 0,\n",
+                    """DEBUG:simpleml.persistables.hashing:Hashing input:                 "d": lambda: 0,\n""",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
                     "DEBUG:simpleml.persistables.hashing:Hashing output: c9a7e524abd9d6db4108a4314e7082d7, <class 'str'>",
                     "DEBUG:simpleml.persistables.hashing:Hashing output: c9a7e524abd9d6db4108a4314e7082d7, <class 'str'>",
