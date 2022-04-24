@@ -138,38 +138,50 @@ This block (or any subset) can be executed as many times as desired and will cre
 autoincrementing version (for each "name").
 
 ```python
-from simpleml.datasets.pandas import PandasFileBasedDataset
-from simpleml.pipelines.sklearn import RandomSplitSklearnPipeline
-from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
-from simpleml.models import SklearnLogisticRegression
-from simpleml.metrics AccuracyMetric
 from simpleml.constants import TEST_SPLIT
-
+from simpleml.datasets.pandas import PandasFileBasedDataset
+from simpleml.metrics import AccuracyMetric
+from simpleml.models import SklearnLogisticRegression
+from simpleml.pipelines.sklearn import RandomSplitSklearnPipeline
+from simpleml.transformers import (
+    DataframeToRecords,
+    FillWithValue,
+    SklearnDictVectorizer,
+)
 
 # Create Dataset and save it
-dataset = PandasFileBasedDataset(name='titanic',
-    filepath='filepath/to/train.csv', format='csv',
-    label_columns=['Survived'], squeeze_return=True)
+dataset = PandasFileBasedDataset(
+    name="titanic",
+    filepath="filepath/to/train.csv",
+    format="csv",
+    label_columns=["Survived"],
+    squeeze_return=True,
+)
 dataset.build_dataframe()
 dataset.save()  # this defaults to a pickle serialization
 
 # Define the minimal transformers to fill nulls and one-hot encode text columns
 transformers = [
-    ('fill_zeros', FillWithValue(values=0.)),
-    ('record_coverter', DataframeToRecords()),
-    ('vectorizer', SklearnDictVectorizer())
+    ("fill_zeros", FillWithValue(values=0.0)),
+    ("record_coverter", DataframeToRecords()),
+    ("vectorizer", SklearnDictVectorizer()),
 ]
 
 # Create Pipeline and save it - Use basic 80-20 test split
 # Creates an sklearn.pipelines.Pipeline artifact
-pipeline = RandomSplitSklearnPipeline(name='titanic', transformers=transformers,
-                               train_size=0.8, validation_size=0.0, test_size=0.2)
+pipeline = RandomSplitSklearnPipeline(
+    name="titanic",
+    transformers=transformers,
+    train_size=0.8,
+    validation_size=0.0,
+    test_size=0.2,
+)
 pipeline.add_dataset(dataset)  # adds a lineage relationship
 pipeline.fit()  # automatically uses relationship and parameters to choose data
 pipeline.save()  # this defaults to a pickle serialization
 
 # Create Model and save it -- Creates an sklearn.linear_model.LogisticRegression artifact
-model = SklearnLogisticRegression(name='titanic')
+model = SklearnLogisticRegression(name="titanic")
 model.add_pipeline(pipeline)  # adds a lineage relationship
 model.fit()  # automatically uses relationship to choose data
 model.save()  # this defaults to a pickle serialization
@@ -188,40 +200,57 @@ at construction and not subject to user changes) the metadata automatically gene
 identify existing artifacts without having to recreate them.
 
 ```python
-from simpleml.utils import DatasetCreator, PipelineCreator, ModelCreator, MetricCreator
+from simpleml.utils import DatasetCreator, MetricCreator, ModelCreator, PipelineCreator
 
 # ---------------------------------------------------------------------------- #
 # Option 1: Explicit object creation (pass in dependencies)
 # ---------------------------------------------------------------------------- #
 # Object defining parameters
-dataset_kwargs = {'name': 'titanic', 'registered_name': 'PandasFileBasedDataset',
-  'filepath': 'filepath/to/train.csv', 'format': 'csv', 'label_columns': ['Survived'], 'squeeze_return': True}
-pipeline_kwargs = {'name': 'titanic', 'registered_name': 'RandomSplitSklearnPipeline', 'transformers': transformers, 'train_size': 0.8, 'validation_size': 0.0, 'test_size': 0.2}
-model_kwargs = {'name': 'titanic', 'registered_name': 'SklearnLogisticRegression'}
-metric_kwargs = {'registered_name': 'AccuracyMetric', 'dataset_split': TEST_SPLIT}
+dataset_kwargs = {
+    "name": "titanic",
+    "registered_name": "PandasFileBasedDataset",
+    "filepath": "filepath/to/train.csv",
+    "format": "csv",
+    "label_columns": ["Survived"],
+    "squeeze_return": True,
+}
+pipeline_kwargs = {
+    "name": "titanic",
+    "registered_name": "RandomSplitSklearnPipeline",
+    "transformers": transformers,
+    "train_size": 0.8,
+    "validation_size": 0.0,
+    "test_size": 0.2,
+}
+model_kwargs = {"name": "titanic", "registered_name": "SklearnLogisticRegression"}
+metric_kwargs = {"registered_name": "AccuracyMetric", "dataset_split": TEST_SPLIT}
 
 # each creator has two methods - `retrieve_or_create` and `create`. using create will
 # create a new persistable each time while retrieve_or_create will first look for a matching persistable
 dataset = DatasetCreator.retrieve_or_create(**dataset_kwargs)
 pipeline = PipelineCreator.retrieve_or_create(dataset=dataset, **pipeline_kwargs)
 model = ModelCreator.retrieve_or_create(pipeline=pipeline, **model_kwargs)
-metric = MetricCreator.retrieve_or_create(model=model, dataset=dataset, **metric_kwargs)     
+metric = MetricCreator.retrieve_or_create(model=model, dataset=dataset, **metric_kwargs)
 
 # ---------------------------------------------------------------------------- #
 # Option 2: Implicit object creation (pass in dependency references - nested)
 # Does not require dependency existence at this time, good for compiling job definitions and executing on remote, distributed nodes
 # ---------------------------------------------------------------------------- #
 # Nested dependencies
-pipeline_kwargs['dataset_kwargs'] = dataset_kwargs
-model_kwargs['pipeline_kwargs'] = pipeline_kwargs
-metric_kwargs['model_kwargs'] = model_kwargs
+pipeline_kwargs["dataset_kwargs"] = dataset_kwargs
+model_kwargs["pipeline_kwargs"] = pipeline_kwargs
+metric_kwargs["model_kwargs"] = model_kwargs
 
 # each creator has two methods - `retrieve_or_create` and `create`. using create will
 # create a new persistable each time while retrieve_or_create will first look for a matching persistable
 dataset = DatasetCreator.retrieve_or_create(**dataset_kwargs)
-pipeline = PipelineCreator.retrieve_or_create(dataset_kwargs=dataset_kwargs, **pipeline_kwargs)
+pipeline = PipelineCreator.retrieve_or_create(
+    dataset_kwargs=dataset_kwargs, **pipeline_kwargs
+)
 model = ModelCreator.retrieve_or_create(pipeline_kwargs=pipeline_kwargs, **model_kwargs)
-metric = MetricCreator.retrieve_or_create(model_kwargs=model_kwargs, dataset_kwargs=dataset_kwargs, **metric_kwargs)     
+metric = MetricCreator.retrieve_or_create(
+    model_kwargs=model_kwargs, dataset_kwargs=dataset_kwargs, **metric_kwargs
+)
 ```
 
 This workflow is modeled as a DAG, which means that there is room for parallelization, but dependencies are assumed
@@ -242,17 +271,19 @@ requests.
 from simpleml.utils import PersistableLoader
 
 # Notice versions are not shared between persistable types and can increment differently depending on iterations
-dataset = PersistableLoader.load_dataset(name='titanic', version=7)
-pipeline = PersistableLoader.load_pipeline(name='titanic', version=6)
-model = PersistableLoader.load_model(name='titanic', version=8)
-metric = PersistableLoader.load_metric(name='classification_accuracy', model_id=model.id)
+dataset = PersistableLoader.load_dataset(name="titanic", version=7)
+pipeline = PersistableLoader.load_pipeline(name="titanic", version=6)
+model = PersistableLoader.load_model(name="titanic", version=8)
+metric = PersistableLoader.load_metric(
+    name="classification_accuracy", model_id=model.id
+)
 ```
 
 When it comes to production, typically the training data is no longer needed so this mechanism becomes as simple
 as loading the feature pipeline and model:
 
 ```python
-desired_model = PersistableLoader.load_model(name='titanic', version=10)
+desired_model = PersistableLoader.load_model(name="titanic", version=10)
 # Implicitly pass new data through linked pipeline via transform param
 desired_model.predict_proba(new_dataframe, transform=True)
 ```
@@ -260,8 +291,8 @@ desired_model.predict_proba(new_dataframe, transform=True)
 or (explicitly load a pipeline to use, by default the pipeline the model was trained on will be used)
 
 ```python
-desired_pipeline = PersistableLoader.load_pipeline(name='titanic', version=11)
-desired_model = PersistableLoader.load_model(name='titanic', version=10)
+desired_pipeline = PersistableLoader.load_pipeline(name="titanic", version=11)
+desired_model = PersistableLoader.load_model(name="titanic", version=10)
 desired_model.predict_proba(desired_pipeline.transform(new_dataframe), transform=False)
 ```
 

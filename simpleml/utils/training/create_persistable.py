@@ -1,78 +1,93 @@
-'''
+"""
 Module with helper classes to create new persistables
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 import logging
-
 from abc import ABCMeta, abstractmethod
+from typing import Any, Dict, Optional, Tuple
+
 from future.utils import with_metaclass
-from typing import Dict, Any, Optional, Tuple
 
-from simpleml.registries import SIMPLEML_REGISTRY
-from simpleml.persistables.base_persistable import Persistable
 from simpleml.datasets.base_dataset import Dataset
-from simpleml.pipelines.base_pipeline import Pipeline
-from simpleml.models.base_model import Model
 from simpleml.metrics.base_metric import Metric
+from simpleml.models.base_model import Model
+from simpleml.persistables.base_persistable import Persistable
+from simpleml.pipelines.base_pipeline import Pipeline
+from simpleml.registries import SIMPLEML_REGISTRY
 from simpleml.utils.errors import TrainingError
-
 
 LOGGER = logging.getLogger(__name__)
 
 
 class PersistableCreator(with_metaclass(ABCMeta, object)):
-
     @classmethod
     def retrieve_or_create(self, **kwargs) -> Persistable:
-        '''
+        """
         Wrapper method to first attempt to retrieve a matching persistable and
         then create a new one if it isn't found
-        '''
+        """
         cls, filters = self.determine_filters(**kwargs)
         persistable = self.retrieve(cls, filters)
 
         if persistable is not None:
-            LOGGER.info('Using existing persistable: {}, {}, {}'.format(cls.__tablename__, persistable.name, persistable.version))
+            LOGGER.info(
+                "Using existing persistable: {}, {}, {}".format(
+                    cls.__tablename__, persistable.name, persistable.version
+                )
+            )
             persistable.load()
             return persistable
 
         else:
-            LOGGER.info('Existing {} not found. Creating new one now'.format(cls.__tablename__))
+            LOGGER.info(
+                "Existing {} not found. Creating new one now".format(cls.__tablename__)
+            )
             persistable = self.create(**kwargs)
-            LOGGER.info('Using new persistable: {}, {}, {}'.format(cls.__tablename__, persistable.name, persistable.version))
+            LOGGER.info(
+                "Using new persistable: {}, {}, {}".format(
+                    cls.__tablename__, persistable.name, persistable.version
+                )
+            )
             return persistable
 
     @staticmethod
     def retrieve(cls, filters: Dict[str, Any]) -> Persistable:
-        '''
+        """
         Query database using the table model (cls) and filters for a matching
         persistable
-        '''
+        """
         return cls.where(**filters).order_by(cls.version.desc()).first()
 
     @staticmethod
-    def retrieve_dependency(dependency_cls: 'PersistableCreator', **dependency_kwargs) -> Persistable:
-        '''
+    def retrieve_dependency(
+        dependency_cls: "PersistableCreator", **dependency_kwargs
+    ) -> Persistable:
+        """
         Base method to query for dependency
         Raises TrainingError if dependency does not exist
-        '''
+        """
         if not dependency_kwargs:
-            raise TrainingError('Must pass at least one key:value to look up in database')
+            raise TrainingError(
+                "Must pass at least one key:value to look up in database"
+            )
         dependency = dependency_cls.retrieve(
-            *dependency_cls.determine_filters(**dependency_kwargs))
+            *dependency_cls.determine_filters(**dependency_kwargs)
+        )
         if dependency is None:
-            raise TrainingError('Expected dependency is missing')
+            raise TrainingError("Expected dependency is missing")
         dependency.load()
         return dependency
 
     @classmethod
-    def retrieve_dataset(cls,
-                         dataset: Optional[Dataset] = None,
-                         dataset_id: str = None,
-                         dataset_kwargs: Optional[Dict[str, Any]] = None,
-                         **kwargs) -> Dataset:
+    def retrieve_dataset(
+        cls,
+        dataset: Optional[Dataset] = None,
+        dataset_id: str = None,
+        dataset_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Dataset:
         if dataset is not None:
             return dataset
         if dataset_id is not None:
@@ -82,11 +97,13 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
             return cls.retrieve_dependency(DatasetCreator, **dataset_kwargs)
 
     @classmethod
-    def retrieve_pipeline(cls,
-                          pipeline: Optional[Pipeline] = None,
-                          pipeline_id: str = None,
-                          pipeline_kwargs: Optional[Dict[str, Any]] = None,
-                          **kwargs) -> Pipeline:
+    def retrieve_pipeline(
+        cls,
+        pipeline: Optional[Pipeline] = None,
+        pipeline_id: str = None,
+        pipeline_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Pipeline:
         if pipeline is not None:
             return pipeline
         if pipeline_id is not None:
@@ -96,11 +113,13 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
             return cls.retrieve_dependency(PipelineCreator, **pipeline_kwargs)
 
     @classmethod
-    def retrieve_model(cls,
-                       model: Optional[Model] = None,
-                       model_id: str = None,
-                       model_kwargs: Optional[Dict[str, Any]] = None,
-                       **kwargs) -> Model:
+    def retrieve_model(
+        cls,
+        model: Optional[Model] = None,
+        model_id: str = None,
+        model_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Model:
         if model is not None:
             return model
         if model_id is not None:
@@ -111,7 +130,7 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
 
     @abstractmethod
     def determine_filters(cls, strict: bool = False, **kwargs):
-        '''
+        """
         method to determine which filters to apply when looking for
         existing persistable
 
@@ -127,30 +146,34 @@ class PersistableCreator(with_metaclass(ABCMeta, object)):
                 definition is the same and would result in an identical persistable)
 
         Returns: database class, filter dictionary
-        '''
+        """
 
     @abstractmethod
     def create(cls, **kwargs):
-        '''
+        """
         method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
-        '''
+        """
 
     @staticmethod
     def retrieve_from_registry(registered_name: str) -> Persistable:
-        '''
+        """
         stateless method to query registry for class definitions. handles errors
-        '''
+        """
         cls = SIMPLEML_REGISTRY.get(registered_name)
         if cls is None:
-            raise TrainingError('Referenced class unregistered: {}'.format(registered_name))
+            raise TrainingError(
+                "Referenced class unregistered: {}".format(registered_name)
+            )
         return cls
 
 
 class DatasetCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, strict: bool = True, **kwargs) -> Tuple[Dataset, Dict[str, Any]]:
-        '''
+    def determine_filters(
+        cls, strict: bool = True, **kwargs
+    ) -> Tuple[Dataset, Dict[str, Any]]:
+        """
         stateless method to determine which filters to apply when looking for
         existing persistable
 
@@ -159,24 +182,27 @@ class DatasetCreator(PersistableCreator):
         :param registered_name: Class name registered in SimpleML
         :param strict: whether to assume same class and name = same persistable,
         or, load the data and compare the hash
-        '''
-        if ('id' not in kwargs) and ('name' not in kwargs or 'version' not in kwargs) \
-                and ('registered_name' not in kwargs):
-            raise TrainingError('Need to pass at least one of: `id`, `name, version`, `registered_name` to compare against existing persistables')
+        """
+        if (
+            ("id" not in kwargs)
+            and ("name" not in kwargs or "version" not in kwargs)
+            and ("registered_name" not in kwargs)
+        ):
+            raise TrainingError(
+                "Need to pass at least one of: `id`, `name, version`, `registered_name` to compare against existing persistables"
+            )
 
-        if 'id' in kwargs:
-            filters = {
-                'id': kwargs['id']
-            }
+        if "id" in kwargs:
+            filters = {"id": kwargs["id"]}
 
-        elif 'name' in kwargs and 'version' in kwargs:
+        elif "name" in kwargs and "version" in kwargs:
             filters = {
-                'name': kwargs['name'],
-                'version': kwargs['version'],
+                "name": kwargs["name"],
+                "version": kwargs["version"],
             }
 
         else:
-            registered_name = kwargs['registered_name']
+            registered_name = kwargs["registered_name"]
             # Check if dependency object was passed
             pipeline = cls.retrieve_pipeline(**kwargs)
 
@@ -187,31 +213,31 @@ class DatasetCreator(PersistableCreator):
                 new_dataset.build_dataframe()
 
                 filters = {
-                    'name': new_dataset.name,
-                    'registered_name': new_dataset.registered_name,
-                    'hash_': new_dataset._hash()
+                    "name": new_dataset.name,
+                    "registered_name": new_dataset.registered_name,
+                    "hash_": new_dataset._hash(),
                 }
 
             else:
                 # Assume combo of name, class, and pipeline will be unique
                 filters = {
-                    'registered_name': registered_name,
-                    'pipeline_id': pipeline.id if pipeline is not None else None
+                    "registered_name": registered_name,
+                    "pipeline_id": pipeline.id if pipeline is not None else None,
                 }
-                if 'name' in kwargs:
-                    filters['name'] = kwargs['name']
+                if "name" in kwargs:
+                    filters["name"] = kwargs["name"]
 
         return Dataset, filters
 
     @classmethod
     def create(cls, registered_name: str, **kwargs) -> Dataset:
-        '''
+        """
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
 
         :param registered_name: Class name registered in SimpleML
         :param dataset_pipeline: dataset pipeline object
-        '''
+        """
         pipeline = cls.retrieve_pipeline(**kwargs)
         new_dataset = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_dataset.add_pipeline(pipeline)
@@ -223,8 +249,10 @@ class DatasetCreator(PersistableCreator):
 
 class PipelineCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, strict: bool = False, **kwargs) -> Tuple[Pipeline, Dict[str, Any]]:
-        '''
+    def determine_filters(
+        cls, strict: bool = False, **kwargs
+    ) -> Tuple[Pipeline, Dict[str, Any]]:
+        """
         stateless method to determine which filters to apply when looking for
         existing persistable
 
@@ -235,48 +263,54 @@ class PipelineCreator(PersistableCreator):
         In theory if all inputs and classes are the same, the outputs should deterministically
         be the same as well (up to random iter). So, you dont need to fit objects
         to be sure they are the same
-        '''
-        if ('id' not in kwargs) and ('name' not in kwargs or 'version' not in kwargs) \
-                and ('registered_name' not in kwargs or ('dataset' not in kwargs and 'dataset_kwargs' not in kwargs)):
-            raise TrainingError('Need to pass at least one of: `id`, `name, version`, `registered_name, dataset`, `registered_name, dataset_kwargs` to compare against existing persistables')
+        """
+        if (
+            ("id" not in kwargs)
+            and ("name" not in kwargs or "version" not in kwargs)
+            and (
+                "registered_name" not in kwargs
+                or ("dataset" not in kwargs and "dataset_kwargs" not in kwargs)
+            )
+        ):
+            raise TrainingError(
+                "Need to pass at least one of: `id`, `name, version`, `registered_name, dataset`, `registered_name, dataset_kwargs` to compare against existing persistables"
+            )
 
-        if 'id' in kwargs:
-            filters = {
-                'id': kwargs['id']
-            }
+        if "id" in kwargs:
+            filters = {"id": kwargs["id"]}
 
-        elif 'name' in kwargs and 'version' in kwargs:
+        elif "name" in kwargs and "version" in kwargs:
             filters = {
-                'name': kwargs['name'],
-                'version': kwargs['version'],
+                "name": kwargs["name"],
+                "version": kwargs["version"],
             }
 
         else:
             dataset = cls.retrieve_dataset(**kwargs)
             # Build dummy object to retrieve hash to look for
-            registered_name = kwargs['registered_name']
+            registered_name = kwargs["registered_name"]
             new_pipeline = cls.retrieve_from_registry(registered_name)(**kwargs)
             new_pipeline.add_dataset(dataset)
             if strict:
                 new_pipeline.fit()
 
             filters = {
-                'name': new_pipeline.name,
-                'registered_name': new_pipeline.registered_name,
-                'hash_': new_pipeline._hash()
+                "name": new_pipeline.name,
+                "registered_name": new_pipeline.registered_name,
+                "hash_": new_pipeline._hash(),
             }
 
         return Pipeline, filters
 
     @classmethod
     def create(cls, registered_name: str, **kwargs) -> Pipeline:
-        '''
+        """
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
 
         :param registered_name: Class name registered in SimpleML
         :param dataset: dataset object
-        '''
+        """
         dataset = cls.retrieve_dataset(**kwargs)
         new_pipeline = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_pipeline.add_dataset(dataset)
@@ -288,8 +322,10 @@ class PipelineCreator(PersistableCreator):
 
 class ModelCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, strict: bool = False, **kwargs) -> Tuple[Model, Dict[str, Any]]:
-        '''
+    def determine_filters(
+        cls, strict: bool = False, **kwargs
+    ) -> Tuple[Model, Dict[str, Any]]:
+        """
         stateless method to determine which filters to apply when looking for
         existing persistable
 
@@ -300,48 +336,54 @@ class ModelCreator(PersistableCreator):
         In theory if all inputs and classes are the same, the outputs should deterministically
         be the same as well (up to random iter). So, you dont need to fit objects
         to be sure they are the same
-        '''
-        if ('id' not in kwargs) and ('name' not in kwargs or 'version' not in kwargs) \
-                and ('registered_name' not in kwargs or ('pipeline' not in kwargs and 'pipeline_kwargs' not in kwargs)):
-            raise TrainingError('Need to pass at least one of: `id`, `name, version`, `registered_name, pipeline`, `registered_name, pipeline_kwargs` to compare against existing persistables')
+        """
+        if (
+            ("id" not in kwargs)
+            and ("name" not in kwargs or "version" not in kwargs)
+            and (
+                "registered_name" not in kwargs
+                or ("pipeline" not in kwargs and "pipeline_kwargs" not in kwargs)
+            )
+        ):
+            raise TrainingError(
+                "Need to pass at least one of: `id`, `name, version`, `registered_name, pipeline`, `registered_name, pipeline_kwargs` to compare against existing persistables"
+            )
 
-        if 'id' in kwargs:
-            filters = {
-                'id': kwargs['id']
-            }
+        if "id" in kwargs:
+            filters = {"id": kwargs["id"]}
 
-        elif 'name' in kwargs and 'version' in kwargs:
+        elif "name" in kwargs and "version" in kwargs:
             filters = {
-                'name': kwargs['name'],
-                'version': kwargs['version'],
+                "name": kwargs["name"],
+                "version": kwargs["version"],
             }
 
         else:
             pipeline = cls.retrieve_pipeline(**kwargs)
             # Build dummy object to retrieve hash to look for
-            registered_name = kwargs['registered_name']
+            registered_name = kwargs["registered_name"]
             new_model = cls.retrieve_from_registry(registered_name)(**kwargs)
             new_model.add_pipeline(pipeline)
             if strict:
                 new_model.fit()
 
             filters = {
-                'name': new_model.name,
-                'registered_name': new_model.registered_name,
-                'hash_': new_model._hash()
+                "name": new_model.name,
+                "registered_name": new_model.registered_name,
+                "hash_": new_model._hash(),
             }
 
         return Model, filters
 
     @classmethod
     def create(cls, registered_name: str, **kwargs) -> Model:
-        '''
+        """
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
 
         :param registered_name: Class name registered in SimpleML
         :param pipeline: pipeline object
-        '''
+        """
         pipeline = cls.retrieve_pipeline(**kwargs)
         new_model = cls.retrieve_from_registry(registered_name)(**kwargs)
         new_model.add_pipeline(pipeline)
@@ -353,8 +395,10 @@ class ModelCreator(PersistableCreator):
 
 class MetricCreator(PersistableCreator):
     @classmethod
-    def determine_filters(cls, strict: bool = False, **kwargs) -> Tuple[Metric, Dict[str, Any]]:
-        '''
+    def determine_filters(
+        cls, strict: bool = False, **kwargs
+    ) -> Tuple[Metric, Dict[str, Any]]:
+        """
         stateless method to determine which filters to apply when looking for
         existing persistable
 
@@ -365,30 +409,36 @@ class MetricCreator(PersistableCreator):
         In theory if all inputs and classes are the same, the outputs should deterministically
         be the same as well (up to random iter). So, you dont need to fit objects
         to be sure they are the same
-        '''
-        if ('id' not in kwargs) and \
-            ('name' not in kwargs or 'version' not in kwargs or ('model_id' not in kwargs and 'model' not in kwargs)) \
-                and ('registered_name' not in kwargs):
-            raise TrainingError('Need to pass at least one of: `id`, `name, version, model`, `name, version, model_id`, `registered_name` to compare against existing persistables')
+        """
+        if (
+            ("id" not in kwargs)
+            and (
+                "name" not in kwargs
+                or "version" not in kwargs
+                or ("model_id" not in kwargs and "model" not in kwargs)
+            )
+            and ("registered_name" not in kwargs)
+        ):
+            raise TrainingError(
+                "Need to pass at least one of: `id`, `name, version, model`, `name, version, model_id`, `registered_name` to compare against existing persistables"
+            )
 
         model = cls.retrieve_model(**kwargs)
         dataset = cls.retrieve_dataset(**kwargs)
 
-        if 'id' in kwargs:
-            filters = {
-                'id': kwargs['id']
-            }
+        if "id" in kwargs:
+            filters = {"id": kwargs["id"]}
 
-        elif 'name' in kwargs and 'version' in kwargs and model is not None:
+        elif "name" in kwargs and "version" in kwargs and model is not None:
             filters = {
-                'name': kwargs['name'],
-                'version': kwargs['version'],
-                'model_id': model.id,
+                "name": kwargs["name"],
+                "version": kwargs["version"],
+                "model_id": model.id,
             }
 
         else:
             # Build dummy object to retrieve hash to look for
-            registered_name = kwargs['registered_name']
+            registered_name = kwargs["registered_name"]
             new_metric = cls.retrieve_from_registry(registered_name)(**kwargs)
             new_metric.add_model(model)
             new_metric.add_dataset(dataset)
@@ -396,22 +446,22 @@ class MetricCreator(PersistableCreator):
                 new_metric.score()
 
             filters = {
-                'name': new_metric.name,
-                'registered_name': registered_name,
-                'hash_': new_metric._hash()
+                "name": new_metric.name,
+                "registered_name": registered_name,
+                "hash_": new_metric._hash(),
             }
 
         return Metric, filters
 
     @classmethod
     def create(cls, registered_name: str, **kwargs) -> Metric:
-        '''
+        """
         Stateless method to create a new persistable with the desired parameters
         kwargs are passed directly to persistable
 
         :param registered_name: Class name registered in SimpleML
         :param model: model class
-        '''
+        """
         model = cls.retrieve_model(**kwargs)
         dataset = cls.retrieve_dataset(**kwargs)
         new_metric = cls.retrieve_from_registry(registered_name)(**kwargs)

@@ -1,8 +1,8 @@
-'''
+"""
 Base native python pipeline wrapper
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import logging
@@ -16,12 +16,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class OrderedDictPipeline(Pipeline):
-    '''
+    """
     Native python dict pipeline implementation
-    '''
+    """
 
-    def _create_external_pipeline(self,
-                                  transformers: List[Any],
-                                  **kwargs) -> OrderedDictExternalPipeline:
+    def _create_external_pipeline(
+        self, transformers: List[Any], **kwargs
+    ) -> OrderedDictExternalPipeline:
 
         return OrderedDictExternalPipeline(transformers)

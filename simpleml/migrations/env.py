@@ -1,16 +1,18 @@
-'''
+"""
 Central place to actually run any migrations. Can be invoked in a few ways:
     1) simpleml upgrade/downgrade/etc
     2) alembic upgrade/downgrade/etc WITH env.ALEMBIC_CONFIG pointing to here OR called from this directory
     3) in a python session via `db.upgrade/downgrade`
-'''
+"""
 
 from __future__ import with_statement
+
 from logging.config import fileConfig
+
 from alembic import context
 
-from simpleml.utils.initialization import Database
 from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
+from simpleml.utils.initialization import Database
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -49,12 +51,9 @@ def run_migrations_offline():
     script output.
 
     """
-    url = 'postgresql://user:pass@localhost/dbname'
+    url = "postgresql://user:pass@localhost/dbname"
     context.configure(
-        url=url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        compare_type=True
+        url=url, target_metadata=target_metadata, literal_binds=True, compare_type=True
     )
 
     with context.begin_transaction():
@@ -69,7 +68,7 @@ def run_migrations_online():
 
     """
     # Allow config object to have a connection already added
-    connectable = config.attributes.get('connection', None)
+    connectable = config.attributes.get("connection", None)
 
     if connectable is None:
         # only create Engine if we don't have a Connection
@@ -82,14 +81,14 @@ def run_migrations_online():
             target_metadata=target_metadata,
             compare_type=True,
             transaction_per_migration=True,
-            render_as_batch=True  # for SQLite support: https://alembic.sqlalchemy.org/en/latest/batch.html
+            render_as_batch=True,  # for SQLite support: https://alembic.sqlalchemy.org/en/latest/batch.html
         )
 
         with context.begin_transaction():
             context.run_migrations()
 
 
-if __name__ == 'env_py':
+if __name__ == "env_py":
     # alembic entrypoint is env_py
     # regular import would be env
     if context.is_offline_mode():

@@ -1,8 +1,8 @@
-'''
+"""
 Base module for sklearn classifier models
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 from simpleml.models.base_sklearn_model import SklearnModel

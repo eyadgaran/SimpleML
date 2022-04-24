@@ -1,9 +1,9 @@
-'''
+"""
 Integration tests for save patterns
 Includes available stateful connections (database) and full class implementations
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import os
@@ -17,14 +17,19 @@ from simpleml.tests.utils import MOCK_PATH, assert_data_container_equal
 
 class DaskPersistenceTests(unittest.TestCase):
     def generate_dataset(self, save_pattern):
-        dataset = BaseDaskDataset(name='dask_integration_tests', label_columns=['Survived'],
-                                  squeeze_return=True,
-                                  save_patterns={'dataset': [save_pattern]})
-        dataset.dataframe = dd.read_csv(os.path.join(MOCK_PATH, 'titanic.csv')).repartition(npartitions=20)
+        dataset = BaseDaskDataset(
+            name="dask_integration_tests",
+            label_columns=["Survived"],
+            squeeze_return=True,
+            save_patterns={"dataset": [save_pattern]},
+        )
+        dataset.dataframe = dd.read_csv(
+            os.path.join(MOCK_PATH, "titanic.csv")
+        ).repartition(npartitions=20)
         return dataset
 
     def test_save_and_load_json(self):
-        save_pattern = 'dask_disk_json'
+        save_pattern = "dask_disk_json"
         dataset = self.generate_dataset(save_pattern)
         df = dataset.dataframe.compute()
         # expect a custom index
@@ -35,7 +40,7 @@ class DaskPersistenceTests(unittest.TestCase):
         assert_data_container_equal(df, df2)
 
     def test_save_and_load_csv(self):
-        save_pattern = 'dask_disk_csv'
+        save_pattern = "dask_disk_csv"
         dataset = self.generate_dataset(save_pattern)
         df = dataset.dataframe.compute()
         # expect a custom index
@@ -46,7 +51,7 @@ class DaskPersistenceTests(unittest.TestCase):
         assert_data_container_equal(df, df2)
 
     def test_save_and_load_parquet(self):
-        save_pattern = 'dask_disk_parquet'
+        save_pattern = "dask_disk_parquet"
         dataset = self.generate_dataset(save_pattern)
         df = dataset.dataframe.compute()
         dataset.save()
@@ -133,5 +138,5 @@ class DaskPersistenceTests(unittest.TestCase):
 #
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -1,15 +1,15 @@
-from simpleml.models.external_models import ExternalModelMixin
 import logging
 
+from simpleml.models.external_models import ExternalModelMixin
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 LOGGER = logging.getLogger(__name__)
 
 
 class ClassificationExternalModelMixin(ExternalModelMixin):
-    '''
+    """
     Wrapper class for a pickleable model with expected methods
 
     Expected to be used as Mixin Class with default methods and
@@ -27,11 +27,11 @@ class ClassificationExternalModelMixin(ExternalModelMixin):
     class some_model_libraryActualModelClass(Model, [optional mixins]):
         def _create_external_model(self, **kwargs):
             return WrappedActualModelClass(**kwargs)
-    '''
+    """
 
     def predict_proba(self, *args, **kwargs):
-        '''
+        """
         By default fall back to predict method
-        '''
-        LOGGER.warning('No predict_proba method defined, using predict')
+        """
+        LOGGER.warning("No predict_proba method defined, using predict")
         return self.predict(*args, **kwargs)

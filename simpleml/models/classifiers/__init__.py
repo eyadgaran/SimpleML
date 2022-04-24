@@ -1,7 +1,6 @@
-'''
+"""
 Import modules to register class names in global registry
-'''
-from . import sklearn
-from . import keras
+"""
+from . import keras, sklearn
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"

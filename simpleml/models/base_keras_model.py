@@ -1,9 +1,9 @@
-'''
+"""
 Base module for keras models. Keras has a native persistence mechanism so
 need to overwrite other methods at the root
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import logging
@@ -18,12 +18,16 @@ LOGGER = logging.getLogger(__name__)
 
 
 class KerasModel(LibraryModel):
-    def __init__(self,
-                 use_training_generator=False, training_generator_params=None,
-                 use_validation_generator=False, validation_generator_params=None,
-                 use_sequence_object=False,
-                 **kwargs):
-        '''
+    def __init__(
+        self,
+        use_training_generator=False,
+        training_generator_params=None,
+        use_validation_generator=False,
+        validation_generator_params=None,
+        use_sequence_object=False,
+        **kwargs,
+    ):
+        """
         Pass default save method as Keras's persistence pattern
 
         :param use_training_generator: Whether to propagate use of a generator object
@@ -36,14 +40,14 @@ class KerasModel(LibraryModel):
             normal fit(_generator) params should be passed as params={}
         :param validation_generator_params: parameters to pass to the generator method for validation split -
             normal fit(_generator) params should be passed as params={}
-        '''
+        """
         # Overwrite default model save pattern to keras specific (if not already passed)
-        if 'save_patterns' not in kwargs:
-            LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
-            kwargs['save_patterns'] = {'model': ['disk_keras_hdf5']}
-        elif 'model' not in kwargs['save_patterns']:
-            LOGGER.info('Setting model save pattern to `disk_keras_hdf5`')
-            kwargs['save_patterns']['model'] = ['disk_keras_hdf5']
+        if "save_patterns" not in kwargs:
+            LOGGER.info("Setting model save pattern to `disk_keras_hdf5`")
+            kwargs["save_patterns"] = {"model": ["disk_keras_hdf5"]}
+        elif "model" not in kwargs["save_patterns"]:
+            LOGGER.info("Setting model save pattern to `disk_keras_hdf5`")
+            kwargs["save_patterns"]["model"] = ["disk_keras_hdf5"]
         super(KerasModel, self).__init__(**kwargs)
 
         # Keras supports training and validation with generators
@@ -56,17 +60,17 @@ class KerasModel(LibraryModel):
         if validation_generator_params is None:
             validation_generator_params = {}
         generator_params = {
-            'use_training_generator': use_training_generator,
-            'use_sequence_object': use_sequence_object,
-            'training_generator_params': training_generator_params,
-            'use_validation_generator': use_validation_generator,
-            'validation_generator_params': validation_generator_params,
+            "use_training_generator": use_training_generator,
+            "use_sequence_object": use_sequence_object,
+            "training_generator_params": training_generator_params,
+            "use_validation_generator": use_validation_generator,
+            "validation_generator_params": validation_generator_params,
         }
         self.config.update(generator_params)
 
     @abstractmethod
     def _create_external_model(self, **kwargs):
-        '''
+        """
         Abstract method for each subclass to implement
         should return the desired model object
 
@@ -75,28 +79,28 @@ class KerasModel(LibraryModel):
         Keras pattern is:
         external_model = SomeWrappedKerasClass(**kwargs)
         return self.build_network(external_model)
-        '''
+        """
         external_model = None
         self.build_network(external_model, **kwargs)
 
     def build_network(self, external_model, **kwargs):
-        '''
+        """
         Design choice to require build network method instead of exposing raw
         Keras objects that can be modified later. Simplifies saving and loading
         pattern because initialized object should also be the final state (as
         long as manual override doesnt happen)
-        '''
+        """
         return external_model
 
     def _fit(self):
-        '''
+        """
         Keras fit parameters (epochs, callbacks...) are stored as self.params so
         retrieve them automatically
-        '''
+        """
 
         # Keras supports fitting on generator objects, so expose additional internal
         # method, if flag set
-        if self.config['use_training_generator']:
+        if self.config["use_training_generator"]:
             self._fit_generator()
         else:
             # Explicitly fit only on default (train) split
@@ -104,11 +108,11 @@ class KerasModel(LibraryModel):
             self.external_model.fit(**split, **self.get_params)
 
     def _fit_generator(self):
-        '''
+        """
         Keras fit parameters (epochs, callbacks...) are stored as self.params so
         retrieve them automatically
-        '''
-        use_keras_sequence = self.config.get('use_sequence_object', False)
+        """
+        use_keras_sequence = self.config.get("use_sequence_object", False)
         if use_keras_sequence:
             iterator_cls = DatasetSequence
         else:
@@ -116,22 +120,39 @@ class KerasModel(LibraryModel):
 
         # Explicitly fit only on default (train) split
         transformed_training_data = self.transform(X=None, dataset_split=TRAIN_SPLIT)
-        training_generator_params = self.config.get('training_generator_params', {}).copy()
-        training_generator_params['return_tuple'] = True  # force tuple return for compatibility
-        training_generator = iterator_cls(transformed_training_data, **training_generator_params)
-        if self.config['use_validation_generator']:
-            transformed_validation_data = self.transform(X=None, dataset_split=VALIDATION_SPLIT)
-            validation_generator_params = self.config.get('validation_generator_params', {}).copy()
-            validation_generator_params['return_tuple'] = True  # force tuple return for compatibility
-            validation_generator = iterator_cls(transformed_validation_data, **validation_generator_params)
+        training_generator_params = self.config.get(
+            "training_generator_params", {}
+        ).copy()
+        training_generator_params[
+            "return_tuple"
+        ] = True  # force tuple return for compatibility
+        training_generator = iterator_cls(
+            transformed_training_data, **training_generator_params
+        )
+        if self.config["use_validation_generator"]:
+            transformed_validation_data = self.transform(
+                X=None, dataset_split=VALIDATION_SPLIT
+            )
+            validation_generator_params = self.config.get(
+                "validation_generator_params", {}
+            ).copy()
+            validation_generator_params[
+                "return_tuple"
+            ] = True  # force tuple return for compatibility
+            validation_generator = iterator_cls(
+                transformed_validation_data, **validation_generator_params
+            )
         else:
             validation_generator = None
 
         self.external_model.fit_generator(
-            training_generator, validation_data=validation_generator, **self.get_params())
+            training_generator,
+            validation_data=validation_generator,
+            **self.get_params(),
+        )
 
     def set_params(self, **kwargs):
-        '''
+        """
         Keras networks don't have params beyond layers, which should be configured
         in `self.build_network`, so use this for fit params - self.fit will auto pull
         params and pass them to the fit method.
@@ -142,18 +163,20 @@ class KerasModel(LibraryModel):
         static, and no longer able to be changed
 
         For now going with option 2 - cannot refit models
-        '''
+        """
         if self.fitted:
-            LOGGER.warning('Cannot change fit params and retrain model, skipping operation')
-            LOGGER.warning('Initialize a new model for new fit params')
+            LOGGER.warning(
+                "Cannot change fit params and retrain model, skipping operation"
+            )
+            LOGGER.warning("Initialize a new model for new fit params")
             return None
 
         self.params = kwargs
 
     def get_params(self, **kwargs):
-        '''
+        """
         Get fit params
-        '''
+        """
         return self.params
 
     @staticmethod
