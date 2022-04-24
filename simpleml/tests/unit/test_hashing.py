@@ -519,8 +519,8 @@ class CustomHasherTests(unittest.TestCase):
                     # depending on source, this could be more variables than just the function
                     """DEBUG:simpleml.persistables.hashing:Hashing input:                 "d": lambda: 0,\n""",
                     "DEBUG:simpleml.persistables.hashing:hash type: <class 'str'>",
-                    "DEBUG:simpleml.persistables.hashing:Hashing output: c9a7e524abd9d6db4108a4314e7082d7, <class 'str'>",
-                    "DEBUG:simpleml.persistables.hashing:Hashing output: c9a7e524abd9d6db4108a4314e7082d7, <class 'str'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing output: 8ea258d3c421cfc77ddf3c8665388147, <class 'str'>",
+                    "DEBUG:simpleml.persistables.hashing:Hashing output: 8ea258d3c421cfc77ddf3c8665388147, <class 'str'>",
                     "DEBUG:simpleml.persistables.hashing:Hashing output: ae338bc5442a052f122182363859534b, <class 'str'>",
                     # data
                     f"DEBUG:simpleml.persistables.hashing:Hashing input: ('e', {data['e']})",
