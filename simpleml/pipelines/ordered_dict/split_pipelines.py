@@ -1,8 +1,8 @@
-'''
+"""
 Derivative OrderedDict pipeline wrappers
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 from typing import Any, List

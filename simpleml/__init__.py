@@ -1,8 +1,8 @@
-'''
+"""
 Startup module on initial import
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 # 1) Export package version

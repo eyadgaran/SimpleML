@@ -1,6 +1,6 @@
-'''
+"""
 Platform independent sqlalchemy types
-'''
+"""
 
 import uuid
 
@@ -19,10 +19,11 @@ class GUID(TypeDecorator):
 
     http://docs.sqlalchemy.org/en/latest/core/custom_types.html
     """
+
     impl = CHAR
 
     def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
+        if dialect.name == "postgresql":
             return dialect.type_descriptor(UUID())
         else:
             return dialect.type_descriptor(CHAR(32))
@@ -30,7 +31,7 @@ class GUID(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return value
-        elif dialect.name == 'postgresql':
+        elif dialect.name == "postgresql":
             return str(value)
         else:
             if not isinstance(value, uuid.UUID):
@@ -49,15 +50,16 @@ class GUID(TypeDecorator):
 
 
 class JSON(TypeDecorator):
-    '''
+    """
     Platform-independent JSON type
 
     Uses PostgreSQL's JSONB type, otherwise falls back to standard JSON
-    '''
+    """
+
     impl = SQLJSON
 
     def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
+        if dialect.name == "postgresql":
             return dialect.type_descriptor(JSONB(astext_type=Text()))
         else:
             return dialect.type_descriptor(SQLJSON())

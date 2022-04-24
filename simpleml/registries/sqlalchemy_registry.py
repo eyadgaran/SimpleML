@@ -1,8 +1,8 @@
-'''
+"""
 Meta class to auto register new classes with sqlalchemy bases
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 from abc import ABCMeta
@@ -31,7 +31,7 @@ class MetaRegistry(MetaBase, ABCMeta):
         SIMPLEML_REGISTRY.register(newclass)
         return newclass
 
-    '''
+    """
     TBD on implementing registry as class attribute
 
     def __init__(cls, name, bases, nmspc):
@@ -47,7 +47,7 @@ class MetaRegistry(MetaBase, ABCMeta):
 
     def __iter__(cls):
         return iter(cls.registry)
-    '''
+    """
 
 
 class DatasetRegistry(MetaRegistry):

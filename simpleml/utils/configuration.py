@@ -1,4 +1,4 @@
-'''
+"""
 Module to set a reference for the SimpleML home directory
 
 Defaults to user's home directory if no environment variable is set
@@ -67,9 +67,9 @@ example config file:
     host=localhost
     port=5432
 ```
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 import errno  # os.errno deprecated in python 3.7+
 import logging
@@ -83,61 +83,69 @@ LOGGER = logging.getLogger(__name__)
 
 
 # Configuration
-CONFIGURATION_FILE = os.getenv('SIMPLEML_CONFIGURATION_FILE', None)
+CONFIGURATION_FILE = os.getenv("SIMPLEML_CONFIGURATION_FILE", None)
 if CONFIGURATION_FILE is None:
-    LOGGER.debug('Configuration File Environment Variable Not Set (`SIMPLEML_CONFIGURATION_FILE`), using default')
+    LOGGER.debug(
+        "Configuration File Environment Variable Not Set (`SIMPLEML_CONFIGURATION_FILE`), using default"
+    )
     CONFIGURATION_FILE = os.path.expanduser("~/.simpleml/simpleml.conf")
 
-CONFIG = ConfigParser(converters={'list': lambda x: [i.strip() for i in x.split(',')]})
+CONFIG = ConfigParser(converters={"list": lambda x: [i.strip() for i in x.split(",")]})
 if os.path.isfile(CONFIGURATION_FILE):
     CONFIG.read(CONFIGURATION_FILE)
 else:
-    LOGGER.warning('No Configuration File Found, Falling Back to Default Values')
+    LOGGER.warning("No Configuration File Found, Falling Back to Default Values")
 
 # Config Sections
-PATH_SECTION = 'path'
-LIBCLOUD_SECTION = 'libcloud'
+PATH_SECTION = "path"
+LIBCLOUD_SECTION = "libcloud"
 
 # Local Filestore
 if PATH_SECTION in CONFIG:
-    SIMPLEML_DIRECTORY = os.path.expanduser(CONFIG.get(PATH_SECTION, 'home_directory'))
+    SIMPLEML_DIRECTORY = os.path.expanduser(CONFIG.get(PATH_SECTION, "home_directory"))
     if not os.path.isdir(SIMPLEML_DIRECTORY):
-        LOGGER.error('Invalid Home Directory Specified: {}, using ~/.simpleml'.format(SIMPLEML_DIRECTORY))
+        LOGGER.error(
+            "Invalid Home Directory Specified: {}, using ~/.simpleml".format(
+                SIMPLEML_DIRECTORY
+            )
+        )
         SIMPLEML_DIRECTORY = os.path.expanduser("~/.simpleml")
 
 else:
-    LOGGER.debug('Home Directory Path Not Set (`[path]`), using default')
-    LOGGER.debug('Expected Configuration Section as Follows:')
-    LOGGER.debug('[path]')
-    LOGGER.debug('home_directory = ~/.simpleml')
+    LOGGER.debug("Home Directory Path Not Set (`[path]`), using default")
+    LOGGER.debug("Expected Configuration Section as Follows:")
+    LOGGER.debug("[path]")
+    LOGGER.debug("home_directory = ~/.simpleml")
     SIMPLEML_DIRECTORY = os.path.expanduser("~/.simpleml")
 
 # Libcloud configs
 if LIBCLOUD_SECTION in CONFIG:
-    LIBCLOUD_CONFIG_SECTION = CONFIG.get(LIBCLOUD_SECTION, 'section')
-    LIBCLOUD_ROOT_PATH = CONFIG.get(LIBCLOUD_CONFIG_SECTION, 'path', fallback='')
+    LIBCLOUD_CONFIG_SECTION = CONFIG.get(LIBCLOUD_SECTION, "section")
+    LIBCLOUD_ROOT_PATH = CONFIG.get(LIBCLOUD_CONFIG_SECTION, "path", fallback="")
 else:
-    LOGGER.debug('Libcloud config parameters not set. Attempts to use persistence patterns with the library will fail')
-    LIBCLOUD_ROOT_PATH = ''
+    LOGGER.debug(
+        "Libcloud config parameters not set. Attempts to use persistence patterns with the library will fail"
+    )
+    LIBCLOUD_ROOT_PATH = ""
     LIBCLOUD_CONFIG_SECTION = None
 
 
 # Reference paths
-PICKLE_DIRECTORY = 'pickle/'
-HDF5_DIRECTORY = 'HDF5/'
-PARQUET_DIRECTORY = 'parquet/'
-CSV_DIRECTORY = 'csv/'
-ORC_DIRECTORY = 'orc/'
-JSON_DIRECTORY = 'json/'
-TENSORFLOW_SAVED_MODEL_DIRECTORY = 'saved_model/'
-FILESTORE_DIRECTORY = os.path.join(SIMPLEML_DIRECTORY, 'filestore/')
+PICKLE_DIRECTORY = "pickle/"
+HDF5_DIRECTORY = "HDF5/"
+PARQUET_DIRECTORY = "parquet/"
+CSV_DIRECTORY = "csv/"
+ORC_DIRECTORY = "orc/"
+JSON_DIRECTORY = "json/"
+TENSORFLOW_SAVED_MODEL_DIRECTORY = "saved_model/"
+FILESTORE_DIRECTORY = os.path.join(SIMPLEML_DIRECTORY, "filestore/")
 SYSTEM_TEMP_DIRECTORY = tempfile.gettempdir()
 
 
 # register paths for consistent reference
-FILEPATH_REGISTRY.register('filestore', FILESTORE_DIRECTORY)
-FILEPATH_REGISTRY.register('system_temp', SYSTEM_TEMP_DIRECTORY)
-FILEPATH_REGISTRY.register('libcloud_root_path', LIBCLOUD_ROOT_PATH)
+FILEPATH_REGISTRY.register("filestore", FILESTORE_DIRECTORY)
+FILEPATH_REGISTRY.register("system_temp", SYSTEM_TEMP_DIRECTORY)
+FILEPATH_REGISTRY.register("libcloud_root_path", LIBCLOUD_ROOT_PATH)
 
 
 # Create Paths if they don't exist - use try/excepts to catch race conditions

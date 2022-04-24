@@ -1,12 +1,12 @@
-'''
+"""
 Module to define the classes that support serialization for all JSON columns
 
 A lot of persistable subclasses try to persist objects that cannot be natively serialized
 in a database. This attempts to define a custom pattern to serialize them and
 subsequently deserialize on load
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import codecs
@@ -35,13 +35,16 @@ class JSONSerializer(json.JSONEncoder):
         try:
             return super(JSONSerializer, self).default(obj)
         except TypeError:
-            return 'pickle_serialized->' + codecs.encode(pickle.dumps(obj), "base64").decode()
+            return (
+                "pickle_serialized->"
+                + codecs.encode(pickle.dumps(obj), "base64").decode()
+            )
 
 
 def object_hook(data, ignore_dicts=False):
     # if this is a string, check for pickled
     if isinstance(data, basestring) and len(data) > 19:
-        if data[:19] == 'pickle_serialized->':
+        if data[:19] == "pickle_serialized->":
             return pickle.loads(codecs.decode(data[19:].encode(), "base64"))
 
     # if this is a list of values, return list of deserialized values
@@ -72,6 +75,8 @@ def custom_loads(data):
     # Need the extra nesting because json loads only passes nested dict objects to object_hook
     # Python 2 strings have a decode method, python 3 doesn't
     if sys.version_info[0] == 2:
-        return object_hook(json.loads(data.decode('utf-8'), object_hook=object_hook), ignore_dicts=True)
+        return object_hook(
+            json.loads(data.decode("utf-8"), object_hook=object_hook), ignore_dicts=True
+        )
     else:
         return object_hook(json.loads(data, object_hook=object_hook), ignore_dicts=True)

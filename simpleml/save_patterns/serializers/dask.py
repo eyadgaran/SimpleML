@@ -1,8 +1,8 @@
-'''
+"""
 Module for Dask save patterns
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import glob
@@ -23,17 +23,18 @@ from simpleml.utils.configuration import (
 
 
 class DaskPersistenceMethods(object):
-    '''
+    """
     Base class for internal dask serialization/deserialization options
 
     Wraps dd.Dataframe methods with sensible defaults
-    '''
-    INDEX_COLUMN = 'simpleml_index'
+    """
+
+    INDEX_COLUMN = "simpleml_index"
 
     @classmethod
-    def read_csv(cls, filepaths: List[str],
-                 sample_rows: int = 1000,
-                 **kwargs) -> ddDataFrame:
+    def read_csv(
+        cls, filepaths: List[str], sample_rows: int = 1000, **kwargs
+    ) -> ddDataFrame:
         # Automatically handle index (dask cannot read in index) so
         # set based on output format
         df = dd.read_csv(filepaths, sample_rows=sample_rows, **kwargs)
@@ -42,23 +43,19 @@ class DaskPersistenceMethods(object):
         return df
 
     @staticmethod
-    def read_parquet(filepath: str,
-                     **kwargs) -> ddDataFrame:
+    def read_parquet(filepath: str, **kwargs) -> ddDataFrame:
         return dd.read_parquet(filepath, **kwargs)
 
     @staticmethod
-    def read_hdf(filepath: str,
-                 **kwargs) -> ddDataFrame:
+    def read_hdf(filepath: str, **kwargs) -> ddDataFrame:
         return dd.read_hdf(filepath, **kwargs)
 
     @staticmethod
-    def read_orc(filepath: str,
-                 **kwargs) -> ddDataFrame:
+    def read_orc(filepath: str, **kwargs) -> ddDataFrame:
         return dd.read_orc(filepath, **kwargs)
 
     @classmethod
-    def read_json(cls, filepaths: List[str],
-                  **kwargs) -> ddDataFrame:
+    def read_json(cls, filepaths: List[str], **kwargs) -> ddDataFrame:
         # Automatically handle index
         df = dd.read_json(filepaths, **kwargs)
         if cls.INDEX_COLUMN in df.columns:
@@ -78,10 +75,9 @@ class DaskPersistenceMethods(object):
         return dd.read_fwf(**kwargs)
 
     @classmethod
-    def to_csv(cls, df: ddDataFrame,
-               filepath: str,
-               overwrite: bool = True,
-               **kwargs) -> None:
+    def to_csv(
+        cls, df: ddDataFrame, filepath: str, overwrite: bool = True, **kwargs
+    ) -> None:
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -89,10 +85,9 @@ class DaskPersistenceMethods(object):
         df.to_csv(filepath, index_label=cls.INDEX_COLUMN, **kwargs)
 
     @staticmethod
-    def to_parquet(df: ddDataFrame,
-                   filepath: str,
-                   overwrite: bool = True,
-                   **kwargs) -> None:
+    def to_parquet(
+        df: ddDataFrame, filepath: str, overwrite: bool = True, **kwargs
+    ) -> None:
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -100,10 +95,9 @@ class DaskPersistenceMethods(object):
         df.to_parquet(filepath, **kwargs)
 
     @staticmethod
-    def to_hdf(df: ddDataFrame,
-               filepath: str,
-               overwrite: bool = True,
-               **kwargs) -> None:
+    def to_hdf(
+        df: ddDataFrame, filepath: str, overwrite: bool = True, **kwargs
+    ) -> None:
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -111,10 +105,9 @@ class DaskPersistenceMethods(object):
         df.to_hdf(filepath, **kwargs)
 
     @classmethod
-    def to_json(cls, df: ddDataFrame,
-                filepath: str,
-                overwrite: bool = True,
-                **kwargs) -> None:
+    def to_json(
+        cls, df: ddDataFrame, filepath: str, overwrite: bool = True, **kwargs
+    ) -> None:
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -123,13 +116,14 @@ class DaskPersistenceMethods(object):
         if cls.INDEX_COLUMN in df.columns:
             df.to_json(filepath, **kwargs)
         else:
-            df.reset_index(drop=False).rename(columns={'index': cls.INDEX_COLUMN}).to_json(filepath, **kwargs)
+            df.reset_index(drop=False).rename(
+                columns={"index": cls.INDEX_COLUMN}
+            ).to_json(filepath, **kwargs)
 
     @staticmethod
-    def to_orc(df: ddDataFrame,
-               filepath: str,
-               overwrite: bool = True,
-               **kwargs) -> None:
+    def to_orc(
+        df: ddDataFrame, filepath: str, overwrite: bool = True, **kwargs
+    ) -> None:
         if not overwrite:
             # Check if file was already serialized
             if isfile(filepath):
@@ -143,39 +137,43 @@ class DaskPersistenceMethods(object):
 
 class DaskParquetSerializer(BaseSerializer):
     @staticmethod
-    def serialize(obj: ddDataFrame,
-                  filepath: str,
-                  format_directory: str = PARQUET_DIRECTORY,
-                  format_extension: str = '.parquet',
-                  destination_directory: str = 'system_temp',
-                  **kwargs) -> Dict[str, str]:
+    def serialize(
+        obj: ddDataFrame,
+        filepath: str,
+        format_directory: str = PARQUET_DIRECTORY,
+        format_extension: str = ".parquet",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ) -> Dict[str, str]:
 
         # Append the filepath to the storage directory
         filepath = join(format_directory, filepath + format_extension)
         full_path = join(FILEPATH_REGISTRY.get(destination_directory), filepath)
         DaskPersistenceMethods.to_parquet(obj, full_path)
-        return {'filepath': filepath, 'source_directory': destination_directory}
+        return {"filepath": filepath, "source_directory": destination_directory}
 
     @staticmethod
-    def deserialize(filepath: str,
-                    source_directory: str = 'system_temp',
-                    **kwargs) -> Dict[str, Any]:
+    def deserialize(
+        filepath: str, source_directory: str = "system_temp", **kwargs
+    ) -> Dict[str, Any]:
         full_path = join(FILEPATH_REGISTRY.get(source_directory), filepath)
-        return {'obj': DaskPersistenceMethods.read_parquet(full_path)}
+        return {"obj": DaskPersistenceMethods.read_parquet(full_path)}
 
 
 class DaskCSVSerializer(BaseSerializer):
     @staticmethod
-    def serialize(obj: ddDataFrame,
-                  filepath: str,
-                  format_directory: str = CSV_DIRECTORY,
-                  format_extension: str = '.csv',
-                  destination_directory: str = 'system_temp',
-                  **kwargs) -> Dict[str, str]:
+    def serialize(
+        obj: ddDataFrame,
+        filepath: str,
+        format_directory: str = CSV_DIRECTORY,
+        format_extension: str = ".csv",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ) -> Dict[str, str]:
         # Append the filepath to the storage directory
         # read_csv method expects a * format
         destination_folder = FILEPATH_REGISTRY.get(destination_directory)
-        filename_format = join(format_directory, filepath + '-*' + format_extension)
+        filename_format = join(format_directory, filepath + "-*" + format_extension)
         full_path = join(destination_folder, filename_format)
         DaskPersistenceMethods.to_csv(obj, full_path)
         written_filepaths = glob.glob(full_path)
@@ -185,32 +183,37 @@ class DaskCSVSerializer(BaseSerializer):
         for i in written_filepaths:
             relative_path = i.split(destination_folder)[1]
             # strip the preceding /
-            if relative_path[0] == '/':
+            if relative_path[0] == "/":
                 relative_path = relative_path[1:]
             filepaths.append(relative_path)
 
-        return {'filepaths': filepaths, 'source_directory': destination_directory}
+        return {"filepaths": filepaths, "source_directory": destination_directory}
 
     @staticmethod
-    def deserialize(filepaths: List[str],
-                    source_directory: str = 'system_temp',
-                    **kwargs) -> Dict[str, Any]:
-        full_paths = [join(FILEPATH_REGISTRY.get(source_directory), filepath) for filepath in filepaths]
-        return {'obj': DaskPersistenceMethods.read_csv(full_paths)}
+    def deserialize(
+        filepaths: List[str], source_directory: str = "system_temp", **kwargs
+    ) -> Dict[str, Any]:
+        full_paths = [
+            join(FILEPATH_REGISTRY.get(source_directory), filepath)
+            for filepath in filepaths
+        ]
+        return {"obj": DaskPersistenceMethods.read_csv(full_paths)}
 
 
 class DaskJSONSerializer(BaseSerializer):
     @staticmethod
-    def serialize(obj: ddDataFrame,
-                  filepath: str,
-                  format_directory: str = JSON_DIRECTORY,
-                  format_extension: str = '.jsonl',
-                  destination_directory: str = 'system_temp',
-                  **kwargs) -> Dict[str, str]:
+    def serialize(
+        obj: ddDataFrame,
+        filepath: str,
+        format_directory: str = JSON_DIRECTORY,
+        format_extension: str = ".jsonl",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ) -> Dict[str, str]:
         # Append the filepath to the storage directory
         # read_json method expects a * format
         destination_folder = FILEPATH_REGISTRY.get(destination_directory)
-        filename_format = join(format_directory, filepath + '-*' + format_extension)
+        filename_format = join(format_directory, filepath + "-*" + format_extension)
         full_path = join(destination_folder, filename_format)
         DaskPersistenceMethods.to_json(obj, full_path)
 
@@ -221,61 +224,68 @@ class DaskJSONSerializer(BaseSerializer):
         for i in written_filepaths:
             relative_path = i.split(destination_folder)[1]
             # strip the preceding /
-            if relative_path[0] == '/':
+            if relative_path[0] == "/":
                 relative_path = relative_path[1:]
             filepaths.append(relative_path)
 
-        return {'filepaths': filepaths, 'source_directory': destination_directory}
+        return {"filepaths": filepaths, "source_directory": destination_directory}
 
     @staticmethod
-    def deserialize(filepaths: List[str],
-                    source_directory: str = 'system_temp',
-                    **kwargs) -> Dict[str, Any]:
-        full_paths = [join(FILEPATH_REGISTRY.get(source_directory), filepath) for filepath in filepaths]
-        return {'obj': DaskPersistenceMethods.read_json(full_paths)}
+    def deserialize(
+        filepaths: List[str], source_directory: str = "system_temp", **kwargs
+    ) -> Dict[str, Any]:
+        full_paths = [
+            join(FILEPATH_REGISTRY.get(source_directory), filepath)
+            for filepath in filepaths
+        ]
+        return {"obj": DaskPersistenceMethods.read_json(full_paths)}
 
 
 class DaskHDFSerializer(BaseSerializer):
     @staticmethod
-    def serialize(obj: ddDataFrame,
-                  filepath: str,
-                  format_directory: str = HDF5_DIRECTORY,
-                  format_extension: str = '.hdf',
-                  destination_directory: str = 'system_temp',
-                  **kwargs) -> Dict[str, str]:
+    def serialize(
+        obj: ddDataFrame,
+        filepath: str,
+        format_directory: str = HDF5_DIRECTORY,
+        format_extension: str = ".hdf",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ) -> Dict[str, str]:
 
         # Append the filepath to the storage directory
         filepath = join(format_directory, filepath + format_extension)
         full_path = join(FILEPATH_REGISTRY.get(destination_directory), filepath)
         DaskPersistenceMethods.to_hdf(obj, full_path)
-        return {'filepath': filepath, 'source_directory': destination_directory}
+        return {"filepath": filepath, "source_directory": destination_directory}
 
     @staticmethod
-    def deserialize(filepath: str,
-                    source_directory: str = 'system_temp',
-                    **kwargs) -> Dict[str, Any]:
+    def deserialize(
+        filepath: str, source_directory: str = "system_temp", **kwargs
+    ) -> Dict[str, Any]:
         full_path = join(FILEPATH_REGISTRY.get(source_directory), filepath)
-        return {'obj': DaskPersistenceMethods.read_hdf(full_path)}
+        return {"obj": DaskPersistenceMethods.read_hdf(full_path)}
 
 
 class DaskORCSerializer(BaseSerializer):
     @staticmethod
-    def serialize(obj: ddDataFrame,
-                  filepath: str,
-                  format_directory: str = ORC_DIRECTORY,
-                  format_extension: str = '.orc',
-                  destination_directory: str = 'system_temp',
-                  **kwargs) -> Dict[str, str]:
+    def serialize(
+        obj: ddDataFrame,
+        filepath: str,
+        format_directory: str = ORC_DIRECTORY,
+        format_extension: str = ".orc",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ) -> Dict[str, str]:
 
         # Append the filepath to the storage directory
         filepath = join(format_directory, filepath + format_extension)
         full_path = join(FILEPATH_REGISTRY.get(destination_directory), filepath)
         DaskPersistenceMethods.to_orc(obj, full_path)
-        return {'filepath': filepath, 'source_directory': destination_directory}
+        return {"filepath": filepath, "source_directory": destination_directory}
 
     @staticmethod
-    def deserialize(filepath: str,
-                    source_directory: str = 'system_temp',
-                    **kwargs) -> Dict[str, Any]:
+    def deserialize(
+        filepath: str, source_directory: str = "system_temp", **kwargs
+    ) -> Dict[str, Any]:
         full_path = join(FILEPATH_REGISTRY.get(source_directory), filepath)
-        return {'obj': DaskPersistenceMethods.read_orc(full_path)}
+        return {"obj": DaskPersistenceMethods.read_orc(full_path)}

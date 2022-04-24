@@ -1,8 +1,8 @@
-'''
+"""
 Module for Disk based locations
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import shutil
@@ -30,72 +30,96 @@ class DiskIOMethods(object):
 
 class FilestoreCopyFileLocation(BaseSerializer):
     @staticmethod
-    def serialize(filepath: str,
-                  source_directory: str = 'system_temp',
-                  destination_directory: str = 'filestore', **kwargs):
+    def serialize(
+        filepath: str,
+        source_directory: str = "system_temp",
+        destination_directory: str = "filestore",
+        **kwargs,
+    ):
         DiskIOMethods.copy_file(
             join(FILEPATH_REGISTRY.get(source_directory), filepath),
-            join(FILEPATH_REGISTRY.get(destination_directory), filepath))
+            join(FILEPATH_REGISTRY.get(destination_directory), filepath),
+        )
 
-        return {'filepath': filepath, 'source_directory': destination_directory}
+        return {"filepath": filepath, "source_directory": destination_directory}
 
     @staticmethod
-    def deserialize(filepath: str,
-                    source_directory: str = 'filestore',
-                    destination_directory: str = 'system_temp', **kwargs):
+    def deserialize(
+        filepath: str,
+        source_directory: str = "filestore",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ):
         DiskIOMethods.copy_file(
             join(FILEPATH_REGISTRY.get(source_directory), filepath),
-            join(FILEPATH_REGISTRY.get(destination_directory), filepath))
+            join(FILEPATH_REGISTRY.get(destination_directory), filepath),
+        )
 
-        return {'filepath': filepath, 'source_directory': destination_directory}
+        return {"filepath": filepath, "source_directory": destination_directory}
 
 
 class FilestoreCopyFilesLocation(BaseSerializer):
     @staticmethod
-    def serialize(filepaths: List[str],
-                  source_directory: str = 'system_temp',
-                  destination_directory: str = 'filestore', **kwargs):
+    def serialize(
+        filepaths: List[str],
+        source_directory: str = "system_temp",
+        destination_directory: str = "filestore",
+        **kwargs,
+    ):
 
         for filepath in filepaths:
             DiskIOMethods.copy_file(
                 join(FILEPATH_REGISTRY.get(source_directory), filepath),
-                join(FILEPATH_REGISTRY.get(destination_directory), filepath))
+                join(FILEPATH_REGISTRY.get(destination_directory), filepath),
+            )
 
-        return {'filepaths': filepaths, 'source_directory': destination_directory}
+        return {"filepaths": filepaths, "source_directory": destination_directory}
 
     @staticmethod
-    def deserialize(filepaths: List[str],
-                    source_directory: str = 'filestore',
-                    destination_directory: str = 'system_temp', **kwargs):
+    def deserialize(
+        filepaths: List[str],
+        source_directory: str = "filestore",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ):
 
         for filepath in filepaths:
             DiskIOMethods.copy_file(
                 join(FILEPATH_REGISTRY.get(source_directory), filepath),
-                join(FILEPATH_REGISTRY.get(destination_directory), filepath))
+                join(FILEPATH_REGISTRY.get(destination_directory), filepath),
+            )
 
-        return {'filepaths': filepaths, 'source_directory': destination_directory}
+        return {"filepaths": filepaths, "source_directory": destination_directory}
 
 
 class FilestoreCopyFolderLocation(BaseSerializer):
     @staticmethod
-    def serialize(filepath: str,
-                  source_directory: str = 'system_temp',
-                  destination_directory: str = 'filestore', **kwargs):
+    def serialize(
+        filepath: str,
+        source_directory: str = "system_temp",
+        destination_directory: str = "filestore",
+        **kwargs,
+    ):
         DiskIOMethods.copy_directory(
             join(FILEPATH_REGISTRY.get(source_directory), filepath),
-            join(FILEPATH_REGISTRY.get(destination_directory), filepath))
+            join(FILEPATH_REGISTRY.get(destination_directory), filepath),
+        )
 
-        return {'filepath': filepath, 'source_directory': destination_directory}
+        return {"filepath": filepath, "source_directory": destination_directory}
 
     @staticmethod
-    def deserialize(filepath: str,
-                    source_directory: str = 'filestore',
-                    destination_directory: str = 'system_temp', **kwargs):
+    def deserialize(
+        filepath: str,
+        source_directory: str = "filestore",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ):
         DiskIOMethods.copy_directory(
             join(FILEPATH_REGISTRY.get(source_directory), filepath),
-            join(FILEPATH_REGISTRY.get(destination_directory), filepath))
+            join(FILEPATH_REGISTRY.get(destination_directory), filepath),
+        )
 
-        return {'filepath': filepath, 'source_directory': destination_directory}
+        return {"filepath": filepath, "source_directory": destination_directory}
 
 
 class FilestorePassthroughLocation(BaseSerializer):

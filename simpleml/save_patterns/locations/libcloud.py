@@ -1,9 +1,9 @@
-'''
+"""
 Module for cloud save pattern definitions
 Uses Apache Libcloud as a universal engine
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 from os import makedirs, walk
@@ -17,7 +17,7 @@ from simpleml.utils.configuration import CONFIG, LIBCLOUD_CONFIG_SECTION
 
 
 class LibcloudMethods(object):
-    '''
+    """
     Mixin class to save/load objects via Apache Libcloud
 
     Generic api for all cloud providers so naming convention is extremely important
@@ -65,19 +65,20 @@ class LibcloudMethods(object):
                                  overwrite_existing=True,
                                  delete_on_failure=True)
     ```
-    '''
+    """
+
     @staticmethod
     def get_driver_config(config_section: str = None, **kwargs) -> Dict[str, str]:
         if config_section is None:
             # use default
             config_section = LIBCLOUD_CONFIG_SECTION
-        connection_params = CONFIG.getlist(config_section, 'connection_params')
+        connection_params = CONFIG.getlist(config_section, "connection_params")
         return {param: CONFIG.get(config_section, param) for param in connection_params}
 
     @classmethod
     def get_driver(cls, provider: str = None, **kwargs) -> Any:
         if provider is None:
-            provider = CONFIG.get(LIBCLOUD_CONFIG_SECTION, 'driver')
+            provider = CONFIG.get(LIBCLOUD_CONFIG_SECTION, "driver")
         driver_cls = get_driver(getattr(Provider, provider))
         driver = driver_cls(**cls.get_driver_config(**kwargs))
         return driver
@@ -87,93 +88,106 @@ class LibcloudMethods(object):
         if config_section is None:
             # use default
             config_section = LIBCLOUD_CONFIG_SECTION
-        return CONFIG.get(config_section, 'container')
+        return CONFIG.get(config_section, "container")
 
     @staticmethod
-    def upload(driver,
-               source_filepath: str,
-               destination_filepath: str,
-               container_name: str) -> None:
-        '''
+    def upload(
+        driver, source_filepath: str, destination_filepath: str, container_name: str
+    ) -> None:
+        """
         Upload any file from disk to cloud
-        '''
+        """
         container = driver.get_container(container_name=container_name)
-        extra = {'content_type': 'application/octet-stream'}
-        driver.upload_object(source_filepath,
-                             container=container,
-                             object_name=destination_filepath,
-                             extra=extra)
+        extra = {"content_type": "application/octet-stream"}
+        driver.upload_object(
+            source_filepath,
+            container=container,
+            object_name=destination_filepath,
+            extra=extra,
+        )
 
     @staticmethod
-    def download(driver,
-                 source_filepath: str,
-                 destination_filepath: str,
-                 container_name: str) -> None:
-        '''
+    def download(
+        driver, source_filepath: str, destination_filepath: str, container_name: str
+    ) -> None:
+        """
         Download any file from cloud to disk
-        '''
+        """
         obj = driver.get_object(
-            container_name=container_name,
-            object_name=source_filepath)
+            container_name=container_name, object_name=source_filepath
+        )
 
-        driver.download_object(obj,
-                               destination_path=destination_filepath,
-                               overwrite_existing=True,
-                               delete_on_failure=True)
+        driver.download_object(
+            obj,
+            destination_path=destination_filepath,
+            overwrite_existing=True,
+            delete_on_failure=True,
+        )
 
 
 class LibcloudCopyFileLocation(BaseSerializer):
     @staticmethod
-    def serialize(filepath: str,
-                  source_directory: str = 'system_temp',
-                  destination_directory: str = 'libcloud_root_path',
-                  **kwargs) -> Dict[str, str]:
+    def serialize(
+        filepath: str,
+        source_directory: str = "system_temp",
+        destination_directory: str = "libcloud_root_path",
+        **kwargs,
+    ) -> Dict[str, str]:
 
         source_filepath = join(FILEPATH_REGISTRY.get(source_directory), filepath)
         if isdir(source_filepath):
-            raise ValueError('Cannot use file persistence pattern for folders. Use `LibcloudCopyFolderLocation` instead')
+            raise ValueError(
+                "Cannot use file persistence pattern for folders. Use `LibcloudCopyFolderLocation` instead"
+            )
 
         LibcloudMethods.upload(
             LibcloudMethods.get_driver(**kwargs),
             source_filepath,
             join(FILEPATH_REGISTRY.get(destination_directory), filepath),
-            LibcloudMethods.get_container_name(**kwargs)
+            LibcloudMethods.get_container_name(**kwargs),
         )
 
-        return {'filepath': filepath, 'source_directory': destination_directory}
+        return {"filepath": filepath, "source_directory": destination_directory}
 
     @staticmethod
-    def deserialize(filepath: str,
-                    source_directory: str = 'libcloud_root_path',
-                    destination_directory: str = 'system_temp',
-                    **kwargs) -> Dict[str, str]:
+    def deserialize(
+        filepath: str,
+        source_directory: str = "libcloud_root_path",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ) -> Dict[str, str]:
         LibcloudMethods.download(
             LibcloudMethods.get_driver(**kwargs),
             join(FILEPATH_REGISTRY.get(source_directory), filepath),
             join(FILEPATH_REGISTRY.get(destination_directory), filepath),
-            LibcloudMethods.get_container_name(**kwargs)
+            LibcloudMethods.get_container_name(**kwargs),
         )
 
-        return {'filepath': filepath, 'source_directory': destination_directory}
+        return {"filepath": filepath, "source_directory": destination_directory}
 
 
 class LibcloudCopyFolderLocation(BaseSerializer):
-    '''
+    """
     Libcloud doesnt have a notion of folder objects so iterate through filepaths
     individually
-    '''
+    """
+
     @staticmethod
-    def serialize(filepath: str,
-                  source_directory: str = 'system_temp',
-                  destination_directory: str = 'libcloud_root_path',
-                  **kwargs) -> Dict[str, str]:
+    def serialize(
+        filepath: str,
+        source_directory: str = "system_temp",
+        destination_directory: str = "libcloud_root_path",
+        **kwargs,
+    ) -> Dict[str, str]:
         source_folder = FILEPATH_REGISTRY.get(source_directory)
         destination_folder = FILEPATH_REGISTRY.get(destination_directory)
         driver = LibcloudMethods.get_driver(**kwargs)
         container = LibcloudMethods.get_container_name(**kwargs)
 
         if not isdir(join(source_folder, filepath)):
-            raise ValueError('Cannot use folder persistence pattern for files. Use `LibcloudCopyFileLocation` instead')
+            raise ValueError(
+                "Cannot use folder persistence pattern for files. Use `LibcloudCopyFileLocation` instead"
+            )
 
         # walkthrough all subpaths
         filepaths = []
@@ -182,7 +196,7 @@ class LibcloudCopyFolderLocation(BaseSerializer):
                 # strip out root path to keep relative to directory
                 filename = join(dirpath, filename).split(source_folder)[1]
                 # strip the preceding /
-                if filename[0] == '/':
+                if filename[0] == "/":
                     filename = filename[1:]
                 filepaths.append(filename)
 
@@ -190,20 +204,17 @@ class LibcloudCopyFolderLocation(BaseSerializer):
             source_filepath = join(source_folder, file)
             destination_filepath = join(destination_folder, file)
             LibcloudMethods.upload(
-                driver,
-                source_filepath,
-                destination_filepath,
-                container
+                driver, source_filepath, destination_filepath, container
             )
 
-        return {'filepaths': filepaths, 'source_directory': destination_directory}
+        return {"filepaths": filepaths, "source_directory": destination_directory}
 
     @staticmethod
     def common_path(paths: List[str]) -> str:
-        '''
+        """
         Helper utility to return the common parent path for a bunch of filepaths
-        '''
-        split_paths = [i.split('/') for i in paths]
+        """
+        split_paths = [i.split("/") for i in paths]
         common_splits = []
         shortest_split = min([len(i) for i in split_paths])
 
@@ -218,40 +229,44 @@ class LibcloudCopyFolderLocation(BaseSerializer):
         return join(*common_splits)
 
     @classmethod
-    def deserialize(cls,
-                    filepaths: List[str],
-                    source_directory: str = 'libcloud_root_path',
-                    destination_directory: str = 'system_temp',
-                    **kwargs) -> Dict[str, str]:
+    def deserialize(
+        cls,
+        filepaths: List[str],
+        source_directory: str = "libcloud_root_path",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ) -> Dict[str, str]:
         driver = LibcloudMethods.get_driver(**kwargs)
         container = LibcloudMethods.get_container_name(**kwargs)
 
         for file in filepaths:
             source_filepath = join(FILEPATH_REGISTRY.get(source_directory), file)
-            destination_filepath = join(FILEPATH_REGISTRY.get(destination_directory), file)
+            destination_filepath = join(
+                FILEPATH_REGISTRY.get(destination_directory), file
+            )
             # safety check for the destination path
             makedirs(dirname(destination_filepath), exist_ok=True)
             LibcloudMethods.download(
-                driver,
-                source_filepath,
-                destination_filepath,
-                container
+                driver, source_filepath, destination_filepath, container
             )
 
         folder_filepath = cls.common_path(filepaths)
 
-        return {'filepath': folder_filepath, 'source_directory': destination_directory}
+        return {"filepath": folder_filepath, "source_directory": destination_directory}
 
 
 class LibcloudCopyFilesLocation(BaseSerializer):
-    '''
+    """
     Libcloud transport for many individual files
-    '''
+    """
+
     @staticmethod
-    def serialize(filepaths: List[str],
-                  source_directory: str = 'system_temp',
-                  destination_directory: str = 'libcloud_root_path',
-                  **kwargs) -> Dict[str, str]:
+    def serialize(
+        filepaths: List[str],
+        source_directory: str = "system_temp",
+        destination_directory: str = "libcloud_root_path",
+        **kwargs,
+    ) -> Dict[str, str]:
         source_folder = FILEPATH_REGISTRY.get(source_directory)
         destination_folder = FILEPATH_REGISTRY.get(destination_directory)
         driver = LibcloudMethods.get_driver(**kwargs)
@@ -262,36 +277,36 @@ class LibcloudCopyFilesLocation(BaseSerializer):
             destination_filepath = join(destination_folder, file)
 
             if isdir(source_filepath):
-                raise ValueError('Cannot use file persistence pattern for folder. Use `LibcloudCopyFolderLocation` instead')
+                raise ValueError(
+                    "Cannot use file persistence pattern for folder. Use `LibcloudCopyFolderLocation` instead"
+                )
 
             LibcloudMethods.upload(
-                driver,
-                source_filepath,
-                destination_filepath,
-                container
+                driver, source_filepath, destination_filepath, container
             )
 
-        return {'filepaths': filepaths, 'source_directory': destination_directory}
+        return {"filepaths": filepaths, "source_directory": destination_directory}
 
     @classmethod
-    def deserialize(cls,
-                    filepaths: List[str],
-                    source_directory: str = 'libcloud_root_path',
-                    destination_directory: str = 'system_temp',
-                    **kwargs) -> Dict[str, str]:
+    def deserialize(
+        cls,
+        filepaths: List[str],
+        source_directory: str = "libcloud_root_path",
+        destination_directory: str = "system_temp",
+        **kwargs,
+    ) -> Dict[str, str]:
         driver = LibcloudMethods.get_driver(**kwargs)
         container = LibcloudMethods.get_container_name(**kwargs)
 
         for file in filepaths:
             source_filepath = join(FILEPATH_REGISTRY.get(source_directory), file)
-            destination_filepath = join(FILEPATH_REGISTRY.get(destination_directory), file)
+            destination_filepath = join(
+                FILEPATH_REGISTRY.get(destination_directory), file
+            )
             # safety check for the destination path
             makedirs(dirname(destination_filepath), exist_ok=True)
             LibcloudMethods.download(
-                driver,
-                source_filepath,
-                destination_filepath,
-                container
+                driver, source_filepath, destination_filepath, container
             )
 
-        return {'filepaths': filepaths, 'source_directory': destination_directory}
+        return {"filepaths": filepaths, "source_directory": destination_directory}

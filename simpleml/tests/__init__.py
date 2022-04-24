@@ -1,4 +1,4 @@
-'''
+"""
 Combine all the test suites and execute
 
 Testing Paradigm: Hierarchical tests broken out by directory.
@@ -33,9 +33,9 @@ Otherwise it executes just the tests in the module for easy iteration on specifi
     if __name__ == '__main__':
         unittest.main()
 ```
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import unittest
@@ -58,7 +58,7 @@ def load_tests(*args, **kwargs):
 
 def run_tests():
     # Start coverage collection
-    cov = Coverage(data_file='.coverage')
+    cov = Coverage(data_file=".coverage")
     cov.start()
 
     runner = unittest.TextTestRunner(verbosity=2)
@@ -74,5 +74,5 @@ def run_tests():
         exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_tests()

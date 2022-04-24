@@ -1,8 +1,8 @@
-'''
+"""
 Keras specific registry. Autoregisters when used as a base class
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 from abc import ABCMeta

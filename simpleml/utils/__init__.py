@@ -1,8 +1,8 @@
-'''
+"""
 Utilities
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 from .configuration import CONFIG, FILESTORE_DIRECTORY, SIMPLEML_DIRECTORY

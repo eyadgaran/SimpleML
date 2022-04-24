@@ -1,4 +1,4 @@
-'''
+"""
 Import modules to register class names in global registry
 
 Expose classes in one import module
@@ -6,9 +6,9 @@ Expose classes in one import module
 Models Directory follows this structure:
 Generic Base -> Library Base -> Domain Base -> Individual Models
 (ex: Model -> SklearnModel -> SklearnClassifier -> SklearnLogisticRegression)
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 # Transfer Learning

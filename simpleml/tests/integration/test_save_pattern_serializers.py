@@ -1,8 +1,8 @@
-'''
+"""
 Tests for save patterns serializers
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import random
@@ -15,10 +15,11 @@ RANDOM_RUN = random.randint(10000, 99999)
 
 
 class TestSerializationClass(object):
-    '''
+    """
     Fake test class with all complex datatypes to test pickling
-    '''
-    cls_attribute = 'blah'
+    """
+
+    cls_attribute = "blah"
 
     def __init__(self, a, *args, **kwargs):
         self.a = a
@@ -26,12 +27,14 @@ class TestSerializationClass(object):
         self.kwargs = kwargs
 
     def __eq__(self, other):
-        return all((
-            self.cls_attribute == other.cls_attribute,
-            self.a == other.a,
-            self.args == other.args,
-            self.kwargs == other.kwargs
-        ))
+        return all(
+            (
+                self.cls_attribute == other.cls_attribute,
+                self.a == other.a,
+                self.args == other.args,
+                self.kwargs == other.kwargs,
+            )
+        )
 
 
 class CloudpickleFileSerializerTests(unittest.TestCase):
@@ -99,5 +102,5 @@ class KerasH5SerializerTests(unittest.TestCase):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

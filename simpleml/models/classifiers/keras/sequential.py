@@ -1,8 +1,8 @@
-'''
+"""
 Uses Keras's API to create a sequential classifier
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 # Import optional dependencies
 from simpleml.imports import Sequential

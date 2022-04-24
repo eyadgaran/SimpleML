@@ -1,8 +1,8 @@
-'''
+"""
 Persistable related tests
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 import unittest
 
@@ -33,17 +33,17 @@ class PersistableTests(unittest.TestCase):
         self.assertNotEqual(cl.__class__, Persistable)
 
     def test_lazy_loading(self):
-        '''
+        """
         Test that dependecy loads only when called
-        '''
+        """
         # Delete dependency file and check that it works
         # Then reference dependency and assert error
 
     def test_abstract_hash_error(self):
-        '''
+        """
         Confirm an error is raised if initialized without
         defining the hash
-        '''
+        """
 
     def test_loading_without_externals(self):
         pass
@@ -55,5 +55,5 @@ class PersistableTests(unittest.TestCase):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

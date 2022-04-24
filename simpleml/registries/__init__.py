@@ -1,8 +1,8 @@
-'''
+"""
 Import path for the different registries available
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 from simpleml.registries.keras_registry import KERAS_REGISTRY, KerasRegistry

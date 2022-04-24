@@ -1,9 +1,9 @@
-'''
+"""
 Module to centralize all external imports - makes it easy to handle
 optional dependencies in different installations
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
 
 
 import logging
@@ -27,10 +27,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 class MissingImportWrapper(object):
-    '''
+    """
     Wrapper class and callable generator to be used instead of unavailable dependencies
     Errors on reference when not available instead of on import
-    '''
+    """
 
     def __init__(self, *args, **kwargs):
         self.raise_error()
@@ -40,7 +40,9 @@ class MissingImportWrapper(object):
 
     @classmethod
     def raise_error(cls):
-        raise ImportError(f'Attempting to use missing dependency {cls.name}. Install via `pip install {cls.pypi_name}` or `pip install simpleml[{cls.simpleml_extra_group}]` and restart script')
+        raise ImportError(
+            f"Attempting to use missing dependency {cls.name}. Install via `pip install {cls.pypi_name}` or `pip install simpleml[{cls.simpleml_extra_group}]` and restart script"
+        )
 
     @classmethod
     def __call__(cls):
@@ -48,24 +50,24 @@ class MissingImportWrapper(object):
 
     @classmethod
     def __repr__(cls):
-        return f'Missing Dependency Wrapper for {cls.name} (`pip install {cls.pypi_name}` or `pip install simpleml[{cls.simpleml_extra_group}]`)'
+        return f"Missing Dependency Wrapper for {cls.name} (`pip install {cls.pypi_name}` or `pip install simpleml[{cls.simpleml_extra_group}]`)"
 
 
 class MissingImportFactory(object):
-    '''
+    """
     Factory class to generate library specific import wrappers
-    '''
-    def __new__(cls,
-                name: str,
-                pypi_name: str,
-                simpleml_extra_group: str):
-        LOGGER.debug(f'Wrapping missing dependency: {name}')
+    """
+
+    def __new__(cls, name: str, pypi_name: str, simpleml_extra_group: str):
+        LOGGER.debug(f"Wrapping missing dependency: {name}")
 
         class LibraryMissingImportWrapper(MissingImportWrapper):
-            '''
+            """
             Wrap as a library specific instance
-            '''
+            """
+
             pass
+
         LibraryMissingImportWrapper.name = name
         LibraryMissingImportWrapper.pypi_name = pypi_name
         LibraryMissingImportWrapper.simpleml_extra_group = simpleml_extra_group
@@ -76,7 +78,7 @@ class MissingImportFactory(object):
 try:
     import psycopg2
 except ImportError:
-    psycopg2 = MissingImportFactory('psycopg2', 'psycopg2', 'postgres')
+    psycopg2 = MissingImportFactory("psycopg2", "psycopg2", "postgres")
 
 try:
     import tensorflow as tf
@@ -84,40 +86,55 @@ try:
     from tf.keras.models import Model, Sequential, load_model
     from tf.keras.utils import Sequence
 except ImportError:
-    tf = MissingImportFactory('tensorflow', 'tensorflow', 'deep-learning')
-    keras = MissingImportFactory('tensorflow.keras', 'tensorflow', 'deep-learning')
-    load_model = MissingImportFactory('tensorflow.keras.models.load_model', 'tensorflow', 'deep-learning')
-    Sequential = MissingImportFactory('tensorflow.keras.models.Sequential', 'tensorflow', 'deep-learning')
-    Model = MissingImportFactory('tensorflow.keras.models.Model', 'tensorflow', 'deep-learning')
-    Sequence = MissingImportFactory('tensorflow.keras.utils.Sequence', 'tensorflow', 'deep-learning')
+    tf = MissingImportFactory("tensorflow", "tensorflow", "deep-learning")
+    keras = MissingImportFactory("tensorflow.keras", "tensorflow", "deep-learning")
+    load_model = MissingImportFactory(
+        "tensorflow.keras.models.load_model", "tensorflow", "deep-learning"
+    )
+    Sequential = MissingImportFactory(
+        "tensorflow.keras.models.Sequential", "tensorflow", "deep-learning"
+    )
+    Model = MissingImportFactory(
+        "tensorflow.keras.models.Model", "tensorflow", "deep-learning"
+    )
+    Sequence = MissingImportFactory(
+        "tensorflow.keras.utils.Sequence", "tensorflow", "deep-learning"
+    )
 
 try:
     import hickle
 except ImportError:
-    hickle = MissingImportFactory('hickle', 'hickle', 'deep-learning')
+    hickle = MissingImportFactory("hickle", "hickle", "deep-learning")
 
 try:
     import onedrivesdk
 except ImportError:
-    onedrivesdk = MissingImportFactory('onedrivesdk', 'onedrivesdk<2', 'onedrive')
+    onedrivesdk = MissingImportFactory("onedrivesdk", "onedrivesdk<2", "onedrive")
 
 try:
     from sshtunnel import SSHTunnelForwarder
 except ImportError:
-    SSHTunnelForwarder = MissingImportFactory('sshtunnel.SSHTunnelForwarder', 'sshtunnel', 'cloud')
+    SSHTunnelForwarder = MissingImportFactory(
+        "sshtunnel.SSHTunnelForwarder", "sshtunnel", "cloud"
+    )
 
 try:
     from libcloud.storage.providers import get_driver
     from libcloud.storage.types import Provider
 except ImportError:
-    Provider = MissingImportFactory('libcloud.storage.types.Provider', 'apache-libcloud', 'cloud')
-    get_driver = MissingImportFactory('libcloud.storage.providers.get_driver', 'apache-libcloud', 'cloud')
+    Provider = MissingImportFactory(
+        "libcloud.storage.types.Provider", "apache-libcloud", "cloud"
+    )
+    get_driver = MissingImportFactory(
+        "libcloud.storage.providers.get_driver", "apache-libcloud", "cloud"
+    )
 
 try:
     import dask.dataframe as dd
+
     ddDataFrame = dd.DataFrame
     ddSeries = dd.Series
 except ImportError:
-    dd = MissingImportFactory('dask.dataframe', 'dask', 'dask')
-    ddDataFrame = MissingImportFactory('dask.dataframe.DataFrame', 'dask', 'dask')
-    ddSeries = MissingImportFactory('dask.dataframe.Series', 'dask', 'dask')
+    dd = MissingImportFactory("dask.dataframe", "dask", "dask")
+    ddDataFrame = MissingImportFactory("dask.dataframe.DataFrame", "dask", "dask")
+    ddSeries = MissingImportFactory("dask.dataframe.Series", "dask", "dask")

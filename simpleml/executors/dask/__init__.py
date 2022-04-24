@@ -1,5 +1,5 @@
-'''
+"""
 Executor support for dask backend
-'''
+"""
 
-__author__ = 'Elisha Yadgaran'
+__author__ = "Elisha Yadgaran"
