@@ -139,9 +139,14 @@ autoincrementing version (for each "name").
 
 ```python
 from simpleml.datasets.pandas import PandasFileBasedDataset
-from simpleml.pipelines.sklearn import RandomSplitSklearnPipeline
-from simpleml.transformers import SklearnDictVectorizer, DataframeToRecords, FillWithValue
 from simpleml.models import SklearnLogisticRegression
+from simpleml.pipelines.sklearn import RandomSplitSklearnPipeline
+from simpleml.transformers import (
+    DataframeToRecords,
+    FillWithValue,
+    SklearnDictVectorizer,
+)
+
 from simpleml.metrics AccuracyMetric
 from simpleml.constants import TEST_SPLIT
 
@@ -205,7 +210,7 @@ metric_kwargs = {'registered_name': 'AccuracyMetric', 'dataset_split': TEST_SPLI
 dataset = DatasetCreator.retrieve_or_create(**dataset_kwargs)
 pipeline = PipelineCreator.retrieve_or_create(dataset=dataset, **pipeline_kwargs)
 model = ModelCreator.retrieve_or_create(pipeline=pipeline, **model_kwargs)
-metric = MetricCreator.retrieve_or_create(model=model, dataset=dataset, **metric_kwargs)     
+metric = MetricCreator.retrieve_or_create(model=model, dataset=dataset, **metric_kwargs)
 
 # ---------------------------------------------------------------------------- #
 # Option 2: Implicit object creation (pass in dependency references - nested)
@@ -221,7 +226,7 @@ metric_kwargs['model_kwargs'] = model_kwargs
 dataset = DatasetCreator.retrieve_or_create(**dataset_kwargs)
 pipeline = PipelineCreator.retrieve_or_create(dataset_kwargs=dataset_kwargs, **pipeline_kwargs)
 model = ModelCreator.retrieve_or_create(pipeline_kwargs=pipeline_kwargs, **model_kwargs)
-metric = MetricCreator.retrieve_or_create(model_kwargs=model_kwargs, dataset_kwargs=dataset_kwargs, **metric_kwargs)     
+metric = MetricCreator.retrieve_or_create(model_kwargs=model_kwargs, dataset_kwargs=dataset_kwargs, **metric_kwargs)
 ```
 
 This workflow is modeled as a DAG, which means that there is room for parallelization, but dependencies are assumed
