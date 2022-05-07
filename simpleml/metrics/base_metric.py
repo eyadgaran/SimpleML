@@ -2,51 +2,125 @@ __author__ = "Elisha Yadgaran"
 
 
 import logging
-from typing import Any
-
-from future.utils import with_metaclass
-from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint, func
-from sqlalchemy.orm import relationship
+import uuid
+import weakref
+from typing import Any, Optional, Union
 
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.models.base_model import Model
-from simpleml.persistables.base_persistable import GUID, MutableJSON, Persistable
+from simpleml.persistables.base_persistable import Persistable
 from simpleml.registries import MetricRegistry
 from simpleml.utils.errors import MetricError
 
 LOGGER = logging.getLogger(__name__)
 
 
-class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
+class Metric(Persistable, metaclass=MetricRegistry):
     """
-    Abstract Base class for all Metric objects
-
-    -------
-    Schema
-    -------
-    name: the metric name
-    values: JSON object with key: value pairs for performance on test dataset
-        (ex: FPR: TPR to create ROC Curve)
-        Singular value metrics take the form - {'agg': value}
+    Base class for all Metric objects
     """
-
-    __abstract__ = True
-
-    values = Column(MutableJSON, nullable=False)
 
     object_type: str = "METRIC"
+
+    def __init__(
+        self,
+        dataset_id: Optional[Union[str, uuid.uuid4]] = None,
+        model_id: Optional[Union[str, uuid.uuid4]] = None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+
+        # initialize null references
+        self.dataset_id = dataset_id
+        self.model_id = model_id
 
     def add_dataset(self, dataset: Dataset) -> None:
         """
         Setter method for dataset used
         """
+        if dataset is None:
+            return
+        self.dataset_id = dataset.id
         self.dataset = dataset
+
+    @property
+    def dataset(self):
+        """
+        Use a weakref to bind linked dataset so it doesnt bloat usage
+        returns dataset if still available or tries to fetch otherwise
+        """
+        # still referenced weakref
+        if hasattr(self, "_dataset") and self._dataset() is not None:
+            return self._dataset()
+
+        # null return if no associated dataset (governed by dataset_id)
+        elif self.dataset_id is None:
+            return None
+
+        # else regenerate weakref
+        LOGGER.info("No referenced object available. Refreshing weakref")
+        dataset = self._load_dataset()
+        self._dataset = weakref.ref(dataset)
+        return dataset
+
+    @dataset.setter
+    def dataset(self, dataset: Dataset) -> None:
+        """
+        Need to be careful not to set as the orm object
+        Cannot load if wrong type because of recursive behavior (will
+        propagate down the whole dependency chain)
+        """
+        self._dataset = weakref.ref(dataset)
+
+    def _load_dataset(self):
+        """
+        Helper to fetch the dataset
+        """
+        return self.orm_cls.load_dataset(self.dataset_id)
 
     def add_model(self, model: Model) -> None:
         """
         Setter method for model used
         """
+        if model is None:
+            return
+        self.model_id = model.id
         self.model = model
+
+    @property
+    def model(self):
+        """
+        Use a weakref to bind linked model so it doesnt bloat usage
+        returns model if still available or tries to fetch otherwise
+        """
+        # still referenced weakref
+        if hasattr(self, "_model") and self._model() is not None:
+            return self._model()
+
+        # null return if no associated model (governed by model_id)
+        elif self.model_id is None:
+            return None
+
+        # else regenerate weakref
+        LOGGER.info("No referenced object available. Refreshing weakref")
+        model = self._load_model()
+        self._model = weakref.ref(model)
+        return model
+
+    @model.setter
+    def model(self, model: Model) -> None:
+        """
+        Need to be careful not to set as the orm object
+        Cannot load if wrong type because of recursive behavior (will
+        propagate down the whole dependency chain)
+        """
+        self._model = weakref.ref(model)
+
+    def _load_model(self):
+        """
+        Helper to fetch the model
+        """
+        return self.orm_cls.load_model(self.model_id)
 
     def _hash(self) -> str:
         """
@@ -71,19 +145,7 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
         Versions should be autoincrementing for each object (constrained over
         friendly name and model). Executes a database lookup and increments..
         """
-        last_version = (
-            self.__class__.query_by(func.max(self.__class__.version))
-            .filter(
-                self.__class__.name == self.name,
-                self.__class__.model_id == self.model.id,
-            )
-            .scalar()
-        )
-
-        if last_version is None:
-            last_version = 0
-
-        return last_version + 1
+        return self.orm_cls.get_latest_version(name=self.name, model_id=self.model.id)
 
     def _get_pipeline_split(self, column: str, split: str, **kwargs) -> Any:
         """
@@ -115,19 +177,7 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
         if self.values is None:
             raise MetricError("Must score metric before saving")
 
-        super(AbstractMetric, self).save(**kwargs)
-
-        # Sqlalchemy updates relationship references after save so reload class
-        self.model.load(load_externals=False)
-
-    def load(self, **kwargs) -> None:
-        """
-        Extend main load routine to load relationship class
-        """
-        super(AbstractMetric, self).load(**kwargs)
-
-        # By default dont load data unless it actually gets used
-        self.model.load(load_externals=False)
+        super().save(**kwargs)
 
     def score(self, **kwargs):
         """
@@ -136,38 +186,3 @@ class AbstractMetric(with_metaclass(MetricRegistry, Persistable)):
         Should set self.values
         """
         raise NotImplementedError
-
-
-class Metric(AbstractMetric):
-    """
-    Base class for all Metric objects
-
-    -------
-    Schema
-    -------
-    model_id: foreign key to the model that was used to generate predictions
-
-    TODO: Should join criteria be composite of model and dataset for multiple
-        duplicate metric objects computed over different test datasets?
-    """
-
-    __tablename__ = "metrics"
-
-    # Dependencies are model and dataset
-    model_id = Column(GUID, ForeignKey("models.id", name="metrics_model_id_fkey"))
-    model = relationship("Model", enable_typechecks=False)
-    dataset_id = Column(GUID, ForeignKey("datasets.id", name="metrics_dataset_id_fkey"))
-    dataset = relationship("Dataset", enable_typechecks=False)
-
-    __table_args__ = (
-        # Metrics don't have the notion of versions, values should be deterministic
-        # by class, model, and dataset - name should be the combination of class and dataset
-        # Still exists to stay consistent with the persistables style of unrestricted duplication
-        # (otherwise would be impossible to distinguish a duplicated metric -- name and model_id would be the same)
-        # Unique constraint for versioning
-        UniqueConstraint(
-            "name", "model_id", "version", name="metric_name_model_version_unique"
-        ),
-        # Index for searching through friendly names
-        Index("metric_name_index", "name"),
-    )

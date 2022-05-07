@@ -21,19 +21,15 @@ from sqlalchemy.engine.url import URL, make_url
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-import simpleml.datasets.base_dataset
-import simpleml.metrics.base_metric
-import simpleml.models.base_model
-import simpleml.pipelines.base_pipeline
 from simpleml.imports import SSHTunnelForwarder
 
 # Import table models to register in DeclaritiveBase
-from simpleml.persistables.base_sqlalchemy import (
+from simpleml.orm.metadata import (
     BinaryStorageSqlalchemy,
     DatasetStorageSqlalchemy,
     SimplemlCoreSqlalchemy,
 )
-from simpleml.persistables.serializing import custom_dumps, custom_loads
+from simpleml.orm.serializing import custom_dumps, custom_loads
 from simpleml.utils.configuration import CONFIG, FILESTORE_DIRECTORY
 from simpleml.utils.errors import SimpleMLError
 

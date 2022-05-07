@@ -11,6 +11,11 @@ from typing import Any, Dict
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.metrics.base_metric import Metric
 from simpleml.models.base_model import Model
+from simpleml.orm.dataset import ORMDataset
+from simpleml.orm.metric import ORMMetric
+from simpleml.orm.model import ORMModel
+from simpleml.orm.persistable import ORMPersistable
+from simpleml.orm.pipeline import ORMPipeline
 from simpleml.persistables.base_persistable import Persistable
 from simpleml.pipelines.base_pipeline import Pipeline
 from simpleml.utils.errors import SimpleMLError
@@ -29,16 +34,16 @@ class PersistableLoader(object):
 
     @classmethod
     def load_persistable(
-        cls, persistable_class: Persistable, filters: Dict[str, Any]
+        cls, persistable_class: ORMPersistable, filters: Dict[str, Any]
     ) -> Persistable:
-        persistable = (
+        record = (
             persistable_class.where(**filters)
             .order_by(persistable_class.version.desc())
             .first()
         )
-        if persistable is not None:
+        if record is not None:
+            persistable = record.load(load_externals=False)
             cls.validate_environment(persistable)
-            persistable.load(load_externals=False)
             return persistable
         else:
             raise SimpleMLError(
@@ -47,19 +52,19 @@ class PersistableLoader(object):
 
     @classmethod
     def load_dataset(cls, **filters) -> Dataset:
-        return cls.load_persistable(Dataset, filters)
+        return cls.load_persistable(ORMDataset, filters)
 
     @classmethod
     def load_pipeline(cls, **filters) -> Pipeline:
-        return cls.load_persistable(Pipeline, filters)
+        return cls.load_persistable(ORMPipeline, filters)
 
     @classmethod
     def load_model(cls, **filters) -> Model:
-        return cls.load_persistable(Model, filters)
+        return cls.load_persistable(ORMModel, filters)
 
     @classmethod
     def load_metric(cls, **filters) -> Metric:
-        return cls.load_persistable(Metric, filters)
+        return cls.load_persistable(ORMMetric, filters)
 
     @staticmethod
     def validate_environment(persistable: Persistable) -> None:

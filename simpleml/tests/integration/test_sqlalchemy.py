@@ -6,22 +6,35 @@ __author__ = "Elisha Yadgaran"
 
 
 import unittest
+import uuid
 
-from simpleml.datasets import Dataset
+from sqlalchemy import Column
+
+from simpleml.orm.metadata import SimplemlCoreSqlalchemy
+from simpleml.orm.sqlalchemy_types import GUID, MutableJSON
 
 
 class MutableJSONTests(unittest.TestCase):
     """Default sqlalchemy behavior treats JSON data as immutable"""
 
+    class JSONTestClass(SimplemlCoreSqlalchemy):
+        __tablename__ = "json_tests"
+        id = Column(GUID, primary_key=True, nullable=False, default=uuid.uuid4)
+        json_col = Column(MutableJSON)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.JSONTestClass.__table__.create(checkfirst=True)
+
     def test_modifying_json_field(self):
         """
         Top level JSON change
         """
-        persistable = Dataset(name="top_level_json_modification_test")
-        persistable._external_file = "datadata"
+        persistable = self.JSONTestClass()
+        persistable.json_col = {}
         persistable.save()
 
-        persistable.metadata_["new_key"] = "blah"
+        persistable.json_col["new_key"] = "blah"
         self.assertIn(persistable, persistable._session.dirty)
         persistable._session.refresh(persistable)
 
@@ -29,12 +42,12 @@ class MutableJSONTests(unittest.TestCase):
         """
         Nested JSON change
         """
-        persistable = Dataset(name="nested_json_modification_test")
-        persistable.metadata_["new_key"] = {}
-        persistable._external_file = "datadata"
+        persistable = self.JSONTestClass()
+        persistable.json_col = {}
+        persistable.json_col["new_key"] = {}
         persistable.save()
 
-        persistable.metadata_["new_key"]["sub_key"] = "blah"
+        persistable.json_col["new_key"]["sub_key"] = "blah"
         self.assertIn(persistable, persistable._session.dirty)
         persistable._session.refresh(persistable)
 

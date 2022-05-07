@@ -5,10 +5,10 @@ Base module for Sklearn models.
 __author__ = "Elisha Yadgaran"
 
 
-import inspect
 import logging
 
 from simpleml.constants import TRAIN_SPLIT
+from simpleml.utils.signature_inspection import signature_kwargs_validator
 
 from .base_model import LibraryModel
 
@@ -31,24 +31,8 @@ class SklearnModel(LibraryModel):
         """
         # Explicitly fit only on default (train) split
         split = self.transform(X=None, dataset_split=TRAIN_SPLIT)
-        supported_fit_params = {}
 
         # Ensure input compatibility with split object
-        fit_params = inspect.signature(self.external_model.fit).parameters
-        # check if any params are **kwargs (all inputs accepted)
-        has_kwarg_params = any(
-            [param.kind == param.VAR_KEYWORD for param in fit_params.values()]
-        )
-        # log ignored args
-        if not has_kwarg_params:
-            for split_arg, val in split.items():
-                if split_arg not in fit_params:
-                    LOGGER.warning(
-                        f"Unsupported fit param encountered, `{split_arg}`. Dropping..."
-                    )
-                else:
-                    supported_fit_params[split_arg] = val
-        else:
-            supported_fit_params = split
+        fit_params = signature_kwargs_validator(self.external_model.fit, **split)
 
-        self.external_model.fit(**supported_fit_params)
+        self.external_model.fit(**fit_params)

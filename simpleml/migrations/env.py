@@ -11,8 +11,8 @@ from logging.config import fileConfig
 
 from alembic import context
 
-from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
-from simpleml.utils.initialization import Database
+from simpleml.orm.initialization import Database
+from simpleml.orm.metadata import SimplemlCoreSqlalchemy
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

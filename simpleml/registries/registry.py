@@ -7,7 +7,7 @@ __author__ = "Elisha Yadgaran"
 
 import logging
 from contextlib import contextmanager
-from typing import Dict, Type
+from typing import Dict, Optional, Type
 
 LOGGER = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class Registry(object):
                 LOGGER.debug(f"Reverting value of registry key {name}")
                 self.registry[name] = original_value
 
-    def get_from_registry(self, class_name: str) -> Type:
+    def get_from_registry(self, class_name: str) -> Optional[Type]:
         cls = self.registry.get(class_name)
         if cls is None:
             LOGGER.error(

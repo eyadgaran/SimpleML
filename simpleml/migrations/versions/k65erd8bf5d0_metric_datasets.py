@@ -12,9 +12,9 @@ from sqlalchemy import Column, ForeignKey, MetaData, String
 from sqlalchemy.orm import relationship, scoped_session, sessionmaker
 
 from simpleml.metrics.classification import ClassificationMetric
-from simpleml.persistables.base_sqlalchemy import BaseSQLAlchemy
+from simpleml.orm.base_sqlalchemy import BaseSQLAlchemy
+from simpleml.orm.sqlalchemy_types import GUID, MutableJSON
 from simpleml.persistables.hashing import CustomHasherMixin
-from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.pipelines.validation_split_mixins import (
     ExplicitSplitMixin,
     RandomSplitMixin,

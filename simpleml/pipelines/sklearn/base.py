@@ -11,6 +11,7 @@ from typing import Any, Dict, List
 
 from simpleml.pipelines.base_pipeline import Pipeline
 from simpleml.pipelines.projected_splits import ProjectedDatasetSplit
+from simpleml.utils.signature_inspection import signature_kwargs_validator
 
 from .external_pipeline import SklearnExternalPipeline
 
@@ -28,17 +29,9 @@ class SklearnPipeline(Pipeline):
         """
         Initialize a scikit-learn pipeline object
         """
-        # Ensure input compatibility with split object
-        init_params = inspect.signature(SklearnExternalPipeline.__init__).parameters
-        # check if any params are **kwargs (all inputs accepted)
-        has_kwarg_params = any(
-            [param.kind == param.VAR_KEYWORD for param in init_params.values()]
+        supported_kwargs = signature_kwargs_validator(
+            SklearnExternalPipeline.__init__, **kwargs
         )
-        # log ignored args
-        if not has_kwarg_params:
-            supported_kwargs = {k: v for k, v in kwargs.items() if k in init_params}
-        else:
-            supported_kwargs = kwargs
 
         return SklearnExternalPipeline(
             transformers,

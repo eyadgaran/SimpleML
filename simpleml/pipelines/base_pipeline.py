@@ -4,22 +4,20 @@ Base Module for Pipelines
 
 __author__ = "Elisha Yadgaran"
 
-import inspect
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
+import uuid
+import weakref
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import pandas as pd
-from future.utils import with_metaclass
-from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
-from sqlalchemy.orm import relationship
 
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
 from simpleml.persistables.base_persistable import Persistable
-from simpleml.persistables.sqlalchemy_types import GUID, MutableJSON
 from simpleml.registries import PipelineRegistry
 from simpleml.save_patterns.decorators import ExternalArtifactDecorators
 from simpleml.utils.errors import PipelineError
+from simpleml.utils.signature_inspection import signature_kwargs_validator
 
 from .projected_splits import IdentityProjectedDatasetSplit, ProjectedDatasetSplit
 
@@ -36,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
     save_attribute="external_pipeline",
     restore_attribute="_external_file",
 )
-class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
+class Pipeline(Persistable, metaclass=PipelineRegistry):
     """
     Abstract Base class for all Pipelines objects.
 
@@ -49,11 +47,6 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
     params: pipeline parameter metadata for easy insight into hyperparameters across trainings
     """
 
-    __abstract__ = True
-
-    # Additional pipeline specific metadata
-    params = Column(MutableJSON, default={})
-
     object_type: str = "PIPELINE"
 
     def __init__(
@@ -61,21 +54,24 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         has_external_files: bool = True,
         transformers: Optional[List[Any]] = None,
         fitted: bool = False,
+        dataset_id: Optional[Union[str, uuid.uuid4]] = None,
         **kwargs,
     ):
         # If no save patterns are set, specify a default for disk_pickled
         if "save_patterns" not in kwargs:
             kwargs["save_patterns"] = {"pipeline": ["disk_pickled"]}
-        super(AbstractPipeline, self).__init__(
-            has_external_files=has_external_files, **kwargs
-        )
+        super(Pipeline, self).__init__(has_external_files=has_external_files, **kwargs)
 
-        # Instantiate pipeline
+        # prep instantiation of pipeline - lazy build
         if transformers is None:
             transformers: List[Any] = []
-        self._external_file = self._create_external_pipeline(transformers, **kwargs)
+        self._transformers = transformers
+        self._external_pipeline_init_kwargs = kwargs
+
         # Initialize fit state -- pass as true to skip fitting transformers
         self.fitted = fitted
+        # initialize null dataset reference
+        self.dataset_id = dataset_id
 
     """
     Persistable Management
@@ -98,6 +94,16 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         (eg sklearn or native)
         """
         self.load_if_unloaded("pipeline")
+
+        # lazy build
+        if not hasattr(self, "_external_file"):
+            self._external_file = self._create_external_pipeline(
+                self._transformers, **self._external_pipeline_init_kwargs
+            )
+            # clear temp vars
+            del self._transformers
+            del self._external_pipeline_init_kwargs
+
         return self._external_file
 
     def _create_external_pipeline(self, *args, **kwargs):
@@ -110,7 +116,45 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         """
         Setter method for dataset used
         """
+        if dataset is None:
+            return
+        self.dataset_id = dataset.id
         self.dataset = dataset
+
+    @property
+    def dataset(self):
+        """
+        Use a weakref to bind linked dataset so it doesnt bloat usage
+        returns dataset if still available or tries to fetch otherwise
+        """
+        # still referenced weakref
+        if hasattr(self, "_dataset") and self._dataset() is not None:
+            return self._dataset()
+
+        # null return if no associated dataset (governed by dataset_id)
+        elif self.dataset_id is None:
+            return None
+
+        # else regenerate weakref
+        LOGGER.info("No referenced object available. Refreshing weakref")
+        dataset = self._load_dataset()
+        self._dataset = weakref.ref(dataset)
+        return dataset
+
+    @dataset.setter
+    def dataset(self, dataset: "Dataset") -> None:
+        """
+        Need to be careful not to set as the orm object
+        Cannot load if wrong type because of recursive behavior (will
+        propagate down the whole dependency chain)
+        """
+        self._dataset = weakref.ref(dataset)
+
+    def _load_dataset(self):
+        """
+        Helper to fetch the dataset
+        """
+        return self.orm_cls.load_dataset(self.dataset_id)
 
     def assert_dataset(self, msg: str = "") -> None:
         """
@@ -170,6 +214,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         self.assert_dataset("Must set dataset before saving")
         self.assert_fitted("Must fit pipeline before saving")
 
+        # log only attributes - can be refreshed on each save (does not take effect on reloading)
         self.params = self.get_params(params_only=True, **kwargs)
         self.metadata_["transformers"] = self.get_transformers()
         self.metadata_["feature_names"] = self.get_feature_names()
@@ -178,23 +223,17 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         if not self.get_transformers():
             self.has_external_files = False
 
-        super(AbstractPipeline, self).save(**kwargs)
+        super().save(**kwargs)
 
-        # Sqlalchemy updates relationship references after save so reload class
-        self.dataset.load(load_externals=False)
-
-    def load(self, **kwargs) -> None:
+    def __post_restore__(self) -> None:
         """
         Extend main load routine to load relationship class
         """
-        super(AbstractPipeline, self).load(**kwargs)
+        super().__post_restore__()
 
         # Create dummy pipeline if one wasnt saved
         if not self.has_external_files:
             self._external_file = self._create_external_pipeline([], **self.params)
-
-        # By default dont load data unless it actually gets used
-        self.dataset.load(load_externals=False)
 
     """
     Data Accessors
@@ -246,27 +285,7 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         """
         Helper to filter unsupported fit params from dataset splits
         """
-        supported_fit_params = {}
-
-        # Ensure input compatibility with split object
-        fit_params = inspect.signature(self.external_pipeline.fit).parameters
-        # check if any params are **kwargs (all inputs accepted)
-        has_kwarg_params = any(
-            [param.kind == param.VAR_KEYWORD for param in fit_params.values()]
-        )
-        # log ignored args
-        if not has_kwarg_params:
-            for split_arg, val in split.items():
-                if split_arg not in fit_params:
-                    LOGGER.warning(
-                        f"Unsupported fit param encountered, `{split_arg}`. Dropping..."
-                    )
-                else:
-                    supported_fit_params[split_arg] = val
-        else:
-            supported_fit_params = split
-
-        return supported_fit_params
+        return signature_kwargs_validator(self.external_pipeline.fit, **split)
 
     def fit(self):
         """
@@ -359,30 +378,3 @@ class AbstractPipeline(with_metaclass(PipelineRegistry, Persistable)):
         """
         initial_features = self.dataset.get_feature_names()
         return self.external_pipeline.get_feature_names(feature_names=initial_features)
-
-
-class Pipeline(AbstractPipeline):
-    """
-    Base class for all Pipeline objects.
-
-    -------
-    Schema
-    -------
-    dataset_id: foreign key relation to the dataset used as input
-    """
-
-    __tablename__ = "pipelines"
-
-    dataset_id = Column(
-        GUID, ForeignKey("datasets.id", name="pipelines_dataset_id_fkey")
-    )
-    dataset = relationship(
-        "Dataset", enable_typechecks=False, foreign_keys=[dataset_id]
-    )
-
-    __table_args__ = (
-        # Unique constraint for versioning
-        UniqueConstraint("name", "version", name="pipeline_name_version_unique"),
-        # Index for searching through friendly names
-        Index("pipeline_name_index", "name"),
-    )

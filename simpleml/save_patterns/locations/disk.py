@@ -16,13 +16,13 @@ from simpleml.save_patterns.base import BaseSerializer
 
 class DiskIOMethods(object):
     @staticmethod
-    def copy_file(src: str, destination: str):
+    def copy_file(src: str, destination: str) -> None:
         # safety check for the destination path
         makedirs(dirname(destination), exist_ok=True)
         shutil.copy2(src, destination)
 
     @staticmethod
-    def copy_directory(src: str, destination: str):
+    def copy_directory(src: str, destination: str) -> None:
         # safety check for the destination path
         makedirs(dirname(destination), exist_ok=True)
         shutil.copytree(src, destination)
@@ -35,7 +35,7 @@ class FilestoreCopyFileLocation(BaseSerializer):
         source_directory: str = "system_temp",
         destination_directory: str = "filestore",
         **kwargs,
-    ):
+    ) -> Dict[str, str]:
         DiskIOMethods.copy_file(
             join(FILEPATH_REGISTRY.get(source_directory), filepath),
             join(FILEPATH_REGISTRY.get(destination_directory), filepath),
@@ -49,7 +49,7 @@ class FilestoreCopyFileLocation(BaseSerializer):
         source_directory: str = "filestore",
         destination_directory: str = "system_temp",
         **kwargs,
-    ):
+    ) -> Dict[str, str]:
         DiskIOMethods.copy_file(
             join(FILEPATH_REGISTRY.get(source_directory), filepath),
             join(FILEPATH_REGISTRY.get(destination_directory), filepath),
@@ -65,7 +65,7 @@ class FilestoreCopyFilesLocation(BaseSerializer):
         source_directory: str = "system_temp",
         destination_directory: str = "filestore",
         **kwargs,
-    ):
+    ) -> Dict[str, str]:
 
         for filepath in filepaths:
             DiskIOMethods.copy_file(
@@ -81,7 +81,7 @@ class FilestoreCopyFilesLocation(BaseSerializer):
         source_directory: str = "filestore",
         destination_directory: str = "system_temp",
         **kwargs,
-    ):
+    ) -> Dict[str, str]:
 
         for filepath in filepaths:
             DiskIOMethods.copy_file(
@@ -99,7 +99,7 @@ class FilestoreCopyFolderLocation(BaseSerializer):
         source_directory: str = "system_temp",
         destination_directory: str = "filestore",
         **kwargs,
-    ):
+    ) -> Dict[str, str]:
         DiskIOMethods.copy_directory(
             join(FILEPATH_REGISTRY.get(source_directory), filepath),
             join(FILEPATH_REGISTRY.get(destination_directory), filepath),
@@ -113,7 +113,7 @@ class FilestoreCopyFolderLocation(BaseSerializer):
         source_directory: str = "filestore",
         destination_directory: str = "system_temp",
         **kwargs,
-    ):
+    ) -> Dict[str, str]:
         DiskIOMethods.copy_directory(
             join(FILEPATH_REGISTRY.get(source_directory), filepath),
             join(FILEPATH_REGISTRY.get(destination_directory), filepath),
@@ -124,9 +124,9 @@ class FilestoreCopyFolderLocation(BaseSerializer):
 
 class FilestorePassthroughLocation(BaseSerializer):
     @staticmethod
-    def serialize(**kwargs):
+    def serialize(**kwargs) -> Dict[str, str]:
         return kwargs
 
     @staticmethod
-    def deserialize(**kwargs):
+    def deserialize(**kwargs) -> Dict[str, str]:
         return kwargs

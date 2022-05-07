@@ -10,6 +10,7 @@ import logging
 from abc import abstractmethod
 
 from simpleml.constants import TRAIN_SPLIT, VALIDATION_SPLIT
+from simpleml.utils.signature_inspection import signature_kwargs_validator
 
 from .base_model import LibraryModel
 from .split_iterators import DatasetSequence, PythonIterator
@@ -18,6 +19,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class KerasModel(LibraryModel):
+    """
+    Base Keras model class. Keras objects are incrementally structured until
+    fit. Also dont have separable params. Class hijacks params to store fit params
+    instead (enables full specification on init for reproducibility)
+    """
+
     def __init__(
         self,
         use_training_generator=False,
@@ -105,7 +112,14 @@ class KerasModel(LibraryModel):
         else:
             # Explicitly fit only on default (train) split
             split = self.transform(X=None, dataset_split=TRAIN_SPLIT)
-            self.external_model.fit(**split, **self.get_params)
+            # keras api uses lowercase x
+            if "X" in split:
+                split["x"] = split.pop("X")
+
+            supported_fit_params = signature_kwargs_validator(
+                self.external_model.fit, **split
+            )
+            self.external_model.fit(**supported_fit_params, **self.get_params())
 
     def _fit_generator(self):
         """
@@ -177,7 +191,11 @@ class KerasModel(LibraryModel):
         """
         Get fit params
         """
-        return self.params
+        # keras params are fit params which only exist if passed. cannot inspect
+        # from model
+        if hasattr(self, "params"):
+            return self.params
+        return {}
 
     @staticmethod
     def transfer_weights(new_model, old_model):

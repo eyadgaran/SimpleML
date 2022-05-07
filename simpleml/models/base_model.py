@@ -1,18 +1,22 @@
-import logging
-from abc import abstractmethod
-
-import numpy as np
-from future.utils import with_metaclass
-from sqlalchemy import Column, ForeignKey, Index, UniqueConstraint
-from sqlalchemy.orm import relationship
-
-from simpleml.persistables.base_persistable import GUID, MutableJSON, Persistable
-from simpleml.registries import ModelRegistry
-from simpleml.save_patterns.decorators import ExternalArtifactDecorators
-from simpleml.utils.errors import ModelError
+"""
+Base Model module
+"""
 
 __author__ = "Elisha Yadgaran"
 
+import logging
+import uuid
+import weakref
+from abc import abstractmethod
+from typing import Any, Dict, Optional, Union
+
+import numpy as np
+
+from simpleml.persistables.base_persistable import Persistable
+from simpleml.pipelines import Pipeline
+from simpleml.registries import ModelRegistry
+from simpleml.save_patterns.decorators import ExternalArtifactDecorators
+from simpleml.utils.errors import ModelError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -22,54 +26,51 @@ LOGGER = logging.getLogger(__name__)
     save_attribute="external_model",
     restore_attribute="_external_file",
 )
-class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
+class Model(Persistable, metaclass=ModelRegistry):
     """
-    Abstract Base class for all Model objects. Defines the required
+    Base class for all Model objects. Defines the required
     parameters for versioning and all other metadata can be
     stored in the arbitrary metadata field
 
     Also outlines the expected subclass methods (with NotImplementedError).
     Design choice to not abstract unified API across all libraries since each
     has a different internal mechanism
-
-    -------
-    Schema
-    -------
-    params: model parameter metadata for easy insight into hyperparameters across trainings
-    feature_metadata: metadata insight into resulting features and importances
     """
-
-    __abstract__ = True
-
-    # Additional model specific metadata
-    params = Column(MutableJSON, default={})
-    feature_metadata = Column(MutableJSON, default={})
 
     object_type = "MODEL"
 
     def __init__(
-        self, has_external_files=True, external_model_kwargs=None, params=None, **kwargs
+        self,
+        has_external_files: bool = True,
+        external_model_kwargs: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        fitted: bool = False,
+        pipeline_id: Optional[Union[str, uuid.uuid4]] = None,
+        **kwargs,
     ):
         """
         Need to explicitly separate passthrough kwargs to external models since
         most do not support arbitrary **kwargs in the constructors
+
+        Two supported patterns - full initialization in constructor or stepwise configured
+        before fit and save
         """
         # If no save patterns are set, specify a default for disk_pickled
         if "save_patterns" not in kwargs:
             kwargs["save_patterns"] = {"model": ["disk_pickled"]}
-        super(AbstractModel, self).__init__(
-            has_external_files=has_external_files, **kwargs
-        )
+        super(Model, self).__init__(has_external_files=has_external_files, **kwargs)
 
-        # Instantiate model
+        # Prep params for model instantiation. lazy init (first reference will create it)
         if external_model_kwargs is None:
             external_model_kwargs = {}
-        self._external_file = self._create_external_model(**external_model_kwargs)
+        self._external_model_init_kwargs = external_model_kwargs
         if params is not None:
             self.set_params(**params)
 
         # Initialize as unfitted
-        self.fitted = False
+        self.fitted = fitted
+        # initialize null pipeline reference
+        self.pipeline_id = pipeline_id
 
     @property
     def fitted(self):
@@ -88,6 +89,15 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         (eg sklearn or keras)
         """
         self.load_if_unloaded("model")
+
+        # lazy build
+        if not hasattr(self, "_external_file"):
+            self._external_file = self._create_external_model(
+                **self._external_model_init_kwargs
+            )
+            # clear temp vars
+            del self._external_model_init_kwargs
+
         return self._external_file
 
     def _create_external_model(self, **kwargs):
@@ -98,11 +108,49 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         """
         raise NotImplementedError
 
-    def add_pipeline(self, pipeline):
+    def add_pipeline(self, pipeline: Pipeline) -> None:
         """
-        Setter method for pipeline used
+        Setter method for dataset pipeline used
         """
+        if pipeline is None:
+            return
+        self.pipeline_id = pipeline.id
         self.pipeline = pipeline
+
+    @property
+    def pipeline(self):
+        """
+        Use a weakref to bind linked pipeline so it doesnt bloat usage
+        returns pipeline if still available or tries to fetch otherwise
+        """
+        # still referenced weakref
+        if hasattr(self, "_pipeline") and self._pipeline() is not None:
+            return self._pipeline()
+
+        # null return if no associated pipeline (governed by pipeline_id)
+        elif self.pipeline_id is None:
+            return None
+
+        # else regenerate weakref
+        LOGGER.info("No referenced object available. Refreshing weakref")
+        pipeline = self._load_pipeline()
+        self._pipeline = weakref.ref(pipeline)
+        return pipeline
+
+    @pipeline.setter
+    def pipeline(self, pipeline: Pipeline) -> None:
+        """
+        Need to be careful not to set as the orm pipeline
+        Cannot load if wrong type because of recursive behavior (will
+        propagate down the whole dependency chain)
+        """
+        self._pipeline = weakref.ref(pipeline)
+
+    def _load_pipeline(self):
+        """
+        Helper to fetch the pipeline
+        """
+        return self.orm_cls.load_pipeline(self.pipeline_id)
 
     def assert_pipeline(self, msg=""):
         """
@@ -146,22 +194,11 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         self.assert_pipeline("Must set pipeline before saving")
         self.assert_fitted("Must fit model before saving")
 
+        # log only attributes - can be refreshed on each save (does not take effect on reloading)
         self.params = self.get_params(**kwargs)
         self.feature_metadata = self.get_feature_metadata(**kwargs)
 
-        super(AbstractModel, self).save(**kwargs)
-
-        # Sqlalchemy updates relationship references after save so reload class
-        self.pipeline.load(load_externals=False)
-
-    def load(self, **kwargs):
-        """
-        Extend main load routine to load relationship class
-        """
-        super(AbstractModel, self).load(**kwargs)
-
-        # By default dont load data unless it actually gets used
-        self.pipeline.load(load_externals=False)
+        super(Model, self).save(**kwargs)
 
     def fit(self, **kwargs):
         """
@@ -274,35 +311,6 @@ class AbstractModel(with_metaclass(ModelRegistry, Persistable)):
         return self.external_model.get_feature_metadata(
             features=self.pipeline.get_feature_names(), **kwargs
         )
-
-
-class Model(AbstractModel):
-    """
-    Base class for all Model objects. Defines the required
-    parameters for versioning and all other metadata can be
-    stored in the arbitrary metadata field
-
-    -------
-    Schema
-    -------
-    pipeline_id: foreign key relation to the pipeline used to transform input to the model
-        (training is also dependent on originating dataset but scoring only needs access to the pipeline)
-    """
-
-    __tablename__ = "models"
-
-    # Only dependency is the pipeline (to score in production)
-    pipeline_id = Column(
-        GUID, ForeignKey("pipelines.id", name="models_pipeline_id_fkey")
-    )
-    pipeline = relationship("Pipeline", enable_typechecks=False)
-
-    __table_args__ = (
-        # Unique constraint for versioning
-        UniqueConstraint("name", "version", name="model_name_version_unique"),
-        # Index for searching through friendly names
-        Index("model_name_index", "name"),
-    )
 
 
 class LibraryModel(Model):

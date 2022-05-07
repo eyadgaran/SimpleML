@@ -8,7 +8,7 @@ __author__ = "Elisha Yadgaran"
 
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, Type
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,8 +19,8 @@ class BaseSavePattern(object):
     serializers and deserializers)
     """
 
-    serializers = tuple()
-    deserializers = tuple()
+    serializers: Tuple[Type["BaseSerializer"]] = tuple()
+    deserializers: Tuple[Type["BaseSerializer"]] = tuple()
 
     @classmethod
     def save(cls, **kwargs) -> Dict[str, str]:

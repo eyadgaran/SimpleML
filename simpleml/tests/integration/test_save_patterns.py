@@ -34,8 +34,8 @@ class DaskPersistenceTests(unittest.TestCase):
         df = dataset.dataframe.compute()
         # expect a custom index
         df.index.name = DaskPersistenceMethods.INDEX_COLUMN
-        dataset.save()
-        dataset.load()
+        dataset.save_external_files()
+        dataset.load_external_files()
         df2 = dataset.dataframe.compute()
         assert_data_container_equal(df, df2)
 
@@ -45,8 +45,8 @@ class DaskPersistenceTests(unittest.TestCase):
         df = dataset.dataframe.compute()
         # expect a custom index
         df.index.name = DaskPersistenceMethods.INDEX_COLUMN
-        dataset.save()
-        dataset.load()
+        dataset.save_external_files()
+        dataset.load_external_files()
         df2 = dataset.dataframe.compute()
         assert_data_container_equal(df, df2)
 
@@ -54,8 +54,8 @@ class DaskPersistenceTests(unittest.TestCase):
         save_pattern = "dask_disk_parquet"
         dataset = self.generate_dataset(save_pattern)
         df = dataset.dataframe.compute()
-        dataset.save()
-        dataset.load()
+        dataset.save_external_files()
+        dataset.load_external_files()
         df2 = dataset.dataframe.compute()
         assert_data_container_equal(df, df2)
 

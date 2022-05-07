@@ -8,13 +8,13 @@ __author__ = "Elisha Yadgaran"
 import unittest
 from os.path import join
 
+from simpleml.orm.initialization import Database
 from simpleml.registries import FILEPATH_REGISTRY
 from simpleml.tests.utils import (
     ARTIFACTS_PATH,
     DATABASES_PATH,
     assert_data_container_equal,
 )
-from simpleml.utils.initialization import Database
 from simpleml.utils.scoring.load_persistable import PersistableLoader
 from simpleml.utils.training.create_persistable import DatasetCreator
 
@@ -51,7 +51,7 @@ class TitanicRegressionTest(unittest.TestCase):
             persistable = getattr(PersistableLoader, f"load_{persistable_type}")(
                 **filters
             )
-            persistable.load(load_externals=True)
+            persistable.load_external_files()
             return persistable
 
     def compare_hashes(self, new, old):

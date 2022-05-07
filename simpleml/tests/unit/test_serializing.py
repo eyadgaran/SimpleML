@@ -6,7 +6,7 @@ __author__ = "Elisha Yadgaran"
 
 import unittest
 
-from simpleml.persistables.serializing import custom_dumps, custom_loads
+from simpleml.orm.serializing import custom_dumps, custom_loads
 
 
 class TestClass(object):

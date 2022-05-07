@@ -15,13 +15,6 @@ from .errors import (
     SimpleMLError,
     TrainingError,
 )
-from .initialization import (
-    AlembicDatabase,
-    BaseDatabase,
-    BinaryStorageDatabase,
-    Database,
-    DatasetDatabase,
-)
 from .scoring.load_persistable import PersistableLoader
 from .training.create_persistable import (
     DatasetCreator,

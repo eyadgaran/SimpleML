@@ -28,7 +28,7 @@ def upgrade():
             nullable=False,
         ),
         sa.Column("modified_timestamp", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("id", simpleml.persistables.sqlalchemy_types.GUID(), nullable=False),
+        sa.Column("id", simpleml.orm.sqlalchemy_types.GUID(), nullable=False),
         sa.Column("hash", sa.BIGINT(), nullable=False),
         sa.Column("registered_name", sa.String(), nullable=False),
         sa.Column("author", sa.String(), nullable=False),
@@ -38,18 +38,10 @@ def upgrade():
         sa.Column("version_description", sa.String(), nullable=True),
         sa.Column("has_external_files", sa.Boolean(), nullable=True),
         sa.Column(
-            "filepaths",
-            simpleml.persistables.sqlalchemy_types.MutableJSON,
-            nullable=True,
+            "filepaths", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True
         ),
-        sa.Column(
-            "metadata",
-            simpleml.persistables.sqlalchemy_types.MutableJSON,
-            nullable=True,
-        ),
-        sa.Column(
-            "pipeline_id", simpleml.persistables.sqlalchemy_types.GUID(), nullable=True
-        ),
+        sa.Column("metadata", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True),
+        sa.Column("pipeline_id", simpleml.orm.sqlalchemy_types.GUID(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name", "version", name="dataset_name_version_unique"),
     )
@@ -63,7 +55,7 @@ def upgrade():
             nullable=False,
         ),
         sa.Column("modified_timestamp", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("id", simpleml.persistables.sqlalchemy_types.GUID(), nullable=False),
+        sa.Column("id", simpleml.orm.sqlalchemy_types.GUID(), nullable=False),
         sa.Column("hash", sa.BIGINT(), nullable=False),
         sa.Column("registered_name", sa.String(), nullable=False),
         sa.Column("author", sa.String(), nullable=False),
@@ -73,21 +65,11 @@ def upgrade():
         sa.Column("version_description", sa.String(), nullable=True),
         sa.Column("has_external_files", sa.Boolean(), nullable=True),
         sa.Column(
-            "filepaths",
-            simpleml.persistables.sqlalchemy_types.MutableJSON,
-            nullable=True,
+            "filepaths", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True
         ),
-        sa.Column(
-            "metadata",
-            simpleml.persistables.sqlalchemy_types.MutableJSON,
-            nullable=True,
-        ),
-        sa.Column(
-            "values", simpleml.persistables.sqlalchemy_types.MutableJSON, nullable=False
-        ),
-        sa.Column(
-            "model_id", simpleml.persistables.sqlalchemy_types.GUID(), nullable=True
-        ),
+        sa.Column("metadata", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True),
+        sa.Column("values", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=False),
+        sa.Column("model_id", simpleml.orm.sqlalchemy_types.GUID(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "name", "model_id", "version", name="metric_name_model_version_unique"
@@ -103,7 +85,7 @@ def upgrade():
             nullable=False,
         ),
         sa.Column("modified_timestamp", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("id", simpleml.persistables.sqlalchemy_types.GUID(), nullable=False),
+        sa.Column("id", simpleml.orm.sqlalchemy_types.GUID(), nullable=False),
         sa.Column("hash", sa.BIGINT(), nullable=False),
         sa.Column("registered_name", sa.String(), nullable=False),
         sa.Column("author", sa.String(), nullable=False),
@@ -113,26 +95,14 @@ def upgrade():
         sa.Column("version_description", sa.String(), nullable=True),
         sa.Column("has_external_files", sa.Boolean(), nullable=True),
         sa.Column(
-            "filepaths",
-            simpleml.persistables.sqlalchemy_types.MutableJSON,
-            nullable=True,
+            "filepaths", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True
         ),
+        sa.Column("metadata", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True),
+        sa.Column("params", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True),
         sa.Column(
-            "metadata",
-            simpleml.persistables.sqlalchemy_types.MutableJSON,
-            nullable=True,
+            "feature_metadata", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True
         ),
-        sa.Column(
-            "params", simpleml.persistables.sqlalchemy_types.MutableJSON, nullable=True
-        ),
-        sa.Column(
-            "feature_metadata",
-            simpleml.persistables.sqlalchemy_types.MutableJSON,
-            nullable=True,
-        ),
-        sa.Column(
-            "pipeline_id", simpleml.persistables.sqlalchemy_types.GUID(), nullable=True
-        ),
+        sa.Column("pipeline_id", simpleml.orm.sqlalchemy_types.GUID(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name", "version", name="model_name_version_unique"),
     )
@@ -146,7 +116,7 @@ def upgrade():
             nullable=False,
         ),
         sa.Column("modified_timestamp", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("id", simpleml.persistables.sqlalchemy_types.GUID(), nullable=False),
+        sa.Column("id", simpleml.orm.sqlalchemy_types.GUID(), nullable=False),
         sa.Column("hash", sa.BIGINT(), nullable=False),
         sa.Column("registered_name", sa.String(), nullable=False),
         sa.Column("author", sa.String(), nullable=False),
@@ -156,21 +126,11 @@ def upgrade():
         sa.Column("version_description", sa.String(), nullable=True),
         sa.Column("has_external_files", sa.Boolean(), nullable=True),
         sa.Column(
-            "filepaths",
-            simpleml.persistables.sqlalchemy_types.MutableJSON,
-            nullable=True,
+            "filepaths", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True
         ),
-        sa.Column(
-            "metadata",
-            simpleml.persistables.sqlalchemy_types.MutableJSON,
-            nullable=True,
-        ),
-        sa.Column(
-            "params", simpleml.persistables.sqlalchemy_types.MutableJSON, nullable=True
-        ),
-        sa.Column(
-            "dataset_id", simpleml.persistables.sqlalchemy_types.GUID(), nullable=True
-        ),
+        sa.Column("metadata", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True),
+        sa.Column("params", simpleml.orm.sqlalchemy_types.MutableJSON, nullable=True),
+        sa.Column("dataset_id", simpleml.orm.sqlalchemy_types.GUID(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name", "version", name="pipeline_name_version_unique"),
     )
