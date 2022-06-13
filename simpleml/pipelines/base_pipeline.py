@@ -10,7 +10,6 @@ import weakref
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import pandas as pd
-
 from simpleml.constants import TRAIN_SPLIT
 from simpleml.datasets.dataset_splits import Split, SplitContainer
 from simpleml.persistables.base_persistable import Persistable
@@ -302,7 +301,7 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
         # but must be encased in a Split object
         split = self.get_dataset_split(split=TRAIN_SPLIT)
         supported_fit_params = self._filter_fit_params(split)
-        self.external_pipeline.fit(**supported_fit_params)
+        self.process(self.external_pipeline.fit, **supported_fit_params)
         self.fitted = True
 
         return self
@@ -333,13 +332,13 @@ class Pipeline(Persistable, metaclass=PipelineRegistry):
             if split.X is None or (isinstance(split.X, pd.DataFrame) and split.X.empty):
                 output = None  # Skip transformations on empty dataset
             else:
-                output = self.external_pipeline.transform(split.X)
+                output = self.process(self.external_pipeline.transform, split.X)
 
             # Return input with X replaced by output (transformed X)
             # Contains y or other named inputs to propagate downstream
             return Split(X=output, **{k: v for k, v in split.items() if k != "X"})
 
-        return self.external_pipeline.transform(X)
+        return self.process(self.external_pipeline.transform, X)
 
     def fit_transform(self, **kwargs) -> Any:
         """

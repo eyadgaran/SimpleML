@@ -119,7 +119,9 @@ class KerasModel(LibraryModel):
             supported_fit_params = signature_kwargs_validator(
                 self.external_model.fit, **split
             )
-            self.external_model.fit(**supported_fit_params, **self.get_params())
+            self.process(
+                self.external_model.fit, **supported_fit_params, **self.get_params()
+            )
 
     def _fit_generator(self):
         """

@@ -29,3 +29,6 @@ FILEPATH_REGISTRY = NamedRegistry()
 
 # Registry for ORM Classes
 ORM_REGISTRY = NamedRegistry()
+
+# Registry for executors
+EXECUTOR_REGISTRY = NamedRegistry()
