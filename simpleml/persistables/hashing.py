@@ -43,7 +43,7 @@ class CustomHasherMixin(object):
     """
 
     @classmethod
-    def custom_hasher(cls, object_to_hash: Any) -> str:
+    def custom_hasher(cls, object_to_hash: Any, raise_on_nonprimitive: bool = False) -> str:
         """
         Adapted from: https://stackoverflow.com/questions/5884066/hashing-a-dictionary
         Makes a hash from a dictionary, list, tuple or set to any level, that
@@ -64,6 +64,10 @@ class CustomHasherMixin(object):
 
         reduces to primitive dtypes and then calls cls.md5_hasher for a consistent
         hash value. falls back to joblib pickle hashing for other dtypes
+        
+        If `raise_on_nonprimitive` is True, raises a ValueError if `object_to_hash`
+        will be hashed based on inconsistent-across-instantiations object identity
+        rather than primitives/consistent-across-instantiations content values. 
         """
         LOGGER.debug(f"Hashing input: {object_to_hash}")
 
@@ -159,6 +163,8 @@ class CustomHasherMixin(object):
             hash_output = cls.md5_hasher(object_to_hash)
 
         else:
+            if raise_on_nonprimitive:
+                raise ValueError(f"Unable to hash {object_to_hash} using Python primitives")
             # primitives (str, int, float)
             # Log a warning if the previous checks were unable to find a suitable
             # decomposition for the object
