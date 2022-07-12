@@ -64,10 +64,10 @@ class CustomHasherMixin(object):
 
         reduces to primitive dtypes and then calls cls.md5_hasher for a consistent
         hash value. falls back to joblib pickle hashing for other dtypes
-        
+
         If `raise_on_nonprimitive` is True, raises a ValueError if `object_to_hash`
         will be hashed based on inconsistent-across-instantiations object identity
-        rather than primitives/consistent-across-instantiations content values. 
+        rather than primitives/consistent-across-instantiations content values.
         """
         LOGGER.debug(f"Hashing input: {object_to_hash}")
 
