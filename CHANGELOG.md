@@ -1,5 +1,12 @@
 ## Change Log
 
+### 0.14.0 (2022-07-13)
+- Standarized formatting with Black
+- Split up ORM into a standalone swappable backend
+- Persistables maintain weakrefs for lineage
+- Persistables are normal python objects now
+- Hashing flag to reject non-serializable objects
+
 ### 0.13.0 (2022-03-28)
 - Path existence check for pandas serialization
 
