@@ -43,7 +43,9 @@ class CustomHasherMixin(object):
     """
 
     @classmethod
-    def custom_hasher(cls, object_to_hash: Any, raise_on_nonprimitive: bool = False) -> str:
+    def custom_hasher(
+        cls, object_to_hash: Any, raise_on_nonprimitive: bool = False
+    ) -> str:
         """
         Adapted from: https://stackoverflow.com/questions/5884066/hashing-a-dictionary
         Makes a hash from a dictionary, list, tuple or set to any level, that
@@ -164,7 +166,9 @@ class CustomHasherMixin(object):
 
         else:
             if raise_on_nonprimitive:
-                raise ValueError(f"Unable to hash {object_to_hash} using Python primitives")
+                raise ValueError(
+                    f"Unable to hash {object_to_hash} using Python primitives"
+                )
             # primitives (str, int, float)
             # Log a warning if the previous checks were unable to find a suitable
             # decomposition for the object
