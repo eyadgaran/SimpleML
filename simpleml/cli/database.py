@@ -9,8 +9,8 @@ import logging
 
 import click
 
-from simpleml.persistables.base_sqlalchemy import SimplemlCoreSqlalchemy
-from simpleml.utils.initialization import Database
+from simpleml.orm.initialization import Database
+from simpleml.orm.metadata import SimplemlCoreSqlalchemy
 
 LOGGER = logging.getLogger(__name__)
 
