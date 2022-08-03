@@ -1,5 +1,11 @@
 ## Change Log
 
+
+### TBD
+TODOS:
+- base ORM layer to unify API for backends
+- separate library specific implementations from abstract core
+
 ### 0.14.0 (2022-07-13)
 - Standarized formatting with Black
 - Split up ORM into a standalone swappable backend
