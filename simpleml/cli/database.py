@@ -8,6 +8,7 @@ __author__ = "Elisha Yadgaran"
 import logging
 
 import click
+
 from simpleml.orm.initialization import Database
 from simpleml.orm.metadata import SimplemlCoreSqlalchemy
 
