@@ -50,27 +50,6 @@ class BaseDaskDataset(Dataset):
         """
         return self.get(column="y", split=None)
 
-    @property
-    def _dataframe(self) -> ddDataFrame:
-        """
-        Overwrite base behavior to return a copy of the data in case consumers
-        attempt to mutate the data structure
-
-        Only copies the container - underlying cell objects can still propagate
-        inplace mutations (eg lists, dicts, objects)
-        """
-        # return a copy so mutations can happen inplace with memory efficient objects
-        return self._external_file.copy()
-
-    @_dataframe.setter
-    def _dataframe(self, df: ddDataFrame) -> None:
-        """
-        Setter method for self._external_file
-        Persists dask computations to new futures so retrieval calls do not
-        reexecute the computation graph
-        """
-        self._external_file = df.persist()
-
     def _validate_dtype(self, df: ddDataFrame) -> None:
         """
         Validating setter method for self._external_file

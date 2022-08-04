@@ -9,11 +9,11 @@ __author__ = "Elisha Yadgaran"
 from itertools import chain
 from typing import List, Optional, Union
 
-import pandas as pd
-
 from simpleml.datasets.base_dataset import Dataset
 from simpleml.pipelines.validation_split_mixins import Split
 from simpleml.utils.errors import DatasetError
+
+import pandas as pd
 
 DATAFRAME_SPLIT_COLUMN: str = "DATASET_SPLIT"
 
@@ -58,14 +58,6 @@ class BasePandasDataset(Dataset):
         """
         # return a copy so mutations can happen inplace with memory efficient objects
         return self._external_file.copy()
-
-    @_dataframe.setter
-    def _dataframe(self, df: pd.DataFrame) -> None:
-        """
-        Setter method for self._external_file
-        Allows mixins/subclasses to validate input
-        """
-        self._external_file = df
 
     def _validate_dtype(self, df: pd.DataFrame) -> None:
         """
