@@ -2,12 +2,21 @@
 Entry for execution
 """
 
+__author__ = "Elisha Yadgaran"
+
+
 import logging
 from typing import Callable
 
 from simpleml.registries import EXECUTOR_REGISTRY
 
 LOGGER = logging.getLogger(__name__)
+
+
+class AbstractBaseExecutor(object):
+    @staticmethod
+    def process(op, *args, **kwargs):
+        raise NotImplementedError
 
 
 class ExecutionProcessor(object):
@@ -24,5 +33,7 @@ class ExecutionProcessor(object):
                 f"Default executor explicitly overwritten from {configured_executor} to {executor}. {msg}"
             )
 
-        executor = EXECUTOR_REGISTRY.get(executor or configured_executor)
+        executor: AbstractBaseExecutor = EXECUTOR_REGISTRY.get(
+            executor or configured_executor
+        )
         return executor.process(op=op, *args, **kwargs)
