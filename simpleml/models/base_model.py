@@ -242,7 +242,7 @@ class Model(Persistable, metaclass=ModelRegistry):
         """
         Separate out actual predict call for optional overwrite in subclasses
         """
-        return self.external_model.predict(X)
+        return self.process(self.external_model.predict, X)
 
     def predict(self, X, transform=True, **kwargs):
         """

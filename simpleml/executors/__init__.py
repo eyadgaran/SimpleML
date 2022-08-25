@@ -10,3 +10,11 @@ be the same, but using different executors may result in more efficient processi
 """
 
 __author__ = "Elisha Yadgaran"
+
+
+from simpleml.executors.synchronous import MainProcessExecutor
+from simpleml.registries import EXECUTOR_REGISTRY
+
+# Register execution patterns
+EXECUTOR_REGISTRY.register("default", "main")
+EXECUTOR_REGISTRY.register("main", MainProcessExecutor)

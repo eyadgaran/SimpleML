@@ -147,3 +147,14 @@ except ImportError:
     ddSeries = MissingImportFactory("dask.dataframe.Series", "dask", "dask")
     db = MissingImportFactory("dask.bag", "dask", "dask")
     dbBag = MissingImportFactory("dask.bag.Bag", "dask", "dask")
+
+
+try:
+    from dask_ml.wrappers import Incremental, ParallelPostFit
+except ImportError:
+    Incremental = MissingImportFactory(
+        "dask_ml.wrappers.Incremental", "dask-ml", "dask"
+    )
+    ParallelPostFit = MissingImportFactory(
+        "dask_ml.wrappers.ParallelPostFit", "dask-ml", "dask"
+    )

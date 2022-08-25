@@ -34,4 +34,4 @@ class ClassificationMixin(object):
         ):  # Don't attempt to run through model if no samples (can't evaulate ahead of transform in case dataset split used)
             return np.array([])
 
-        return self.external_model.predict_proba(X)
+        return self.process(self.external_model.predict_proba, X)

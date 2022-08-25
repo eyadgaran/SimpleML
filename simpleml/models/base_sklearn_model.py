@@ -35,4 +35,4 @@ class SklearnModel(LibraryModel):
         # Ensure input compatibility with split object
         fit_params = signature_kwargs_validator(self.external_model.fit, **split)
 
-        self.external_model.fit(**fit_params)
+        self.process(self.external_model.fit, **fit_params)

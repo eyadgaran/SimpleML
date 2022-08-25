@@ -11,6 +11,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Type, Union
 
+from simpleml.executors.processor import ExecutionProcessor
 from simpleml.persistables.hashing import CustomHasherMixin
 from simpleml.registries import (
     LOAD_METHOD_REGISTRY,
@@ -25,7 +26,7 @@ from simpleml.utils.library_versions import INSTALLED_LIBRARIES
 LOGGER = logging.getLogger(__name__)
 
 
-class Persistable(CustomHasherMixin, metaclass=PersistableRegistry):
+class Persistable(CustomHasherMixin, ExecutionProcessor, metaclass=PersistableRegistry):
     """
     Base class for all SimpleML persistable objects.
 
