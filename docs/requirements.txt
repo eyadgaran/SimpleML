@@ -14,7 +14,7 @@ charset-normalizer==2.0.10
 click==8.0.3
 cloudpickle==2.0.0
 configparser==5.2.0
-cryptography==36.0.1
+cryptography==39.0.1
 dask==2022.1.0
 dill==0.3.4
 distributed==2022.1.0
