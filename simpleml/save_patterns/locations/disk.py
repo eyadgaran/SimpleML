@@ -66,7 +66,6 @@ class FilestoreCopyFilesLocation(BaseSerializer):
         destination_directory: str = "filestore",
         **kwargs,
     ) -> Dict[str, str]:
-
         for filepath in filepaths:
             DiskIOMethods.copy_file(
                 join(FILEPATH_REGISTRY.get(source_directory), filepath),
@@ -82,7 +81,6 @@ class FilestoreCopyFilesLocation(BaseSerializer):
         destination_directory: str = "system_temp",
         **kwargs,
     ) -> Dict[str, str]:
-
         for filepath in filepaths:
             DiskIOMethods.copy_file(
                 join(FILEPATH_REGISTRY.get(source_directory), filepath),

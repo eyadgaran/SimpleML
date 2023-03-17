@@ -23,5 +23,4 @@ class OrderedDictPipeline(Pipeline):
     def _create_external_pipeline(
         self, transformers: List[Any], **kwargs
     ) -> OrderedDictExternalPipeline:
-
         return OrderedDictExternalPipeline(transformers)

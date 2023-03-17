@@ -371,7 +371,6 @@ class Database(AlembicDatabase):
         *args,
         **kwargs,
     ):
-
         if (
             configuration_section is None
             and uri is None
