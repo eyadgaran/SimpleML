@@ -142,7 +142,7 @@ class HashRecalculator(object):
             "METRIC": (),
         }
 
-        for (immediate_dependency, foreign_key, queue) in dependency_map[
+        for immediate_dependency, foreign_key, queue in dependency_map[
             persistable_type
         ]:
             dependents = immediate_dependency.where(

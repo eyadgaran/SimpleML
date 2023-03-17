@@ -206,9 +206,7 @@ class BaseDatabase(object):
         :return: None
         """
         engine = self.engine
-        session = scoped_session(
-            sessionmaker(autocommit=True, autoflush=False, bind=engine)
-        )
+        session = scoped_session(sessionmaker(autoflush=False, bind=engine))
         base.metadata.bind = engine
         base.query = session.query_property()
 
@@ -371,7 +369,6 @@ class Database(AlembicDatabase):
         *args,
         **kwargs,
     ):
-
         if (
             configuration_section is None
             and uri is None

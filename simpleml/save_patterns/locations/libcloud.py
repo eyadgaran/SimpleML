@@ -133,7 +133,6 @@ class LibcloudCopyFileLocation(BaseSerializer):
         destination_directory: str = "libcloud_root_path",
         **kwargs,
     ) -> Dict[str, str]:
-
         source_filepath = join(FILEPATH_REGISTRY.get(source_directory), filepath)
         if isdir(source_filepath):
             raise ValueError(
@@ -191,7 +190,7 @@ class LibcloudCopyFolderLocation(BaseSerializer):
 
         # walkthrough all subpaths
         filepaths = []
-        for (dirpath, dirnames, filenames) in walk(join(source_folder, filepath)):
+        for dirpath, dirnames, filenames in walk(join(source_folder, filepath)):
             for filename in filenames:
                 # strip out root path to keep relative to directory
                 filename = join(dirpath, filename).split(source_folder)[1]

@@ -61,7 +61,6 @@ class HickleFileSerializer(BaseSerializer):
         destination_directory: str = "system_temp",
         **kwargs,
     ) -> Dict[str, str]:
-
         # Append the filepath to the pickle storage directory
         filepath = join(format_directory, filepath + format_extension)
         full_path = join(FILEPATH_REGISTRY.get(destination_directory), filepath)
