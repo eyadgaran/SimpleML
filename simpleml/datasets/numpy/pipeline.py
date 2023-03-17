@@ -28,6 +28,11 @@ class NumpyPipelineDataset(BaseNumpyDataset):
             raise DatasetError("Must set pipeline before building dataframe")
 
         split_names = self.pipeline.get_split_names()
+
+        if not split_names:
+            raise NotImplementedError(
+                "Numpy pipeline datasets do not support no splits yet"
+            )
         self.dataframe = dict(
             [
                 (split_name, self.pipeline.transform(X=None, split=split_name))
