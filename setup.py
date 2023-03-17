@@ -67,7 +67,7 @@ setup(
     include_package_data=True,
     keywords=["machine-learning", "deep-learning", "automated-learning"],
     install_requires=[
-        "sqlalchemy>=1.3.7",  # Unified json_serializer/deserializer for sqlite
+        "sqlalchemy>=2.0",  # Unified json_serializer/deserializer for sqlite
         "sqlalchemy-mixins",
         "sqlalchemy-json",
         "alembic",
