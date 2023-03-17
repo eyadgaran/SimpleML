@@ -24,10 +24,13 @@ class DaskPipelineDataset(BaseDaskDataset):
             raise DatasetError("Must set pipeline before building dataframe")
 
         split_names = self.pipeline.get_split_names()
-        splits = [
-            self.pipeline.transform(X=None, split=split_name)
-            for split_name in split_names
-        ]
+        if split_names:
+            splits = [
+                self.pipeline.transform(X=None, dataset_split=split_name)
+                for split_name in split_names
+            ]
+        else:
+            splits = [self.pipeline.transform(X=None, dataset_split=None)]
         merged_splits = [self.merge_split(split) for split in splits]
 
         if len(merged_splits) > 1:  # Combine multiple splits
